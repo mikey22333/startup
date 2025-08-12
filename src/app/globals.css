@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Ensure textarea placeholder is visible */
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+  opacity: 1 !important;
+}
+
+/* Ensure select options are visible */
+select option {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+}
+
+/* Ensure form labels are visible */
+label {
+  color: #374151 !important; /* Dark gray for labels */
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Simplified grid that works better with responsive design */
+  .auto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  @media (max-width: 768px) {
+    .auto-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+}
+
+/* Custom styles for the app */
+.verified-fact {
+  background-color: #dcfce7; /* bg-green-100 */
+  border-left: 4px solid #22c55e; /* border-l-4 border-green-500 */
+  padding: 0.5rem; /* p-2 */
+  border-radius: 0.25rem; /* rounded */
+}
+
+.ai-suggestion {
+  background-color: #fefce8; /* bg-yellow-100 */
+  border-left: 4px solid #eab308; /* border-l-4 border-yellow-500 */
+  padding: 0.5rem; /* p-2 */
+  border-radius: 0.25rem; /* rounded */
+}
