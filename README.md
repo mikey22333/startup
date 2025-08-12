@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Idea2Action - AI Business Plan Generator
 
 A production-ready AI web application that transforms business ideas into detailed, actionable 30-60-90 day plans.
@@ -220,3 +221,6 @@ For support, email support@idea2action.com or create an issue in this repository
 ---
 
 Built with ❤️ by the Idea2Action team
+=======
+# startup
+>>>>>>> c1a1f8fe445728b37a31d7282f8fce7d39e3fff3
