@@ -163,6 +163,12 @@ interface MarketingStrategy {
   budgetAllocation?: string
   conversionMetrics?: string
   retentionStrategy?: string
+  customerAcquisition?: string
+  targetMarket?: string
+  keyMetrics?: string
+  expectedMetrics?: string
+  businessModelStrategy?: string
+  competitiveAdvantage?: string
 }
 
 interface FinancialAnalysis {
@@ -184,6 +190,18 @@ interface GrowthStrategy {
   upsellOpportunities?: string[]
   feedbackLoop?: string
   scalingPlan?: string
+}
+
+interface FundingPlatform {
+  name: string
+  type: string
+  description: string
+  requirements: string
+  averageAmount: string
+  timeline: string
+  successRate: string
+  fees: string
+  link: string
 }
 
 interface Competitor {
@@ -286,6 +304,7 @@ interface Funding {
   investorTargeting?: string
   timeline?: string
   exitStrategy?: string
+  platforms?: FundingPlatform[]
 }
 
 interface Legal {
@@ -418,10 +437,16 @@ interface DerivedStep {
 
 export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
   const [activeSection, setActiveSection] = useState<string>('overview')
+  const [showAllMilestones, setShowAllMilestones] = useState<boolean>(false)
 
   // Memoize section change handler
   const handleSectionChange = useCallback((section: string) => {
     setActiveSection(section)
+  }, [])
+
+  // Memoize milestone toggle handler
+  const handleToggleMilestones = useCallback(() => {
+    setShowAllMilestones(prev => !prev)
   }, [])
 
   if (isLoading) {
@@ -674,18 +699,16 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
 
               <div className="space-y-6">
                 {/* Recommendation Score */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="bg-white rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-medium text-neutral-900">Recommendation Score</h3>
-                    <div className="flex items-center space-x-2">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {plan?.businessIdeaReview?.recommendationScore}/10
-                      </div>
+                    <div className="text-xl font-semibold text-neutral-900">
+                      {plan?.businessIdeaReview?.recommendationScore}/10
                     </div>
                   </div>
-                  <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full" 
+                      className="bg-neutral-900 h-1.5 rounded-full transition-all duration-300" 
                       style={{ width: `${(plan?.businessIdeaReview?.recommendationScore || 0) * 10}%` }}
                     ></div>
                   </div>
@@ -694,23 +717,18 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                 {/* Risk Level */}
                 <div>
                   <h3 className="text-lg font-medium text-neutral-900 mb-3">Risk Assessment</h3>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      plan?.businessIdeaReview?.riskLevel?.includes('LOW') ? 'bg-green-100 text-green-800' :
-                      plan?.businessIdeaReview?.riskLevel?.includes('MEDIUM') ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                  <div className="mb-2">
+                    <span className="text-sm font-medium text-neutral-900 bg-gray-100 px-3 py-1 rounded-md">
                       {plan?.businessIdeaReview?.riskLevel}
                     </span>
                   </div>
-                  <p className="text-neutral-700 text-sm leading-relaxed">{plan?.businessIdeaReview?.riskLevel}</p>
                 </div>
 
                 {/* Critical Success Factor */}
                 <div>
                   <h3 className="text-lg font-medium text-neutral-900 mb-3">Critical Success Factor</h3>
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-amber-800 font-medium">{plan?.businessIdeaReview?.criticalSuccess}</p>
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <p className="text-neutral-800 font-medium text-sm">{plan?.businessIdeaReview?.criticalSuccess}</p>
                   </div>
                 </div>
               </div>
@@ -993,17 +1011,19 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                 )}
               </div>
 
-              {/* Marketing Strategy - Full width since it can have complex layouts */}
+              {/* Go-to-Market Strategy - Dynamic based on business type */}
               {plan.marketingStrategy && (
-                <div className="space-y-3 md:space-y-4">
+                <div className="space-y-6 md:space-y-8">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 md:w-10 h-8 md:h-10 bg-orange-50 rounded-xl flex items-center justify-center">
                       <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-orange-600" />
                     </div>
-                    <h3 className="text-base md:text-lg font-medium text-neutral-900">Marketing Strategy</h3>
+                    <h3 className="text-base md:text-lg font-medium text-neutral-900">Go-to-Market Strategy</h3>
                   </div>
+
+                  {/* Dynamic channel display based on actual data */}
                   {plan.marketingStrategy.channels && (
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                       <h4 className="font-medium text-neutral-800 text-sm md:text-base">Marketing Channels:</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                         {plan.marketingStrategy.channels.map((channel, index) => {
@@ -1019,13 +1039,19 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                               <div key={index} className="p-3 md:p-4 bg-orange-50 rounded-lg border border-orange-200">
                                 <div className="flex items-center justify-between mb-2">
                                   <h5 className="font-medium text-orange-900 text-sm md:text-base">{channel.channel}</h5>
-                                  <span className="text-xs md:text-sm text-orange-700 font-medium">{channel.budget}</span>
+                                  {channel.budget && (
+                                    <span className="text-xs md:text-sm text-orange-700 font-medium">{channel.budget}</span>
+                                  )}
                                 </div>
-                                <p className="text-xs md:text-sm text-orange-800 mb-2">{channel.audience}</p>
-                                <div className="flex justify-between text-xs text-orange-700">
-                                  <span>CAC: {channel.expectedCAC}</span>
-                                  <span>ROI: {channel.expectedROI}</span>
-                                </div>
+                                {channel.audience && (
+                                  <p className="text-xs md:text-sm text-orange-800 mb-2">{channel.audience}</p>
+                                )}
+                                {(channel.expectedCAC || channel.expectedROI) && (
+                                  <div className="flex justify-between text-xs text-orange-700">
+                                    {channel.expectedCAC && <span>CAC: {channel.expectedCAC}</span>}
+                                    {channel.expectedROI && <span>ROI: {channel.expectedROI}</span>}
+                                  </div>
+                                )}
                               </div>
                             )
                           }
@@ -1034,14 +1060,86 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                       </div>
                     </div>
                   )}
-                  {plan.marketingStrategy.customerFunnel && (
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base"><strong>Customer Funnel:</strong> {plan.marketingStrategy.customerFunnel}</p>
+
+                  {/* Dynamic customer acquisition strategy */}
+                  {plan.marketingStrategy.customerAcquisition && (
+                    <div className="bg-blue-50 rounded-xl p-4 md:p-6 border border-blue-200">
+                      <h4 className="font-semibold text-blue-900 text-sm md:text-base mb-3 flex items-center space-x-2">
+                        <Users className="w-4 h-4" />
+                        <span>Customer Acquisition Strategy</span>
+                      </h4>
+                      <p className="text-blue-800 text-sm md:text-base leading-relaxed">{plan.marketingStrategy.customerAcquisition}</p>
+                    </div>
                   )}
+
+                  {/* Dynamic target market approach */}
+                  {plan.marketingStrategy.targetMarket && (
+                    <div className="bg-green-50 rounded-xl p-4 md:p-6 border border-green-200">
+                      <h4 className="font-semibold text-green-900 text-sm md:text-base mb-3 flex items-center space-x-2">
+                        <Target className="w-4 h-4" />
+                        <span>Target Market Approach</span>
+                      </h4>
+                      <p className="text-green-800 text-sm md:text-base leading-relaxed">{plan.marketingStrategy.targetMarket}</p>
+                    </div>
+                  )}
+
+                  {/* Dynamic budget allocation */}
                   {plan.marketingStrategy.budgetAllocation && (
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base"><strong>Budget Allocation:</strong> {plan.marketingStrategy.budgetAllocation}</p>
+                    <div className="bg-purple-50 rounded-xl p-4 md:p-6 border border-purple-200">
+                      <h4 className="font-semibold text-purple-900 text-sm md:text-base mb-3 flex items-center space-x-2">
+                        <DollarSign className="w-4 h-4" />
+                        <span>Budget Allocation</span>
+                      </h4>
+                      <p className="text-purple-800 text-sm md:text-base leading-relaxed">{plan.marketingStrategy.budgetAllocation}</p>
+                    </div>
                   )}
+
+                  {/* Live metrics and KPIs based on business type */}
+                  {(plan.marketingStrategy.keyMetrics || plan.marketingStrategy.expectedMetrics) && (
+                    <div className="bg-gray-50 rounded-xl p-4 md:p-6 border border-gray-200">
+                      <h4 className="font-semibold text-gray-900 text-sm md:text-base mb-3 flex items-center space-x-2">
+                        <TrendingUp className="w-4 h-4" />
+                        <span>Key Performance Metrics</span>
+                      </h4>
+                      {plan.marketingStrategy.keyMetrics && (
+                        <p className="text-gray-800 text-sm md:text-base leading-relaxed mb-3">{plan.marketingStrategy.keyMetrics}</p>
+                      )}
+                      {plan.marketingStrategy.expectedMetrics && (
+                        <p className="text-gray-800 text-sm md:text-base leading-relaxed">{plan.marketingStrategy.expectedMetrics}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Business model specific approach */}
+                  {plan.marketingStrategy.businessModelStrategy && (
+                    <div className="bg-yellow-50 rounded-xl p-4 md:p-6 border border-yellow-200">
+                      <h4 className="font-semibold text-yellow-900 text-sm md:text-base mb-3 flex items-center space-x-2">
+                        <Building2 className="w-4 h-4" />
+                        <span>Business Model Strategy</span>
+                      </h4>
+                      <p className="text-yellow-800 text-sm md:text-base leading-relaxed">{plan.marketingStrategy.businessModelStrategy}</p>
+                    </div>
+                  )}
+
+                  {plan.marketingStrategy.customerFunnel && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-neutral-800 text-sm md:text-base">Customer Journey:</h4>
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.marketingStrategy.customerFunnel}</p>
+                    </div>
+                  )}
+                  
                   {plan.marketingStrategy.brandStory && (
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base"><strong>Brand Story:</strong> {plan.marketingStrategy.brandStory}</p>
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-neutral-800 text-sm md:text-base">Brand Positioning:</h4>
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.marketingStrategy.brandStory}</p>
+                    </div>
+                  )}
+
+                  {plan.marketingStrategy.competitiveAdvantage && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-neutral-800 text-sm md:text-base">Competitive Advantage:</h4>
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.marketingStrategy.competitiveAdvantage}</p>
+                    </div>
                   )}
                 </div>
               )}
@@ -1086,7 +1184,11 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-              {plan.marketAnalysis.marketSize && (
+              {plan.marketAnalysis.marketSize && 
+               (plan.marketAnalysis.marketSize.tam || plan.marketAnalysis.marketSize.sam || plan.marketAnalysis.marketSize.som || plan.marketAnalysis.marketSize.cagr) && 
+               !(plan.marketAnalysis.marketSize.tam?.includes('Market analysis in progress') || 
+                 plan.marketAnalysis.marketSize.tam?.includes('To be determined') ||
+                 plan.marketAnalysis.marketSize.tam?.includes('Research required')) && (
                 <div className="space-y-3 md:space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 md:w-10 h-8 md:h-10 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -1095,23 +1197,35 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                     <h3 className="text-base md:text-lg font-medium text-neutral-900">Market Size Analysis</h3>
                   </div>
                   <div className="space-y-2 md:space-y-3">
-                    {plan.marketAnalysis.marketSize.tam && (
+                    {plan.marketAnalysis.marketSize.tam && 
+                     !plan.marketAnalysis.marketSize.tam.includes('Market analysis in progress') &&
+                     !plan.marketAnalysis.marketSize.tam.includes('To be determined') &&
+                     !plan.marketAnalysis.marketSize.tam.includes('Research required') && (
                       <p className="text-neutral-700 text-sm md:text-base"><strong>Total Addressable Market:</strong> {plan.marketAnalysis.marketSize.tam}</p>
                     )}
-                    {plan.marketAnalysis.marketSize.sam && (
+                    {plan.marketAnalysis.marketSize.sam && 
+                     !plan.marketAnalysis.marketSize.sam.includes('To be determined') &&
+                     !plan.marketAnalysis.marketSize.sam.includes('Research required') && (
                       <p className="text-neutral-700 text-sm md:text-base"><strong>Serviceable Addressable Market:</strong> {plan.marketAnalysis.marketSize.sam}</p>
                     )}
-                    {plan.marketAnalysis.marketSize.som && (
+                    {plan.marketAnalysis.marketSize.som && 
+                     !plan.marketAnalysis.marketSize.som.includes('To be calculated') &&
+                     !plan.marketAnalysis.marketSize.som.includes('Research required') && (
                       <p className="text-neutral-700"><strong>Serviceable Obtainable Market:</strong> {plan.marketAnalysis.marketSize.som}</p>
                     )}
-                    {plan.marketAnalysis.marketSize.cagr && (
+                    {plan.marketAnalysis.marketSize.cagr && 
+                     !plan.marketAnalysis.marketSize.cagr.includes('Research required') &&
+                     !plan.marketAnalysis.marketSize.cagr.includes('To be determined') && (
                       <p className="text-neutral-700"><strong>Expected Growth Rate:</strong> {plan.marketAnalysis.marketSize.cagr}</p>
                     )}
                   </div>
                 </div>
               )}
 
-              {plan.marketAnalysis.trends && (
+              {plan.marketAnalysis.trends && 
+               plan.marketAnalysis.trends !== 'Market analysis in progress' &&
+               plan.marketAnalysis.trends !== 'Research required' &&
+               plan.marketAnalysis.trends.trim().length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
@@ -1362,7 +1476,9 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-              {plan.marketAnalysis.economicContext && (
+              {plan.marketAnalysis.economicContext && 
+               plan.marketAnalysis.economicContext !== 'Economic analysis required' && 
+               plan.marketAnalysis.economicContext.trim().length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
@@ -1374,7 +1490,9 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                 </div>
               )}
 
-              {plan.marketAnalysis.demandAnalysis && (
+              {plan.marketAnalysis.demandAnalysis && 
+               plan.marketAnalysis.demandAnalysis !== 'Economic analysis required' && 
+               plan.marketAnalysis.demandAnalysis.trim().length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
@@ -1746,9 +1864,14 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
         {/* Implementation Roadmap */}
         {plan.roadmap && plan.roadmap.length > 0 && (
           <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg mb-8 md:mb-16">
-            <div className="flex items-center space-x-3 mb-6 md:mb-8">
-              <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
-              <h2 className="text-xl md:text-2xl font-light text-neutral-900">Implementation Roadmap</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 md:mb-8 space-y-2 sm:space-y-0">
+              <div className="flex items-center space-x-3">
+                <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
+                <h2 className="text-xl md:text-2xl font-light text-neutral-900">Strategic Milestones</h2>
+              </div>
+              <span className="px-3 md:px-4 py-1.5 bg-neutral-50 text-neutral-600 rounded-full text-sm font-medium self-start">
+                {plan.roadmap.length} milestones
+              </span>
             </div>
 
             {/* Roadmap Summary */}
@@ -1772,7 +1895,7 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
             </div>
 
             <div className="space-y-4 md:space-y-6">
-              {plan.roadmap.map((milestone, index) => (
+              {(showAllMilestones ? plan.roadmap : plan.roadmap.slice(0, 3)).map((milestone, index) => (
                 <div key={index} className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4 md:space-x-6 p-4 md:p-6 border border-neutral-200 rounded-xl">
                   <div className="flex-shrink-0 self-start sm:self-auto">
                     <div className="w-8 h-8 bg-neutral-100 border border-neutral-200 rounded-full flex items-center justify-center text-sm font-medium text-neutral-700">
@@ -1833,6 +1956,23 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                 </div>
               ))}
             </div>
+
+            {plan.roadmap.length > 3 && (
+              <div className="text-center pt-6">
+                <button 
+                  onClick={handleToggleMilestones}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 rounded-full transition-colors font-medium"
+                >
+                  <span>
+                    {showAllMilestones 
+                      ? 'Show Less Milestones' 
+                      : `View ${plan.roadmap.length - 3} More Milestones`
+                    }
+                  </span>
+                  <ArrowRight className={`w-4 h-4 transition-transform ${showAllMilestones ? 'rotate-90' : ''}`} />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1849,7 +1989,7 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
           </div>
 
           <div className="space-y-4 md:space-y-6">
-            {derivedActionPlan.slice(0, 6).map((step, index) => (
+            {(showAllMilestones ? derivedActionPlan : derivedActionPlan.slice(0, 6)).map((step, index) => (
               <div key={index} className="group hover:bg-neutral-50 p-4 md:p-6 rounded-2xl transition-all border border-transparent hover:border-neutral-100">
                 <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4 md:space-x-6">
                   <div className="flex-shrink-0 self-start sm:self-auto">
@@ -1888,187 +2028,106 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
 
             {derivedActionPlan.length > 6 && (
               <div className="text-center pt-6">
-                <button className="inline-flex items-center space-x-2 px-6 py-3 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 rounded-full transition-colors font-medium content-fit">
-                  <span>View {derivedActionPlan.length - 6} More Steps</span>
-                  <ArrowRight className="w-4 h-4" />
+                <button 
+                  onClick={handleToggleMilestones}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 rounded-full transition-colors font-medium"
+                >
+                  <span>
+                    {showAllMilestones 
+                      ? 'Show Less Steps' 
+                      : `View ${derivedActionPlan.length - 6} More Steps`
+                    }
+                  </span>
+                  <ArrowRight className={`w-4 h-4 transition-transform ${showAllMilestones ? 'rotate-90' : ''}`} />
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Essential Tools & Resources */}
+        {/* Funding Strategy */}
+        {plan.funding && plan.funding.platforms && plan.funding.platforms.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg mb-8 md:mb-16">
+            <div className="flex items-center space-x-3 mb-6 md:mb-8">
+              <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
+              <h2 className="text-xl md:text-2xl font-light text-neutral-900">Recommended Funding Platforms</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {plan.funding.platforms.slice(0, 6).map((platform: FundingPlatform, index: number) => (
+                <div key={index} className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="font-semibold text-neutral-900 text-base">{platform.name}</h4>
+                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                            {platform.type}
+                          </span>
+                        </div>
+                        <p className="text-neutral-600 text-sm font-light leading-relaxed mb-3">
+                          {platform.description}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <span className="font-medium text-neutral-800">Amount Range:</span>
+                        <p className="text-neutral-600 mt-1">{platform.averageAmount}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-neutral-800">Timeline:</span>
+                        <p className="text-neutral-600 mt-1">{platform.timeline}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-neutral-800">Success Rate:</span>
+                        <p className="text-neutral-600 mt-1">{platform.successRate}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-neutral-800">Fees:</span>
+                        <p className="text-neutral-600 mt-1">{platform.fees}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-3 border-t border-gray-200">
+                      <p className="text-xs text-neutral-600 mb-3">
+                        <span className="font-medium">Requirements:</span> {platform.requirements}
+                      </p>
+                      {platform.link && (
+                        <a 
+                          href={platform.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition-colors"
+                        >
+                          <span>Visit Platform</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Next 7 Days & Resources */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          {/* Tools */}
-          {plan.recommendedTools && plan.recommendedTools.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-black shadow-lg">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-1 h-6 bg-black rounded-full" />
-                <h3 className="text-xl font-light text-neutral-900">Essential Tools</h3>
-              </div>
-              
-              <div className="space-y-4">
-                {plan.recommendedTools.slice(0, 4).map((tool, index) => (
-                  <div key={index} className="p-4 bg-neutral-50 rounded-xl">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-neutral-900 text-sm flex-1 min-w-0">{tool.name}</h4>
-                      <span className="text-neutral-600 font-medium text-xs whitespace-nowrap ml-2">{tool.cost}</span>
-                    </div>
-                    <p className="text-xs text-neutral-600 font-light mb-2">{tool.description.substring(0, 80)}...</p>
-                    {tool.link && (
-                      <a 
-                        href={tool.link} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="inline-flex items-center space-x-1 text-neutral-700 hover:text-neutral-900 text-xs font-medium transition-colors"
-                      >
-                        <span>Learn More</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Funding Strategy */}
-          {plan.funding && (
-            <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-black shadow-lg mb-8 md:mb-16">
-              <div className="flex items-center space-x-3 mb-6 md:mb-8">
-                <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
-                <h2 className="text-xl md:text-2xl font-light text-neutral-900">Funding Strategy</h2>
-              </div>
-
-              <div className="space-y-8 md:space-y-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                  {plan.funding.requirements && (
-                    <div className="space-y-3 md:space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 md:w-10 h-8 md:h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                          <DollarSign className="w-4 md:w-5 h-4 md:h-5 text-green-600" />
-                        </div>
-                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Funding Requirements</h3>
-                      </div>
-                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base pl-11 md:pl-13">{plan.funding.requirements}</p>
-                    </div>
-                  )}
-
-                  {plan.funding.useOfFunds && (
-                    <div className="space-y-3 md:space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 md:w-10 h-8 md:h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                          <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-blue-600" />
-                        </div>
-                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Use of Funds</h3>
-                      </div>
-                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base pl-11 md:pl-13">{plan.funding.useOfFunds}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                  {plan.funding.investorTargeting && (
-                    <div className="space-y-3 md:space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 md:w-10 h-8 md:h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                          <Users className="w-4 md:w-5 h-4 md:h-5 text-purple-600" />
-                        </div>
-                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Investor Targeting</h3>
-                      </div>
-                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base pl-11 md:pl-13">{plan.funding.investorTargeting}</p>
-                    </div>
-                  )}
-
-                  {plan.funding.exitStrategy && (
-                    <div className="space-y-3 md:space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 md:w-10 h-8 md:h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                          <ArrowRight className="w-4 md:w-5 h-4 md:h-5 text-orange-600" />
-                        </div>
-                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Exit Strategy</h3>
-                      </div>
-                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base pl-11 md:pl-13">{plan.funding.exitStrategy}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Legal Considerations */}
-          {plan.legal && (
-            <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-black shadow-lg mb-8 md:mb-16">
-              <div className="flex items-center space-x-3 mb-6 md:mb-8">
-                <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
-                <h2 className="text-xl md:text-2xl font-light text-neutral-900">Legal & Compliance</h2>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 auto-rows-max">
-                {plan.legal.businessEntity && (
-                  <div className="bg-blue-50 rounded-xl p-6 space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-neutral-900">Business Entity</h3>
-                    </div>
-                    <p className="text-neutral-700 leading-relaxed text-sm md:text-base">{plan.legal.businessEntity}</p>
-                  </div>
-                )}
-
-                {plan.legal.intellectualProperty && (
-                  <div className="bg-purple-50 rounded-xl p-6 space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                        <Lightbulb className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-neutral-900">Intellectual Property</h3>
-                    </div>
-                    <p className="text-neutral-700 leading-relaxed text-sm md:text-base">{plan.legal.intellectualProperty}</p>
-                  </div>
-                )}
-
-                {plan.legal.compliance && (
-                  <div className="bg-green-50 rounded-xl p-6 space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-neutral-900">Regulatory Compliance</h3>
-                    </div>
-                    <p className="text-neutral-700 leading-relaxed text-sm md:text-base">{plan.legal.compliance}</p>
-                  </div>
-                )}
-
-                {plan.legal.insurance && (
-                  <div className="bg-orange-50 rounded-xl p-6 space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-neutral-900">Insurance Requirements</h3>
-                    </div>
-                    <p className="text-neutral-700 leading-relaxed text-sm md:text-base">{plan.legal.insurance}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Next 7 Days Action Items */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-blue-200 shadow-lg mb-8 md:mb-16">
+          <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-6 md:mb-8">
               <div className="flex items-center space-x-3">
-                <div className="w-1 h-6 md:h-8 bg-blue-600 rounded-full" />
+                <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
                 <h2 className="text-xl md:text-2xl font-light text-neutral-900">Your Next 7 Days</h2>
               </div>
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium self-start">Priority Actions</span>
+              <span className="px-3 py-1 bg-gray-100 text-neutral-700 rounded-md text-sm font-medium self-start">Priority Actions</span>
             </div>
 
             <div className="space-y-4 md:space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-4 md:p-6 bg-white rounded-xl border border-blue-200">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-700 flex-shrink-0 self-start sm:self-auto">
+              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-neutral-700 flex-shrink-0 self-start sm:self-auto">
                   1
                 </div>
                 <div className="flex-1 min-w-0">
@@ -2089,8 +2148,8 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 md:p-4 bg-white rounded-xl border border-blue-200">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-700 flex-shrink-0 self-start sm:self-auto">
+              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 md:p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-neutral-700 flex-shrink-0 self-start sm:self-auto">
                   2
                 </div>
                 <div className="flex-1">
@@ -2111,8 +2170,8 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 md:p-4 bg-white rounded-xl border border-blue-200">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-700 flex-shrink-0 self-start sm:self-auto">
+              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 md:p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-neutral-700 flex-shrink-0 self-start sm:self-auto">
                   3
                 </div>
                 <div className="flex-1">
@@ -2133,8 +2192,8 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-4 md:p-6 bg-white rounded-xl border border-blue-200">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-700 flex-shrink-0 self-start sm:self-auto">
+              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-neutral-700 flex-shrink-0 self-start sm:self-auto">
                   4
                 </div>
                 <div className="flex-1 min-w-0">
@@ -2155,8 +2214,8 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                 </div>
               </div>
 
-              <div className="flex items-start space-x-4 p-4 md:p-6 bg-white rounded-xl border border-blue-200">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-700 flex-shrink-0">
+              <div className="flex items-start space-x-4 p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-neutral-700 flex-shrink-0">
                   5
                 </div>
                 <div className="flex-1 min-w-0">
@@ -2178,10 +2237,10 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
               </div>
             </div>
 
-            <div className="mt-4 md:mt-6 p-3 md:p-4 bg-blue-100 rounded-xl">
+            <div className="mt-4 md:mt-6 p-3 md:p-4 bg-gray-100 rounded-xl">
               <div className="flex items-center space-x-3">
-                <CheckCircle2 className="w-4 md:w-5 h-4 md:h-5 text-blue-600" />
-                <p className="text-blue-900 font-medium text-sm md:text-base">
+                <CheckCircle2 className="w-4 md:w-5 h-4 md:h-5 text-neutral-600" />
+                <p className="text-neutral-800 font-medium text-sm md:text-base">
                   Complete these 5 actions to build a solid foundation for your business launch.
                 </p>
               </div>
@@ -2225,6 +2284,79 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
             </div>
           )}
         </div>
+
+        {/* Legal & Compliance - Minimalistic */}
+        {plan.legal && (
+          <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg mb-8 md:mb-16 mt-8 md:mt-16">
+            <div className="flex items-center space-x-3 mb-6 md:mb-8">
+              <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
+              <h2 className="text-xl md:text-2xl font-light text-neutral-900">Legal & Compliance</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+              {plan.legal.businessEntity && (
+                <div className="space-y-3">
+                  <h3 className="font-medium text-neutral-900">Business Entity</h3>
+                  <p className="text-neutral-700 text-sm leading-relaxed">{plan.legal.businessEntity}</p>
+                </div>
+              )}
+
+              {plan.legal.intellectualProperty && (
+                <div className="space-y-3">
+                  <h3 className="font-medium text-neutral-900">Intellectual Property</h3>
+                  <p className="text-neutral-700 text-sm leading-relaxed">{plan.legal.intellectualProperty}</p>
+                </div>
+              )}
+
+              {plan.legal.compliance && (
+                <div className="space-y-3">
+                  <h3 className="font-medium text-neutral-900">Regulatory Compliance</h3>
+                  <p className="text-neutral-700 text-sm leading-relaxed">{plan.legal.compliance}</p>
+                </div>
+              )}
+
+              {plan.legal.insurance && (
+                <div className="space-y-3">
+                  <h3 className="font-medium text-neutral-900">Insurance Requirements</h3>
+                  <p className="text-neutral-700 text-sm leading-relaxed">{plan.legal.insurance}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Essential Tools & Resources */}
+        {plan.recommendedTools && plan.recommendedTools.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg mb-8 md:mb-16">
+            <div className="flex items-center space-x-3 mb-6 md:mb-8">
+              <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
+              <h2 className="text-xl md:text-2xl font-light text-neutral-900">Essential Tools</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {plan.recommendedTools.slice(0, 6).map((tool, index) => (
+                <div key={index} className="p-4 md:p-6 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <h4 className="font-medium text-neutral-900 text-sm md:text-base flex-1 min-w-0">{tool.name}</h4>
+                    <span className="text-neutral-600 font-medium text-xs md:text-sm whitespace-nowrap ml-3">{tool.cost}</span>
+                  </div>
+                  <p className="text-xs md:text-sm text-neutral-600 font-light mb-3 leading-relaxed">{tool.description.substring(0, 100)}...</p>
+                  {tool.link && (
+                    <a 
+                      href={tool.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="inline-flex items-center space-x-2 text-neutral-700 hover:text-neutral-900 text-xs md:text-sm font-medium transition-colors"
+                    >
+                      <span>Learn More</span>
+                      <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="text-center pt-8 md:pt-16 pb-6 md:pb-8">

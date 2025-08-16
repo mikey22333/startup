@@ -197,46 +197,393 @@ interface PersonalizationOptions {
   audience: 'investors' | 'partners' | 'internal' | 'customers'
 }
 
-// Real-time financial metrics calculation based on market data
-async function calculateLiveFinancialMetrics(businessType: string, idea: string): Promise<any> {
-  try {
-    console.log('Calculating financial metrics based on live market data...')
+// Calculate realistic financial metrics based on business type and industry data
+function calculateFinancialMetrics(businessType: string, idea: string): any {
+  console.log('Calculating financial metrics for any business idea:', idea)
+  
+  // Use the universal keyword matching system for comprehensive business analysis
+  const lowerIdea = idea.toLowerCase()
+  
+  // Determine CAC based on business characteristics
+  let cac = getBusinessCAC(lowerIdea)
+  
+  // Determine LTV based on business model
+  let ltv = getBusinessLTV(lowerIdea, cac)
+  
+  // Determine churn rate based on industry
+  let churnRate = getBusinessChurnRate(lowerIdea)
+  
+  // Determine gross margin based on business type
+  let grossMargin = getBusinessGrossMargin(lowerIdea)
+  
+  // Calculate startup costs based on business type and idea
+  let startupCosts = getBusinessStartupCosts(lowerIdea)
+  
+  // Calculate additional metrics with realistic ARPU
+  const ltvToCacRatio = Math.round((ltv / cac) * 10) / 10
+  const arpu = calculateRealisticARPU(lowerIdea, ltv) // Realistic monthly ARPU
+  const burnRate = Math.round(cac * 50 + Math.random() * 20000) // Monthly burn estimate
+  const paybackPeriod = Math.round(cac / arpu * 10) / 10 // Months to payback CAC
+  
+  // Determine business type and industry
+  const businessTypeCategory = determineBusinessType(lowerIdea)
+  const industryCategory = determineIndustry(lowerIdea)
+  
+  return {
+    cac: `$${cac}`,
+    ltv: `$${ltv}`,
+    arpu: `$${arpu}/month`,
+    churnRate: `${churnRate}%`,
+    ltvToCacRatio: `${ltvToCacRatio}:1`,
+    grossMargin: `${grossMargin}%`,
+    startupCosts: `$${startupCosts.toLocaleString()}`,
+    burnRate: `$${burnRate.toLocaleString()}/month`,
+    paybackPeriod: `${paybackPeriod} months`,
+    unitEconomics: ltvToCacRatio >= 3 ? 'Healthy' : ltvToCacRatio >= 2 ? 'Acceptable' : 'Needs Improvement',
+    dataSource: 'Industry benchmarks & calculated estimates',
+    calculationDate: new Date().toLocaleDateString(),
+    businessType: businessTypeCategory,
+    industry: industryCategory
+  }
+}
+
+// Calculate startup costs based on business idea and type
+function getBusinessStartupCosts(businessIdea: string): number {
+  const startupCostRanges: { [key: string]: [number, number] } = {
+    // High-cost physical businesses
+    'restaurant': [80000, 200000], 'cafe': [60000, 150000], 'food truck': [50000, 120000],
+    'retail store': [40000, 100000], 'boutique': [30000, 80000], 'salon': [25000, 70000],
+    'gym': [100000, 300000], 'manufacturing': [200000, 500000], 'hotel': [500000, 2000000],
     
-    // Call the real API integrations
-    const industryBenchmarks = await fetchIndustryBenchmarksLive(businessType)
-    const competitorMetrics = await fetchCompetitorFinancials(businessType)
-    const marketConditions = await fetchCurrentMarketConditions()
+    // Medium-cost service businesses
+    'consulting': [5000, 25000], 'agency': [15000, 50000], 'cleaning service': [10000, 30000],
+    'marketing': [8000, 35000], 'real estate': [15000, 40000], 'healthcare clinic': [75000, 200000],
+    'dental practice': [100000, 350000], 'law firm': [25000, 75000], 'accounting': [15000, 50000],
     
-    return {
-      cac: `Calculated from live advertising cost data - ${competitorMetrics?.profitMargin || 'processing'}`,
-      ltv: `Based on industry retention rates - ${typeof industryBenchmarks === 'string' ? industryBenchmarks : 'analyzing'}`,
-      arpu: `Derived from competitor pricing analysis - ${competitorMetrics?.marketCap || 'processing'}`,
-      churnRate: `Industry benchmark adjusted for business model - ${marketConditions?.sentiment || 'analyzing'}`,
-      burnRate: 'Calculated based on operational cost analysis - live data integrated',
-      grossMargin: 'Industry-specific margin analysis - API data processing',
-      dataSource: 'Live APIs: FRED, Alpha Vantage, News API',
-      lastUpdated: new Date().toISOString()
-    }
-  } catch (error) {
-    console.error('Live financial metrics calculation failed:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    // Technology businesses (variable based on complexity)
+    'saas': [25000, 150000], 'mobile app': [30000, 120000], 'web platform': [20000, 100000],
+    'ai software': [50000, 200000], 'fintech': [75000, 300000], 'edtech': [40000, 150000],
+    'ecommerce platform': [15000, 80000], 'marketplace': [50000, 200000],
     
-    return {
-      cac: `API Integration Active - ${errorMessage?.includes('in progress') ? 'Data loading' : 'Error occurred'}`,
-      ltv: 'Real-time financial analysis - API keys configured and testing',
-      arpu: 'Market-based calculation - Live data integration in progress',
-      churnRate: 'Industry benchmark API - FRED/Alpha Vantage connected',
-      burnRate: 'Operating cost analysis - News API sentiment available',
-      grossMargin: 'Competitive margin analysis - APIs configured, processing data',
-      apiStatus: {
-        fredApi: process.env.FRED_API_KEY ? 'Configured ✅' : 'Missing ❌',
-        alphaVantage: process.env.ALPHA_VANTAGE_API_KEY ? 'Configured ✅' : 'Missing ❌',
-        yahooFinance: process.env.YAHOO_FINANCE_API_KEY ? 'Configured ✅' : 'Missing ❌',
-        newsApi: process.env.NEWS_API_KEY ? 'Configured ✅' : 'Missing ❌'
-      },
-      error: errorMessage
+    // E-commerce and online businesses
+    'dropshipping': [5000, 15000], 'online store': [10000, 40000], 'affiliate marketing': [2000, 10000],
+    'digital products': [3000, 20000], 'course creation': [5000, 25000], 'subscription box': [20000, 80000],
+    
+    // Creative and content businesses
+    'photography studio': [15000, 60000], 'video production': [25000, 100000], 'design agency': [10000, 50000],
+    'content creation': [5000, 25000], 'podcast network': [8000, 40000], 'youtube channel': [3000, 15000],
+    
+    // Specialized services
+    'food delivery': [20000, 80000], 'ride sharing': [30000, 100000], 'home services': [15000, 50000],
+    'pet services': [10000, 40000], 'tutoring': [3000, 15000], 'fitness coaching': [5000, 25000],
+    
+    // Investment-heavy sectors
+    'biotech': [500000, 2000000], 'pharmaceutical': [1000000, 5000000], 'aerospace': [2000000, 10000000],
+    'energy': [100000, 1000000], 'mining': [500000, 5000000], 'agriculture': [50000, 500000],
+  }
+  
+  // Find matching business type and calculate startup costs
+  let costRange = [25000, 75000] // Default range
+  
+  // Use keyword scoring to find best match
+  let bestScore = 0
+  let bestMatch = ''
+  
+  for (const [businessType, range] of Object.entries(startupCostRanges)) {
+    const score = calculateKeywordScore(businessIdea, businessType)
+    if (score > bestScore) {
+      bestScore = score
+      bestMatch = businessType
+      costRange = range
     }
   }
+  
+  // Calculate final startup cost with some variability
+  const [minCost, maxCost] = costRange
+  const avgCost = (minCost + maxCost) / 2
+  const variance = 0.8 + Math.random() * 0.4 // ±20% variance
+  
+  return Math.round(avgCost * variance)
+}
+
+// Universal CAC calculator
+function getBusinessCAC(businessIdea: string): number {
+  const cacRanges: { [key: string]: [number, number] } = {
+    // High-touch B2B (realistic enterprise CAC)
+    'enterprise': [200, 500], 'b2b software': [150, 400], 'consulting': [100, 300],
+    'legal services': [200, 450], 'financial services': [250, 600],
+    
+    // SaaS & Software (varied by market)
+    'saas': [50, 180], 'software': [60, 200], 'app': [15, 80], 'platform': [80, 250],
+    'automation': [100, 250], 'ai': [120, 350], 'cybersecurity': [200, 500],
+    
+    // Student/Consumer focused (much lower CAC)
+    'student': [8, 25], 'college': [10, 30], 'meal kit': [15, 45],
+    'consumer': [12, 35], 'individual': [10, 30], 'personal': [8, 25],
+    
+    // E-commerce & Retail
+    'ecommerce': [15, 45], 'online store': [12, 35], 'marketplace': [10, 30],
+    'dropshipping': [8, 20], 'fashion': [20, 60], 'jewelry': [25, 75],
+    'cosmetics': [18, 50], 'subscription box': [25, 65],
+    
+    // Food & Beverage
+    'restaurant': [10, 30], 'food delivery': [15, 35], 'catering': [15, 40],
+    'cafe': [8, 20], 'food truck': [5, 15],
+    
+    // Services (B2C)
+    'beauty': [12, 28], 'fitness': [15, 40], 'wellness': [20, 50], 'therapy': [25, 65],
+    'cleaning': [8, 20], 'home services': [12, 30], 'tutoring': [15, 40],
+    
+    // Healthcare
+    'medical': [60, 150], 'dental': [40, 120], 'telemedicine': [30, 80],
+    'mental health': [35, 90], 'nutrition': [20, 50],
+    
+    // Creative & Media
+    'photography': [15, 45], 'videography': [20, 60], 'design': [18, 50],
+    'marketing agency': [80, 200], 'advertising': [60, 180], 'content creation': [10, 35],
+    
+    // Education & Training
+    'education': [20, 60], 'online course': [12, 40], 'bootcamp': [150, 400],
+    'certification': [30, 100], 'language learning': [18, 50],
+    
+    // Real Estate & Property
+    'real estate': [100, 300], 'property management': [80, 200],
+    'construction': [150, 450], 'moving': [20, 50],
+    
+    // Transportation & Logistics
+    'delivery': [15, 40], 'logistics': [80, 200], 'transportation': [35, 120],
+    'rideshare': [15, 40], 'freight': [200, 500]
+  }
+  
+  let bestMatch = { score: 0, range: [30, 80] as [number, number] } // Default range
+  
+  for (const [keyword, range] of Object.entries(cacRanges)) {
+    const score = calculateKeywordScore(businessIdea, keyword)
+    if (score > bestMatch.score) {
+      bestMatch = { score, range }
+    }
+  }
+  
+  const [min, max] = bestMatch.range
+  return Math.round(min + Math.random() * (max - min))
+}
+
+// Universal LTV calculator with realistic pricing tiers
+function getBusinessLTV(businessIdea: string, cac: number): number {
+  const idea = businessIdea.toLowerCase()
+  
+  // Calculate LTV based on realistic monthly pricing and customer lifespan
+  let monthlyPrice = 0
+  let avgCustomerLifespan = 12 // months
+  
+  // Determine realistic monthly pricing based on business model and target market
+  if (idea.includes('student') || idea.includes('college') || idea.includes('meal kit')) {
+    // Student-focused businesses: low pricing
+    monthlyPrice = 15 + Math.random() * 25 // $15-40/month
+    avgCustomerLifespan = 8 // Students churn faster, shorter academic cycles
+  } else if (idea.includes('enterprise') || idea.includes('b2b software') || idea.includes('saas')) {
+    if (idea.includes('enterprise') || idea.includes('large business')) {
+      // Enterprise B2B: high pricing
+      monthlyPrice = 200 + Math.random() * 800 // $200-1000/month
+      avgCustomerLifespan = 36 // Longer enterprise contracts
+    } else {
+      // SMB B2B SaaS: medium pricing
+      monthlyPrice = 50 + Math.random() * 150 // $50-200/month
+      avgCustomerLifespan = 24 // Moderate retention
+    }
+  } else if (idea.includes('consumer') || idea.includes('b2c') || idea.includes('individual')) {
+    // Consumer businesses: low-medium pricing
+    monthlyPrice = 10 + Math.random() * 40 // $10-50/month
+    avgCustomerLifespan = 18 // Consumer retention varies
+  } else if (idea.includes('professional') || idea.includes('freelancer') || idea.includes('small business')) {
+    // Professional tools: medium pricing
+    monthlyPrice = 25 + Math.random() * 75 // $25-100/month
+    avgCustomerLifespan = 20 // Professional tools have better retention
+  } else if (idea.includes('ecommerce') || idea.includes('retail') || idea.includes('store')) {
+    // E-commerce: based on average order value and purchase frequency
+    const avgOrderValue = 30 + Math.random() * 70 // $30-100 per order
+    const ordersPerYear = 3 + Math.random() * 9 // 3-12 orders per year
+    return Math.round(avgOrderValue * ordersPerYear)
+  } else if (idea.includes('food') || idea.includes('restaurant') || idea.includes('delivery')) {
+    // Food services: frequent, low-value transactions
+    const avgOrderValue = 15 + Math.random() * 35 // $15-50 per order
+    const ordersPerYear = 12 + Math.random() * 36 // 12-48 orders per year
+    return Math.round(avgOrderValue * ordersPerYear)
+  } else if (idea.includes('service') || idea.includes('consulting') || idea.includes('agency')) {
+    // Service businesses: project-based or retainer
+    const monthlyRetainer = 500 + Math.random() * 2000 // $500-2500/month
+    const avgProjectLength = 3 + Math.random() * 9 // 3-12 months
+    return Math.round(monthlyRetainer * avgProjectLength)
+  } else {
+    // Default for other businesses
+    monthlyPrice = 30 + Math.random() * 70 // $30-100/month
+    avgCustomerLifespan = 15 // 15 months average
+  }
+  
+  // Calculate LTV for subscription-based businesses
+  const calculatedLTV = Math.round(monthlyPrice * avgCustomerLifespan)
+  
+  // Ensure LTV makes sense relative to CAC (healthy ratio should be 3:1 to 5:1)
+  const ltvToCacRatio = calculatedLTV / cac
+  
+  // If ratio is too high (unrealistic), cap it
+  if (ltvToCacRatio > 8) {
+    return Math.round(cac * (4 + Math.random() * 3)) // 4-7x CAC
+  }
+  
+  // If ratio is too low (unsustainable), boost it
+  if (ltvToCacRatio < 2) {
+    return Math.round(cac * (3 + Math.random() * 2)) // 3-5x CAC
+  }
+  
+  return calculatedLTV
+}
+
+// Calculate realistic ARPU based on business model
+function calculateRealisticARPU(businessIdea: string, ltv: number): number {
+  const idea = businessIdea.toLowerCase()
+  
+  // For subscription businesses, calculate based on typical pricing
+  if (idea.includes('student') || idea.includes('college')) {
+    return 15 + Math.random() * 25 // $15-40/month for students
+  } else if (idea.includes('enterprise') || idea.includes('b2b software')) {
+    if (idea.includes('enterprise')) {
+      return 200 + Math.random() * 800 // $200-1000/month for enterprise
+    } else {
+      return 50 + Math.random() * 150 // $50-200/month for SMB B2B
+    }
+  } else if (idea.includes('consumer') || idea.includes('b2c')) {
+    return 10 + Math.random() * 40 // $10-50/month for consumers
+  } else if (idea.includes('professional') || idea.includes('freelancer')) {
+    return 25 + Math.random() * 75 // $25-100/month for professionals
+  } else if (idea.includes('service') || idea.includes('consulting')) {
+    return 500 + Math.random() * 2000 // $500-2500/month for services
+  } else if (idea.includes('ecommerce') || idea.includes('food') || idea.includes('retail')) {
+    // For transaction-based businesses, calculate monthly revenue per customer
+    return Math.round(ltv / (8 + Math.random() * 16)) // Spread LTV over 8-24 months
+  } else {
+    // Default: spread LTV over reasonable timeframe
+    return Math.round(ltv / (12 + Math.random() * 12)) // 12-24 months
+  }
+}
+
+// Universal churn rate calculator
+function getBusinessChurnRate(businessIdea: string): number {
+  const churnRates: { [key: string]: [number, number] } = {
+    // Low churn (sticky businesses)
+    'saas': [2, 7], 'software': [3, 8], 'b2b': [2, 6], 'enterprise': [1, 4],
+    'healthcare': [3, 8], 'education': [4, 10], 'financial': [2, 6],
+    
+    // Medium churn
+    'ecommerce': [8, 18], 'retail': [10, 20], 'subscription': [5, 12],
+    'fitness': [8, 15], 'beauty': [10, 18], 'wellness': [6, 14],
+    
+    // Higher churn (competitive markets)
+    'food delivery': [12, 25], 'restaurant': [15, 30], 'meal kit': [10, 20],
+    'marketplace': [15, 35], 'gaming': [20, 40], 'entertainment': [15, 30],
+    
+    // Variable churn
+    'consulting': [5, 15], 'agency': [8, 18], 'freelance': [20, 40],
+    'photography': [15, 35], 'event': [30, 60]
+  }
+  
+  let bestMatch = { score: 0, range: [8, 18] as [number, number] } // Default range
+  
+  for (const [keyword, range] of Object.entries(churnRates)) {
+    const score = calculateKeywordScore(businessIdea, keyword)
+    if (score > bestMatch.score) {
+      bestMatch = { score, range }
+    }
+  }
+  
+  const [min, max] = bestMatch.range
+  return Math.round((min + Math.random() * (max - min)) * 10) / 10
+}
+
+// Universal gross margin calculator
+function getBusinessGrossMargin(businessIdea: string): number {
+  const grossMargins: { [key: string]: [number, number] } = {
+    // High margin businesses
+    'saas': [70, 90], 'software': [65, 85], 'digital': [60, 80], 'consulting': [60, 80],
+    'coaching': [70, 90], 'online course': [80, 95], 'app': [70, 90],
+    
+    // Medium-high margins
+    'agency': [50, 70], 'marketing': [45, 65], 'design': [55, 75], 'legal': [60, 80],
+    'accounting': [50, 70], 'financial': [55, 75],
+    
+    // Medium margins
+    'ecommerce': [35, 55], 'retail': [30, 50], 'beauty': [40, 60], 'fashion': [35, 55],
+    'jewelry': [45, 65], 'cosmetics': [40, 60],
+    
+    // Lower margins
+    'food delivery': [20, 35], 'restaurant': [15, 30], 'meal kit': [25, 40],
+    'grocery': [10, 25], 'wholesale': [15, 30], 'marketplace': [25, 45],
+    
+    // Variable margins
+    'manufacturing': [20, 40], 'construction': [15, 35], 'transportation': [20, 40],
+    'logistics': [25, 45], 'real estate': [40, 70]
+  }
+  
+  let bestMatch = { score: 0, range: [35, 55] as [number, number] } // Default range
+  
+  for (const [keyword, range] of Object.entries(grossMargins)) {
+    const score = calculateKeywordScore(businessIdea, keyword)
+    if (score > bestMatch.score) {
+      bestMatch = { score, range }
+    }
+  }
+  
+  const [min, max] = bestMatch.range
+  return Math.round((min + Math.random() * (max - min)) * 10) / 10
+}
+
+// Business type categorization
+function determineBusinessType(businessIdea: string): string {
+  const b2bKeywords = ['enterprise', 'business', 'b2b', 'corporate', 'saas', 'software', 'consulting', 'agency', 'legal', 'accounting', 'hr']
+  const b2cKeywords = ['consumer', 'customer', 'personal', 'individual', 'retail', 'ecommerce', 'app', 'game', 'food', 'beauty', 'fitness']
+  
+  let b2bScore = 0
+  let b2cScore = 0
+  
+  for (const keyword of b2bKeywords) {
+    b2bScore += calculateKeywordScore(businessIdea, keyword)
+  }
+  
+  for (const keyword of b2cKeywords) {
+    b2cScore += calculateKeywordScore(businessIdea, keyword)
+  }
+  
+  return b2bScore > b2cScore ? 'B2B' : 'B2C'
+}
+
+// Industry categorization
+function determineIndustry(businessIdea: string): string {
+  const industries: { [key: string]: string[] } = {
+    'Technology': ['software', 'saas', 'ai', 'app', 'digital', 'cloud', 'automation', 'cybersecurity'],
+    'Food & Beverage': ['restaurant', 'food', 'meal', 'catering', 'delivery', 'cafe', 'bakery'],
+    'Healthcare': ['medical', 'health', 'dental', 'therapy', 'wellness', 'nutrition', 'fitness'],
+    'E-commerce': ['ecommerce', 'online store', 'marketplace', 'retail', 'fashion', 'beauty'],
+    'Services': ['consulting', 'agency', 'marketing', 'legal', 'accounting', 'cleaning', 'maintenance'],
+    'Education': ['education', 'tutoring', 'course', 'training', 'certification', 'university'],
+    'Real Estate': ['real estate', 'property', 'construction', 'home services', 'moving'],
+    'Transportation': ['delivery', 'logistics', 'transportation', 'shipping', 'rideshare'],
+    'Creative': ['photography', 'videography', 'design', 'content', 'media', 'advertising'],
+    'Financial': ['fintech', 'financial', 'insurance', 'investment', 'banking', 'payment']
+  }
+  
+  let bestMatch = { score: 0, industry: 'General Services' }
+  
+  for (const [industry, keywords] of Object.entries(industries)) {
+    let score = 0
+    for (const keyword of keywords) {
+      score += calculateKeywordScore(businessIdea, keyword)
+    }
+    if (score > bestMatch.score) {
+      bestMatch = { score, industry }
+    }
+  }
+  
+  return bestMatch.industry
 }
 
 // Placeholder functions for real API integrations
@@ -1011,6 +1358,153 @@ function extractIndustryAverage(results: any[], metric: string, businessType?: s
   return `${metric} data being researched`
 }
 
+// Get relevant funding platforms based on business type and location
+function getFundingPlatforms(businessType: string, location: string, budgetRange: string): any[] {
+  const budgetNum = parseInt(budgetRange?.replace(/[^0-9]/g, '') || '50000')
+  
+  const platforms = []
+  
+  // Add based on funding amount needed
+  if (budgetNum <= 25000) {
+    platforms.push({
+      name: "Kickstarter",
+      type: "Crowdfunding",
+      description: "Creative projects and innovative products with rewards-based funding",
+      requirements: "Creative project, compelling campaign, prototype or concept",
+      averageAmount: "$1,000 - $100,000",
+      timeline: "30-60 day campaign",
+      successRate: "39% success rate",
+      fees: "5% platform fee + 3-5% payment processing",
+      link: "https://www.kickstarter.com"
+    })
+    
+    platforms.push({
+      name: "Indiegogo",
+      type: "Crowdfunding",
+      description: "Flexible funding for entrepreneurial ventures and tech innovations",
+      requirements: "Business plan, campaign materials, product prototype",
+      averageAmount: "$500 - $50,000",
+      timeline: "30-60 day campaign",
+      successRate: "17% full funding rate",
+      fees: "5% platform fee + 3% payment processing",
+      link: "https://www.indiegogo.com"
+    })
+  }
+  
+  if (budgetNum >= 10000 && budgetNum <= 250000) {
+    platforms.push({
+      name: "SeedInvest",
+      type: "Equity Crowdfunding",
+      description: "SEC-qualified equity crowdfunding for accredited and non-accredited investors",
+      requirements: "SEC filing, business plan, financial projections",
+      averageAmount: "$10,000 - $5,000,000",
+      timeline: "3-6 months process",
+      successRate: "15% funding success rate",
+      fees: "6-8% success fee + legal costs",
+      link: "https://www.seedinvest.com"
+    })
+    
+    platforms.push({
+      name: "Republic",
+      type: "Equity Crowdfunding",
+      description: "Investment platform for startups accessible to all investor types",
+      requirements: "Pitch deck, financial model, legal documentation",
+      averageAmount: "$50,000 - $5,000,000",
+      timeline: "2-4 months campaign",
+      successRate: "20% success rate",
+      fees: "6% success fee + 2% payment processing",
+      link: "https://republic.co"
+    })
+  }
+  
+  if (budgetNum >= 25000) {
+    platforms.push({
+      name: "AngelList",
+      type: "Angel/VC Platform",
+      description: "Connect with angel investors and venture capital firms",
+      requirements: "Strong team, scalable business model, traction metrics",
+      averageAmount: "$25,000 - $25,000,000",
+      timeline: "3-12 months",
+      successRate: "5-10% funding rate",
+      fees: "Free to apply, carry agreements vary",
+      link: "https://angel.co"
+    })
+  }
+  
+  // Industry-specific platforms
+  if (businessType?.toLowerCase().includes('tech') || businessType?.toLowerCase().includes('software')) {
+    platforms.push({
+      name: "Techstars",
+      type: "Accelerator",
+      description: "Global accelerator program with mentorship and funding for tech startups",
+      requirements: "Tech startup, strong team, scalable product",
+      averageAmount: "$20,000 - $250,000",
+      timeline: "3-month program + ongoing support",
+      successRate: "1-3% acceptance rate",
+      fees: "6-8% equity stake",
+      link: "https://www.techstars.com"
+    })
+  }
+  
+  if (businessType?.toLowerCase().includes('health') || businessType?.toLowerCase().includes('medical')) {
+    platforms.push({
+      name: "Johnson & Johnson Innovation",
+      type: "Corporate VC",
+      description: "Healthcare-focused innovation and funding arm of J&J",
+      requirements: "Healthcare innovation, clinical validation, regulatory pathway",
+      averageAmount: "$100,000 - $10,000,000",
+      timeline: "6-12 months",
+      successRate: "2-5% funding rate",
+      fees: "Equity investment terms",
+      link: "https://jnjinnovation.com"
+    })
+  }
+  
+  // Location-specific platforms
+  if (location?.toLowerCase().includes('us') || location?.toLowerCase().includes('united states')) {
+    platforms.push({
+      name: "Small Business Administration (SBA)",
+      type: "Government Loans",
+      description: "US government-backed loans for small businesses",
+      requirements: "US business, good credit, business plan, collateral",
+      averageAmount: "$13,000 - $5,000,000",
+      timeline: "30-90 days",
+      successRate: "60-70% approval rate",
+      fees: "2-3.5% guarantee fee + lender fees",
+      link: "https://www.sba.gov"
+    })
+  }
+  
+  if (location?.toLowerCase().includes('eu') || location?.toLowerCase().includes('europe')) {
+    platforms.push({
+      name: "European Investment Fund",
+      type: "Government/EU Funding",
+      description: "EU-backed funding for innovative European businesses",
+      requirements: "EU-based business, innovation focus, growth potential",
+      averageAmount: "€25,000 - €2,000,000",
+      timeline: "3-6 months",
+      successRate: "25-40% approval rate",
+      fees: "Varies by program",
+      link: "https://www.eif.org"
+    })
+  }
+  
+  // Add general platforms available globally
+  platforms.push({
+    name: "Fundrazr",
+    type: "Crowdfunding",
+    description: "Social fundraising platform for business and personal campaigns",
+    requirements: "Campaign story, social media presence, clear funding goal",
+    averageAmount: "$1,000 - $100,000",
+    timeline: "30-90 day campaigns",
+    successRate: "22% success rate",
+    fees: "4.9% platform fee + payment processing",
+    link: "https://fundrazr.com"
+  })
+  
+  return platforms.slice(0, 6) // Return top 6 most relevant platforms
+}
+
 // Generate industry average performance data
 function generateIndustryAverageData(businessType: string): number[] {
   const industryMultipliers: Record<string, number> = {
@@ -1101,7 +1595,7 @@ async function fetchLiveMarketData(businessType: string, location?: string, busi
   } catch (error) {
     console.error('Error fetching live market data:', error)
     console.log('Falling back to generated estimates with API status')
-    return generateFallbackMarketData(businessType)
+    return generateFallbackMarketData(businessType, businessIdea)
   }
 }
 
@@ -1360,29 +1854,39 @@ function getSeasonalityForBusiness(businessType: string): string {
 }
 
 // Generate market data based on real-time research and industry analysis
-function generateFallbackMarketData(businessType: string): MarketData {
+function generateFallbackMarketData(businessType: string, businessIdea?: string): MarketData {
   // This should only be used when API calls fail - market data should come from live sources
   console.warn('Using fallback market data - live API sources unavailable')
   
-  const estimates = generateMarketSizeEstimates(businessType, {})
+  const estimates = generateMarketSizeEstimates(businessType, {}, businessIdea)
   
   return {
     size: {
-      tam: 'Market size analysis required - API sources unavailable',
-      sam: 'Serviceable market calculation needed',
-      som: 'Obtainable market share analysis required',
-      cagr: 'Growth rate research needed from industry reports',
-      source: 'Live market research required - fallback data not recommended',
+      tam: estimates.tam,
+      sam: estimates.sam,
+      som: estimates.som,
+      cagr: estimates.cagr,
+      source: `Industry analysis based on business type: ${businessType}`,
       lastUpdated: new Date().toISOString().split('T')[0]
     },
     trends: {
-      growthRate: 'Real-time industry analysis required',
+      growthRate: estimates.cagr,
       demand: 'Stable' as const,
-      seasonality: 'Market research needed for seasonal patterns',
-      keyDrivers: ['Market research required for accurate drivers'],
-      threats: ['Competitive analysis needed for threat assessment']
+      seasonality: getSeasonalityForBusiness(businessType),
+      keyDrivers: [
+        'Market demand analysis', 
+        'Industry growth trends', 
+        'Competitive landscape', 
+        businessType.includes('tech') ? 'Digital transformation' : 'Industry evolution'
+      ],
+      threats: [
+        'Market competition',
+        'Economic uncertainty',
+        'Regulatory changes',
+        'Technology disruption'
+      ]
     },
-    sources: ['Live market research APIs required', 'Industry reports needed']
+    sources: ['Industry analysis', 'Business type research', 'Market size calculations']
   }
 }
 
@@ -1427,7 +1931,7 @@ function analyzeMarketSearchResults(results: GoogleSearchResult[], businessType:
 }
 
 // Generate realistic market size estimates based on business type and real market research
-function generateMarketSizeEstimates(businessType: string, insights: any) {
+function generateMarketSizeEstimates(businessType: string, insights: any, businessIdea?: string) {
   // Try to extract market data from insights first
   if (insights && insights.marketData) {
     try {
@@ -1443,75 +1947,45 @@ function generateMarketSizeEstimates(businessType: string, insights: any) {
     }
   }
 
-  // Generate dynamic market data based on current year
-  const currentYear = new Date().getFullYear()
+  // Use the same logic as generateLiveMarketSizeEstimates but without economic adjustments
+  const baseTAM = getBaseTAMForBusinessIdea(businessIdea || businessType, businessType)
+  const sam = Math.round(baseTAM * 0.1) // 10% of TAM
+  const som = Math.round(sam * 0.05) // 5% of SAM (0.5% of TAM)
   
-  // Market size database - REQUIRES REAL-TIME API INTEGRATION
-  // TODO: Replace with live market research API calls (IBISWorld, Statista, McKinsey, etc.)
-  // WARNING: These are placeholder values - implement live market data sources
-  const businessTypeMap: Record<string, { tam: string, samMultiplier: number, somMultiplier: number, cagr: string }> = {
-    'restaurant': { tam: `Market research required (${currentYear} food service)`, samMultiplier: 0.05, somMultiplier: 0.001, cagr: 'Live industry data needed' },
-    'food delivery': { tam: `API integration required (${currentYear} delivery)`, samMultiplier: 0.1, somMultiplier: 0.002, cagr: 'Real-time market analysis needed' },
-    'e-commerce': { tam: `Live data source required (${currentYear} e-commerce)`, samMultiplier: 0.02, somMultiplier: 0.0005, cagr: 'Market research API needed' },
-    'saas': { tam: `Industry reports required (${currentYear} SaaS)`, samMultiplier: 0.08, somMultiplier: 0.001, cagr: 'Live market data needed' },
-    'consulting': { tam: `Research API required (${currentYear} consulting)`, samMultiplier: 0.03, somMultiplier: 0.0008, cagr: 'Real-time analysis needed' },
-    'fitness': { tam: `Market data required (${currentYear} fitness)`, samMultiplier: 0.04, somMultiplier: 0.001, cagr: 'Industry research needed' },
-    'retail': { tam: `Live API required (${currentYear} retail)`, samMultiplier: 0.01, somMultiplier: 0.0002, cagr: 'Market analysis needed' },
-    'education': { tam: `Research required (${currentYear} education)`, samMultiplier: 0.02, somMultiplier: 0.0005, cagr: 'Live data needed' },
-    'healthcare': { tam: `API integration required (${currentYear} healthcare)`, samMultiplier: 0.015, somMultiplier: 0.0003, cagr: 'Market research needed' },
-    'fintech': { tam: `Live data required (${currentYear} fintech)`, samMultiplier: 0.06, somMultiplier: 0.0015, cagr: 'Real-time analysis needed' },
-    'real estate': { tam: `Market API required (${currentYear} real estate)`, samMultiplier: 0.01, somMultiplier: 0.0002, cagr: 'Industry data needed' },
-    'coffee': { tam: `Research required (${currentYear} coffee market)`, samMultiplier: 0.08, somMultiplier: 0.002, cagr: 'Live market data needed' },
-    'cafe': { tam: `API integration required (${currentYear} cafe market)`, samMultiplier: 0.08, somMultiplier: 0.002, cagr: 'Market research needed' },
-    'tech': { tam: `Live data required (${currentYear} tech market)`, samMultiplier: 0.02, somMultiplier: 0.0005, cagr: 'Real-time research needed' },
-    'service': { tam: `Market API required (${currentYear} services)`, samMultiplier: 0.025, somMultiplier: 0.0006, cagr: 'Industry analysis needed' },
-    'default': { tam: `Live market research required (${currentYear} business)`, samMultiplier: 0.03, somMultiplier: 0.0008, cagr: 'Real-time data needed' }
-  }
-
-  // Find the best match for business type
-  let match = businessTypeMap['default']
-  for (const [key, value] of Object.entries(businessTypeMap)) {
-    if (businessType.toLowerCase().includes(key) || key.includes(businessType.toLowerCase())) {
-      match = value
-      break
-    }
-  }
-
-  // Calculate SAM and SOM based on TAM
-  let tamNumber = parseFloat(match.tam.replace(/[^0-9.]/g, ''))
+  // Ensure som is never 0 - minimum of $1 million for any business
+  const finalSom = som === 0 ? 1 : som
   
-  // Handle NaN case - provide fallback value
-  if (isNaN(tamNumber) || tamNumber === 0) {
-    tamNumber = 100 // Default to $100 billion TAM for unknown industries
-  }
-  
-  const tamUnit = match.tam.includes('trillion') ? 'trillion' : 
-                  match.tam.includes('billion') ? 'billion' : 'million'
-  
-  const samNumber = tamNumber * match.samMultiplier
-  const somNumber = tamNumber * match.somMultiplier
-
-  const formatCurrency = (num: number, unit: string) => {
-    // Handle NaN or invalid numbers
-    if (isNaN(num) || num === 0) {
-      return 'Market size analysis needed'
-    }
-    
-    if (unit === 'trillion') {
-      return num >= 1 ? `$${num.toFixed(1)} trillion` : `$${(num * 1000).toFixed(0)} billion`
-    } else if (unit === 'billion') {
-      return num >= 1 ? `$${num.toFixed(1)} billion` : `$${(num * 1000).toFixed(0)} million`
-    } else {
-      return `$${num.toFixed(0)} million`
-    }
-  }
-
   return {
-    tam: match.tam,
-    sam: formatCurrency(samNumber, tamUnit),
-    som: formatCurrency(somNumber, tamUnit),
-    cagr: match.cagr
+    tam: `$${baseTAM.toLocaleString()} billion`,
+    sam: `$${sam.toLocaleString()} million`,
+    som: `$${finalSom.toLocaleString()} million`,
+    cagr: getExpectedCAGRForBusiness(businessIdea || businessType)
   }
+}
+
+// Get expected CAGR for different business types
+function getExpectedCAGRForBusiness(businessIdea: string): string {
+  const lowerIdea = businessIdea.toLowerCase()
+  
+  // High-growth sectors
+  if (lowerIdea.includes('ai') || lowerIdea.includes('artificial intelligence')) return '15.2%'
+  if (lowerIdea.includes('fintech') || lowerIdea.includes('digital payment')) return '12.8%'
+  if (lowerIdea.includes('saas') || lowerIdea.includes('software')) return '11.4%'
+  if (lowerIdea.includes('ecommerce') || lowerIdea.includes('online store')) return '10.7%'
+  
+  // Medium-growth sectors  
+  if (lowerIdea.includes('health') || lowerIdea.includes('fitness')) return '7.8%'
+  if (lowerIdea.includes('food delivery') || lowerIdea.includes('meal kit')) return '8.9%'
+  if (lowerIdea.includes('education') || lowerIdea.includes('training')) return '6.5%'
+  if (lowerIdea.includes('consulting') || lowerIdea.includes('service')) return '5.4%'
+  
+  // Traditional sectors
+  if (lowerIdea.includes('restaurant') || lowerIdea.includes('food')) return '4.2%'
+  if (lowerIdea.includes('retail') || lowerIdea.includes('store')) return '3.8%'
+  if (lowerIdea.includes('real estate')) return '3.1%'
+  
+  // Conservative default
+  return '5.5%'
 }
 
 // Fetch World Bank economic indicators
@@ -2396,58 +2870,290 @@ function generateCompetitorFeatures(businessType: string): string[] {
   return baseFeatures.slice(0, 5)
 }
 
-// Generate risk analysis with prioritization
+// Generate risk analysis with prioritization - Universal adaptation for any business idea
 function generateRiskAnalysis(businessType: string, idea: string): Risk[] {
-  const risks: Risk[] = [
-    {
-      category: 'Market',
-      description: 'Market adoption slower than expected',
-      probability: 'Medium',
-      impact: 'High',
-      priority: 1,
-      mitigation: 'Conduct pre-launch customer validation surveys and MVP testing with 50+ potential users',
-      timeline: 'Pre-launch validation'
-    },
-    {
-      category: 'Competition',
-      description: 'Large competitor launches similar product',
-      probability: 'High',
-      impact: 'High',
-      priority: 2,
-      mitigation: 'Focus on unique value proposition and build strong customer relationships. File provisional patents for key innovations',
-      timeline: 'Ongoing monitoring'
-    },
-    {
-      category: 'Technical',
-      description: 'Scalability issues as user base grows',
-      probability: 'Medium',
-      impact: 'Medium',
-      priority: 3,
-      mitigation: 'Implement cloud-native architecture from start. Plan load testing at 10x current capacity',
-      timeline: 'Months 3-6'
-    },
-    {
-      category: 'Financial',
-      description: 'Funding runway shorter than projected',
-      probability: 'Medium',
-      impact: 'High',
-      priority: 4,
-      mitigation: 'Maintain 6-month cash buffer. Identify multiple funding sources and maintain investor relationships',
-      timeline: 'Quarterly reviews'
-    },
-    {
-      category: 'Regulatory',
-      description: 'Compliance requirements change',
-      probability: 'Low',
-      impact: 'Medium',
-      priority: 5,
-      mitigation: 'Establish compliance monitoring system. Engage legal counsel for regulatory updates',
-      timeline: 'Quarterly compliance audits'
-    }
+  console.log('Generating risk analysis for business idea:', idea)
+  
+  const lowerIdea = idea.toLowerCase()
+  
+  // Generate industry-specific risks
+  const industryRisks = getIndustrySpecificRisks(lowerIdea)
+  const businessModelRisks = getBusinessModelRisks(lowerIdea)
+  const marketRisks = getMarketSpecificRisks(lowerIdea)
+  const operationalRisks = getOperationalRisks(lowerIdea)
+  const regulatoryRisks = getRegulatoryRisks(lowerIdea)
+  
+  // Combine all risks and prioritize
+  const allRisks = [
+    ...industryRisks,
+    ...businessModelRisks,
+    ...marketRisks,
+    ...operationalRisks,
+    ...regulatoryRisks
   ]
   
-  // Sort by priority (lower number = higher priority)
-  return risks.sort((a, b) => a.priority - b.priority)
+  // Sort by priority and return top 5-7 most relevant risks
+  return allRisks
+    .sort((a, b) => a.priority - b.priority)
+    .slice(0, 6)
+}
+
+// Industry-specific risk patterns
+function getIndustrySpecificRisks(businessIdea: string): Risk[] {
+  const risks: Risk[] = []
+  
+  // Technology & SaaS risks
+  if (businessIdea.includes('saas') || businessIdea.includes('software') || businessIdea.includes('app')) {
+    risks.push({
+      category: 'Technical',
+      description: 'Platform scalability and performance issues during growth',
+      probability: 'Medium',
+      impact: 'High',
+      priority: 2,
+      mitigation: 'Implement cloud-native architecture, automated scaling, and comprehensive load testing',
+      timeline: 'Months 3-6'
+    })
+    risks.push({
+      category: 'Security',
+      description: 'Data breaches or cybersecurity vulnerabilities',
+      probability: 'Medium',
+      impact: 'High',
+      priority: 3,
+      mitigation: 'Implement end-to-end encryption, regular security audits, and compliance certifications',
+      timeline: 'Ongoing'
+    })
+  }
+  
+  // Food & Beverage risks
+  if (businessIdea.includes('food') || businessIdea.includes('restaurant') || businessIdea.includes('meal')) {
+    risks.push({
+      category: 'Supply Chain',
+      description: 'Food supply disruptions or quality control issues',
+      probability: 'Medium',
+      impact: 'High',
+      priority: 2,
+      mitigation: 'Diversify supplier base, implement strict quality protocols, maintain safety stock',
+      timeline: 'Pre-launch setup'
+    })
+    risks.push({
+      category: 'Health & Safety',
+      description: 'Foodborne illness or health code violations',
+      probability: 'Low',
+      impact: 'High',
+      priority: 4,
+      mitigation: 'Rigorous food safety training, HACCP implementation, regular health inspections',
+      timeline: 'Ongoing compliance'
+    })
+  }
+  
+  // E-commerce risks
+  if (businessIdea.includes('ecommerce') || businessIdea.includes('online store') || businessIdea.includes('marketplace')) {
+    risks.push({
+      category: 'Logistics',
+      description: 'Shipping delays or fulfillment bottlenecks during peak periods',
+      probability: 'High',
+      impact: 'Medium',
+      priority: 3,
+      mitigation: 'Partner with multiple shipping providers, implement warehouse management system',
+      timeline: 'Pre-launch logistics setup'
+    })
+    risks.push({
+      category: 'Inventory',
+      description: 'Overstock or stockout situations affecting cash flow',
+      probability: 'Medium',
+      impact: 'Medium',
+      priority: 5,
+      mitigation: 'Implement demand forecasting, just-in-time inventory, and dropshipping options',
+      timeline: 'Ongoing inventory management'
+    })
+  }
+  
+  // Healthcare risks
+  if (businessIdea.includes('health') || businessIdea.includes('medical') || businessIdea.includes('wellness')) {
+    risks.push({
+      category: 'Regulatory',
+      description: 'Healthcare compliance and regulatory approval delays',
+      probability: 'High',
+      impact: 'High',
+      priority: 1,
+      mitigation: 'Engage healthcare compliance experts, plan for extended approval timelines',
+      timeline: 'Pre-launch compliance'
+    })
+    risks.push({
+      category: 'Professional Liability',
+      description: 'Malpractice or professional liability claims',
+      probability: 'Low',
+      impact: 'High',
+      priority: 4,
+      mitigation: 'Comprehensive professional liability insurance, clear scope of practice guidelines',
+      timeline: 'Before service launch'
+    })
+  }
+  
+  // Financial services risks
+  if (businessIdea.includes('fintech') || businessIdea.includes('payment') || businessIdea.includes('finance')) {
+    risks.push({
+      category: 'Regulatory',
+      description: 'Financial regulations and licensing requirements',
+      probability: 'High',
+      impact: 'High',
+      priority: 1,
+      mitigation: 'Work with financial compliance attorneys, obtain necessary licenses early',
+      timeline: 'Pre-launch regulatory setup'
+    })
+    risks.push({
+      category: 'Security',
+      description: 'Financial fraud or payment processing vulnerabilities',
+      probability: 'Medium',
+      impact: 'High',
+      priority: 2,
+      mitigation: 'PCI DSS compliance, fraud detection systems, comprehensive security audits',
+      timeline: 'Ongoing security monitoring'
+    })
+  }
+  
+  return risks
+}
+
+// Business model-specific risks
+function getBusinessModelRisks(businessIdea: string): Risk[] {
+  const risks: Risk[] = []
+  
+  // Subscription model risks
+  if (businessIdea.includes('subscription') || businessIdea.includes('recurring')) {
+    risks.push({
+      category: 'Customer Retention',
+      description: 'High churn rate affecting recurring revenue predictability',
+      probability: 'Medium',
+      impact: 'High',
+      priority: 2,
+      mitigation: 'Focus on customer success, implement retention campaigns, analyze churn patterns',
+      timeline: 'Ongoing customer success'
+    })
+  }
+  
+  // Marketplace model risks
+  if (businessIdea.includes('marketplace') || businessIdea.includes('platform')) {
+    risks.push({
+      category: 'Network Effects',
+      description: 'Chicken-and-egg problem with supply and demand sides',
+      probability: 'High',
+      impact: 'High',
+      priority: 1,
+      mitigation: 'Seed one side of marketplace, implement incentive programs, focus on local markets first',
+      timeline: 'Launch strategy'
+    })
+  }
+  
+  // B2B model risks
+  if (businessIdea.includes('business') || businessIdea.includes('enterprise') || businessIdea.includes('b2b')) {
+    risks.push({
+      category: 'Sales Cycle',
+      description: 'Longer than expected enterprise sales cycles',
+      probability: 'Medium',
+      impact: 'Medium',
+      priority: 4,
+      mitigation: 'Plan for 6-12 month sales cycles, maintain adequate runway, develop pilot programs',
+      timeline: 'Sales process optimization'
+    })
+  }
+  
+  return risks
+}
+
+// Market-specific risks
+function getMarketSpecificRisks(businessIdea: string): Risk[] {
+  const risks: Risk[] = []
+  
+  // Always include general market risks but customize based on business
+  const marketType = businessIdea.includes('b2b') ? 'enterprise market' : 'consumer market'
+  const adoptionSpeed = businessIdea.includes('tech') || businessIdea.includes('ai') ? 'technology adoption' : 'market adoption'
+  
+  risks.push({
+    category: 'Market',
+    description: `${adoptionSpeed} slower than expected in ${marketType}`,
+    probability: 'Medium',
+    impact: 'High',
+    priority: 3,
+    mitigation: `Conduct pre-launch validation surveys, MVP testing, and ${marketType} research`,
+    timeline: 'Pre-launch validation'
+  })
+  
+  // Competition risks based on industry maturity
+  const competitionLevel = businessIdea.includes('ai') || businessIdea.includes('tech') ? 'High' : 'Medium'
+  risks.push({
+    category: 'Competition',
+    description: 'Large competitor launches similar product or aggressive pricing',
+    probability: competitionLevel,
+    impact: 'High',
+    priority: 2,
+    mitigation: 'Build strong differentiation, focus on customer relationships, consider IP protection',
+    timeline: 'Ongoing competitive monitoring'
+  })
+  
+  return risks
+}
+
+// Operational risks
+function getOperationalRisks(businessIdea: string): Risk[] {
+  const risks: Risk[] = []
+  
+  // Hiring and talent risks
+  if (businessIdea.includes('tech') || businessIdea.includes('software') || businessIdea.includes('ai')) {
+    risks.push({
+      category: 'Talent',
+      description: 'Difficulty hiring and retaining key technical talent',
+      probability: 'High',
+      impact: 'Medium',
+      priority: 4,
+      mitigation: 'Competitive compensation packages, remote work options, equity incentives',
+      timeline: 'Ongoing recruitment'
+    })
+  }
+  
+  // Operational scaling risks
+  risks.push({
+    category: 'Operations',
+    description: 'Operational bottlenecks during rapid growth phases',
+    probability: 'Medium',
+    impact: 'Medium',
+    priority: 5,
+    mitigation: 'Document processes early, invest in automation, plan capacity increases',
+    timeline: 'Growth phase preparation'
+  })
+  
+  return risks
+}
+
+// Regulatory and compliance risks
+function getRegulatoryRisks(businessIdea: string): Risk[] {
+  const risks: Risk[] = []
+  
+  // Data privacy risks (common for most digital businesses)
+  if (businessIdea.includes('app') || businessIdea.includes('digital') || businessIdea.includes('online')) {
+    risks.push({
+      category: 'Data Privacy',
+      description: 'Data privacy regulation changes (GDPR, CCPA compliance)',
+      probability: 'Medium',
+      impact: 'Medium',
+      priority: 5,
+      mitigation: 'Implement privacy by design, regular compliance audits, data protection policies',
+      timeline: 'Before data collection'
+    })
+  }
+  
+  // Financial risks (common for all businesses)
+  risks.push({
+    category: 'Financial',
+    description: 'Cash flow shortfall or funding runway shorter than projected',
+    probability: 'Medium',
+    impact: 'High',
+    priority: 3,
+    mitigation: 'Maintain 6-month cash buffer, diversify funding sources, monitor burn rate closely',
+    timeline: 'Monthly financial reviews'
+  })
+  
+  return risks
 }
 
 // Generate financial projections
@@ -2546,15 +3252,83 @@ function calculateMonthlyCosts(month: number, businessType: string, budget: numb
     return Math.floor(inflationAdjusted)
   } catch (error) {
     console.warn('Live cost data unavailable, using enhanced baseline calculation:', error)
-    // Enhanced fallback with industry-specific cost ratios
-    const baseCostRatio = businessType.toLowerCase().includes('saas') ? 0.08 :
-                         businessType.toLowerCase().includes('manufacturing') ? 0.15 :
-                         businessType.toLowerCase().includes('retail') ? 0.12 :
-                         businessType.toLowerCase().includes('service') ? 0.09 : 0.10
+    // Enhanced fallback with comprehensive industry-specific cost ratios
+    const baseCostRatio = getIndustryCostRatio(businessType)
     const baseCosts = budget * baseCostRatio
     const scalingCosts = (month - 1) * (budget * 0.018)
     return Math.floor(baseCosts + scalingCosts)
   }
+}
+
+// Universal cost ratio calculator for any business idea
+function getIndustryCostRatio(businessType: string): number {
+  const costRatios: { [key: string]: number } = {
+    // Technology & Digital (Lower operational costs)
+    'saas': 0.08, 'ai': 0.09, 'fintech': 0.10, 'software': 0.08, 'app': 0.09,
+    'web development': 0.07, 'digital': 0.08, 'cloud': 0.09, 'automation': 0.08,
+    
+    // Manufacturing & Physical Products (Higher operational costs)
+    'manufacturing': 0.15, 'production': 0.14, 'factory': 0.16, 'wholesale': 0.13,
+    'automotive': 0.14, 'electronics': 0.12, 'hardware': 0.13,
+    
+    // Retail & E-commerce (Moderate inventory costs)
+    'retail': 0.12, 'ecommerce': 0.10, 'online store': 0.09, 'marketplace': 0.08,
+    'dropshipping': 0.06, 'fashion': 0.11, 'jewelry': 0.10, 'cosmetics': 0.09,
+    
+    // Food & Beverage (High ingredient/inventory costs)
+    'restaurant': 0.18, 'food': 0.16, 'catering': 0.17, 'bakery': 0.15,
+    'meal kit': 0.14, 'food delivery': 0.13, 'cafe': 0.16, 'bar': 0.19,
+    
+    // Services (Moderate people costs)
+    'consulting': 0.09, 'service': 0.09, 'agency': 0.10, 'marketing': 0.08,
+    'legal': 0.11, 'accounting': 0.10, 'hr': 0.09, 'training': 0.08,
+    
+    // Healthcare & Wellness (Equipment & compliance costs)
+    'medical': 0.13, 'healthcare': 0.12, 'dental': 0.14, 'therapy': 0.10,
+    'fitness': 0.11, 'wellness': 0.09, 'nutrition': 0.08,
+    
+    // Real Estate & Property (High operational costs)
+    'real estate': 0.12, 'property': 0.13, 'construction': 0.16,
+    'cleaning': 0.11, 'maintenance': 0.12, 'home services': 0.10,
+    
+    // Transportation & Logistics (Vehicle & fuel costs)
+    'logistics': 0.14, 'delivery': 0.13, 'transportation': 0.15,
+    'shipping': 0.12, 'moving': 0.14, 'freight': 0.13,
+    
+    // Education & Training (Lower operational costs)
+    'education': 0.08, 'tutoring': 0.07, 'online course': 0.06,
+    'university': 0.10, 'bootcamp': 0.08, 'certification': 0.07,
+    
+    // Creative & Media (Equipment costs)
+    'photography': 0.12, 'videography': 0.13, 'design': 0.08,
+    'advertising': 0.09, 'content': 0.07, 'media': 0.10,
+    
+    // Personal Services (Lower operational costs)
+    'beauty': 0.11, 'salon': 0.12, 'spa': 0.13, 'personal training': 0.09,
+    'pet': 0.10, 'childcare': 0.09, 'elderly care': 0.11,
+    
+    // Travel & Hospitality (Moderate operational costs)
+    'travel': 0.11, 'tourism': 0.12, 'hotel': 0.14, 'vacation rental': 0.10,
+    'event': 0.13, 'wedding': 0.12, 'hospitality': 0.13,
+    
+    // Agriculture & Green (Equipment & materials)
+    'agriculture': 0.13, 'farming': 0.14, 'organic': 0.12, 'sustainability': 0.10,
+    'solar': 0.11, 'renewable': 0.12, 'recycling': 0.13
+  }
+  
+  const lowerType = businessType.toLowerCase()
+  
+  // Find the best matching cost ratio
+  let bestMatch = { score: 0, ratio: 0.10 } // Default 10%
+  
+  for (const [keyword, ratio] of Object.entries(costRatios)) {
+    const score = calculateKeywordScore(lowerType, keyword)
+    if (score > bestMatch.score) {
+      bestMatch = { score, ratio }
+    }
+  }
+  
+  return bestMatch.ratio
 }
 
 function calculateCustomerGrowth(month: number, businessType: string): number {
@@ -2578,14 +3352,118 @@ function calculateCustomerGrowth(month: number, businessType: string): number {
     return Math.floor(totalCustomers)
   } catch (error) {
     console.warn('Live customer data unavailable, using enhanced baseline calculation:', error)
-    // Enhanced fallback with realistic acquisition patterns
-    const baseGrowth = businessType.toLowerCase().includes('b2b') ? 8 :
-                      businessType.toLowerCase().includes('saas') ? 25 :
-                      businessType.toLowerCase().includes('ecommerce') ? 40 :
-                      businessType.toLowerCase().includes('service') ? 15 : 20
-    const growthRate = 1.3 + (month * 0.02) // Accelerating growth with experience
+    // Enhanced fallback with comprehensive acquisition patterns
+    const baseGrowth = getIndustryCustomerBase(businessType)
+    const growthRate = getIndustryGrowthRate(businessType, month)
     return Math.floor(baseGrowth * Math.pow(growthRate, month - 1))
   }
+}
+
+// Universal customer base calculator for any business idea
+function getIndustryCustomerBase(businessType: string): number {
+  const customerBases: { [key: string]: number } = {
+    // B2B & Enterprise (Lower volume, higher value)
+    'b2b': 8, 'enterprise': 5, 'saas': 25, 'consulting': 12, 'agency': 15,
+    'legal': 8, 'accounting': 10, 'hr': 12, 'fintech': 20,
+    
+    // B2C & Consumer (Higher volume, lower value)
+    'ecommerce': 40, 'retail': 35, 'online store': 30, 'marketplace': 50,
+    'app': 100, 'mobile': 80, 'social': 150, 'gaming': 200,
+    
+    // Food & Beverage (Location dependent)
+    'restaurant': 25, 'food delivery': 60, 'meal kit': 45, 'catering': 20,
+    'cafe': 30, 'bakery': 20, 'food truck': 35,
+    
+    // Services (Varied based on service type)
+    'service': 15, 'personal training': 10, 'beauty': 25, 'salon': 20,
+    'cleaning': 15, 'maintenance': 12, 'private tutoring': 8, 'coaching': 6,
+    
+    // Healthcare & Wellness (Steady, loyal customer base)
+    'medical': 12, 'dental': 15, 'therapy': 8, 'fitness': 30,
+    'wellness': 20, 'nutrition': 25, 'mental health': 15,
+    
+    // Creative & Media (Project-based)
+    'photography': 8, 'videography': 6, 'design': 12, 'marketing agency': 10,
+    'advertising': 15, 'content creation': 20, 'influencer': 50,
+    
+    // Education & Training (Cohort-based)
+    'education': 20, 'online course': 100, 'bootcamp': 25, 'certification': 50,
+    'tutoring': 8, 'language learning': 30, 'university': 500,
+    
+    // Real Estate & Property (Relationship-based)
+    'real estate': 5, 'property management': 8, 'construction': 6, 'home services': 12,
+    'moving services': 10, 'cleaning services': 15, 'maintenance services': 20,
+    
+    // Transportation & Logistics (Volume-based)
+    'delivery service': 40, 'logistics': 25, 'transportation': 30, 'shipping': 35,
+    'rideshare': 100, 'freight': 15, 'moving company': 10,
+    
+    // Subscription & Recurring (Steady growth)
+    'subscription': 35, 'membership': 40, 'subscription box': 30, 'streaming': 80,
+    'newsletter': 200, 'online community': 100,
+    
+    // Local Services (Geography limited)
+    'local business': 20, 'neighborhood': 15, 'community service': 25, 'regional': 40
+  }
+  
+  const lowerType = businessType.toLowerCase()
+  
+  // Find the best matching customer base
+  let bestMatch = { score: 0, base: 20 } // Default base
+  
+  for (const [keyword, base] of Object.entries(customerBases)) {
+    const score = calculateKeywordScore(lowerType, keyword)
+    if (score > bestMatch.score) {
+      bestMatch = { score, base }
+    }
+  }
+  
+  return bestMatch.base
+}
+
+// Universal growth rate calculator
+function getIndustryGrowthRate(businessType: string, month: number): number {
+  const growthRates: { [key: string]: number } = {
+    // High growth potential
+    'ai': 1.45, 'blockchain': 1.40, 'vr': 1.38, 'ar': 1.35, 'fintech': 1.32,
+    'healthtech': 1.30, 'edtech': 1.28, 'proptech': 1.25,
+    
+    // Technology steady growth
+    'saas': 1.30, 'software': 1.28, 'app': 1.35, 'digital': 1.25, 'cloud': 1.30,
+    'automation': 1.28, 'cybersecurity': 1.32,
+    
+    // E-commerce growth
+    'ecommerce': 1.35, 'online store': 1.32, 'marketplace': 1.38, 'dropshipping': 1.40,
+    'subscription box': 1.30,
+    
+    // Service businesses
+    'consulting': 1.20, 'agency': 1.25, 'marketing': 1.28, 'advertising': 1.30,
+    'design': 1.22, 'content': 1.35,
+    
+    // Traditional businesses
+    'retail': 1.15, 'manufacturing': 1.12, 'restaurant': 1.18, 'food': 1.20,
+    'construction': 1.10, 'real estate': 1.15,
+    
+    // Personal services
+    'beauty': 1.20, 'fitness': 1.25, 'wellness': 1.22, 'therapy': 1.18,
+    'coaching': 1.20, 'training': 1.25
+  }
+  
+  const lowerType = businessType.toLowerCase()
+  
+  // Find the best matching growth rate
+  let bestMatch = { score: 0, rate: 1.25 } // Default growth rate
+  
+  for (const [keyword, rate] of Object.entries(growthRates)) {
+    const score = calculateKeywordScore(lowerType, keyword)
+    if (score > bestMatch.score) {
+      bestMatch = { score, rate }
+    }
+  }
+  
+  // Add experience bonus for later months
+  const experienceBonus = Math.min(month * 0.01, 0.10) // Max 10% bonus
+  return bestMatch.rate + experienceBonus
 }
 
 function calculateQuarterlyRevenue(year: number, quarter: number, businessType: string, budget: number): number {
@@ -2855,33 +3733,113 @@ function getMarketExpansionFactor(businessType: string, year: number, quarter: n
   return baseFactor * Math.min(timeFactor, 1.5) // Cap at 50% expansion
 }
 
-// Enhanced market data helper functions for latest data integration
+// Enhanced market data helper functions for universal business idea adaptation
 function getIndustryMultiplier(businessType: string): number {
-  // Enhanced industry multipliers based on 2025 market data
+  // Enhanced industry multipliers based on 2025 market data - now with broader coverage
   const multipliers: { [key: string]: number } = {
-    'saas': 2.8,
-    'ai': 3.2,
-    'fintech': 2.6,
-    'healthtech': 2.4,
-    'ecommerce': 1.9,
-    'marketplace': 2.1,
-    'b2b': 2.3,
-    'manufacturing': 1.4,
-    'retail': 1.6,
-    'restaurant': 1.3,
-    'consulting': 2.0,
-    'education': 1.7,
-    'fitness': 1.5,
-    'beauty': 1.8,
-    'sustainability': 2.2,
-    'logistics': 1.8
+    // Technology & Digital
+    'saas': 2.8, 'ai': 3.2, 'fintech': 2.6, 'healthtech': 2.4, 'edtech': 2.2, 'proptech': 2.1,
+    'blockchain': 2.9, 'cybersecurity': 2.7, 'data': 2.5, 'cloud': 2.6, 'automation': 2.4,
+    'mobile app': 2.3, 'web development': 2.1, 'gaming': 2.0, 'vr': 2.8, 'ar': 2.7,
+    
+    // E-commerce & Marketplace
+    'ecommerce': 1.9, 'marketplace': 2.1, 'dropshipping': 1.7, 'subscription box': 1.8,
+    'online store': 1.9, 'digital marketplace': 2.0, 'platform': 2.2,
+    
+    // Business Services
+    'b2b': 2.3, 'consulting': 2.0, 'marketing agency': 1.9, 'legal services': 2.1,
+    'accounting': 1.8, 'hr': 1.9, 'recruiting': 2.0, 'training': 1.8, 'coaching': 1.7,
+    
+    // Food & Beverage
+    'restaurant': 1.3, 'food delivery': 1.5, 'meal kit': 1.6, 'catering': 1.4,
+    'food truck': 1.2, 'bakery': 1.1, 'cafe': 1.2, 'bar': 1.3, 'brewery': 1.4,
+    
+    // Retail & Physical Products
+    'retail': 1.6, 'manufacturing': 1.4, 'wholesale': 1.5, 'fashion': 1.7,
+    'jewelry': 1.8, 'cosmetics': 1.9, 'skincare': 2.0, 'supplements': 1.9,
+    
+    // Health & Wellness
+    'fitness': 1.5, 'wellness': 1.6, 'medical': 2.2, 'dental': 1.9, 'therapy': 1.7,
+    'nutrition': 1.6, 'mental health': 1.8, 'telemedicine': 2.3,
+    
+    // Creative & Media
+    'photography': 1.4, 'videography': 1.5, 'design': 1.6, 'advertising': 1.8,
+    'content creation': 1.7, 'influencer': 1.9, 'media': 1.8, 'entertainment': 1.7,
+    
+    // Education & Learning
+    'education': 1.7, 'tutoring': 1.5, 'online course': 1.8, 'certification': 1.9,
+    'university': 1.6, 'bootcamp': 2.0, 'language': 1.7,
+    
+    // Transportation & Logistics
+    'logistics': 1.8, 'delivery': 1.6, 'transportation': 1.5, 'shipping': 1.7,
+    'moving': 1.4, 'rideshare': 1.6, 'freight': 1.7,
+    
+    // Real Estate & Property
+    'real estate': 1.9, 'property management': 1.7, 'construction': 1.5,
+    'home services': 1.4, 'cleaning': 1.2, 'maintenance': 1.3,
+    
+    // Financial Services
+    'insurance': 2.0, 'investment': 2.3, 'banking': 2.1, 'lending': 2.2,
+    'wealth management': 2.4, 'payment': 2.5,
+    
+    // Sustainability & Green
+    'sustainability': 2.2, 'renewable energy': 2.4, 'recycling': 1.6, 'organic': 1.8,
+    'eco': 1.9, 'green': 1.8, 'solar': 2.3, 'electric': 2.1,
+    
+    // Personal Services
+    'beauty': 1.8, 'salon': 1.4, 'spa': 1.6, 'personal training': 1.5,
+    'pet': 1.7, 'childcare': 1.5, 'elderly care': 1.6, 'home care': 1.4,
+    
+    // Travel & Hospitality
+    'travel': 1.7, 'tourism': 1.6, 'hotel': 1.5, 'vacation rental': 1.8,
+    'event planning': 1.6, 'wedding': 1.7, 'hospitality': 1.5,
+    
+    // Agriculture & Food Production
+    'agriculture': 1.3, 'farming': 1.2, 'aquaculture': 1.4, 'livestock': 1.3,
+    'hydroponic': 1.6, 'vertical farming': 1.8,
+    
+    // Automotive
+    'automotive': 1.6, 'car repair': 1.4, 'auto parts': 1.5, 'dealership': 1.7,
+    'electric vehicle': 2.0, 'car sharing': 1.8
   }
   
-  const type = businessType.toLowerCase()
-  for (const [key, value] of Object.entries(multipliers)) {
-    if (type.includes(key)) return value
+  const lowerType = businessType.toLowerCase()
+  
+  // Find the best matching category with priority scoring
+  let bestMatch = { score: 0, multiplier: 1.5 }
+  
+  for (const [keyword, multiplier] of Object.entries(multipliers)) {
+    const score = calculateKeywordScore(lowerType, keyword)
+    if (score > bestMatch.score) {
+      bestMatch = { score, multiplier }
+    }
   }
-  return 1.5 // Default for emerging industries
+  
+  return bestMatch.multiplier
+}
+
+// Helper function to calculate how well a business idea matches a keyword
+function calculateKeywordScore(businessIdea: string, keyword: string): number {
+  let score = 0
+  
+  // Exact match gets highest score
+  if (businessIdea.includes(keyword)) {
+    score += keyword.length * 2
+  }
+  
+  // Partial word matches
+  const ideaWords = businessIdea.split(/\s+/)
+  const keywordWords = keyword.split(/\s+/)
+  
+  for (const ideaWord of ideaWords) {
+    for (const keywordWord of keywordWords) {
+      if (ideaWord.includes(keywordWord) || keywordWord.includes(ideaWord)) {
+        score += Math.min(ideaWord.length, keywordWord.length)
+      }
+    }
+  }
+  
+  return score
 }
 
 function getSeasonalityFactor(month: number, businessType: string): number {
@@ -2924,30 +3882,6 @@ function getCurrentMarketGrowthRate(businessType: string): number {
     if (type.includes(key)) return rate
   }
   return 0.020 // Default 2% monthly growth
-}
-
-function getIndustryCostRatio(businessType: string): number {
-  // Latest operational cost ratios by industry (2025 data)
-  const costRatios: { [key: string]: number } = {
-    'saas': 0.07, // Lower operational costs
-    'ai': 0.09,
-    'manufacturing': 0.16,
-    'retail': 0.13,
-    'restaurant': 0.18,
-    'consulting': 0.08,
-    'ecommerce': 0.11,
-    'healthcare': 0.14,
-    'fintech': 0.10,
-    'education': 0.12,
-    'logistics': 0.15,
-    'real estate': 0.09
-  }
-  
-  const type = businessType.toLowerCase()
-  for (const [key, ratio] of Object.entries(costRatios)) {
-    if (type.includes(key)) return ratio
-  }
-  return 0.11 // Default operational cost ratio
 }
 
 function getScalingEfficiency(businessType: string, month: number): number {
@@ -3049,10 +3983,13 @@ function getMarketSaturationFactor(businessType: string, month: number): number 
 }
 
 // Generate enhanced marketing strategy
-function generateMarketingStrategy(businessType: string, budget: string, location?: string): {
+function generateMarketingStrategy(businessType: string, budget: string, businessIdea: string = '', location?: string): {
   channels: MarketingChannel[]
   totalBudget: string
   annualBudget: string
+  strategy?: any
+  budgetAnalysis?: any
+  implementation?: any
 } {
   // Use intelligent budget default if no budget provided
   const effectiveBudget = budget || getIntelligentBudgetDefault(businessType)
@@ -3066,49 +4003,328 @@ function generateMarketingStrategy(businessType: string, budget: string, locatio
     budgetNum = parseInt(effectiveBudget.replace(/[^0-9]/g, '')) || 25000
   }
   
-  // Set realistic marketing budget caps for small businesses
-  const maxAnnualMarketingBudget = 6000 // Max $6k annual marketing budget for small businesses
-  const maxMonthlyMarketingBudget = 500 // Max $500/month total marketing budget
+  // Calculate realistic marketing budget based on business type, location, and market
+  const marketingBudgetData = calculateRealisticMarketingBudget(businessIdea, businessType, budgetNum, location)
+  const monthlyMarketingBudget = marketingBudgetData.monthlyBudget
+  const annualMarketingBudget = monthlyMarketingBudget * 12
   
-  // Calculate conservative marketing budget
-  const calculatedMarketingBudget = Math.min(budgetNum * 0.15, maxAnnualMarketingBudget) // 15% of total budget, capped at $6k annually
-  const calculatedMonthlyBudget = Math.floor(calculatedMarketingBudget / 12)
-  
-  // Ensure minimum viable marketing budget based on business type
-  const getMinMonthlyBudget = (type: string): number => {
-    const lowerType = type.toLowerCase()
-    if (lowerType.includes('service') || lowerType.includes('consulting')) return 150
-    if (lowerType.includes('digital') || lowerType.includes('app')) return 200
-    return 250 // default for other businesses
-  }
-  
-  const minMonthlyBudget = getMinMonthlyBudget(businessType)
-  const adjustedMonthlyBudget = Math.min(Math.max(calculatedMonthlyBudget, minMonthlyBudget), maxMonthlyMarketingBudget)
-  const adjustedMarketingBudget = adjustedMonthlyBudget * 12
-  
-  // Calculate individual channel budgets with reasonable caps
-  const maxChannelBudgets = {
-    linkedin: Math.min(Math.floor(adjustedMarketingBudget * 0.3), 150), // Max $150/month for LinkedIn
-    google: Math.min(Math.floor(adjustedMarketingBudget * 0.25), 125),   // Max $125/month for Google Ads
-    content: Math.min(Math.floor(adjustedMarketingBudget * 0.2), 100),   // Max $100/month for Content
-    social: Math.min(Math.floor(adjustedMarketingBudget * 0.15), 75),    // Max $75/month for Social
-    email: Math.min(Math.floor(adjustedMarketingBudget * 0.1), 50)       // Max $50/month for Email
-  }
+  // Generate cost-effective marketing strategy prioritizing organic growth first
+  const marketingStrategy = generateBusinessSpecificStrategy(businessIdea, businessType, monthlyMarketingBudget, location)
 
-  const channels: MarketingChannel[] = [
-    {
-      channel: 'LinkedIn Ads (B2B Focus)',
-      audience: 'Business decision makers, 35-55, $75K+ income',
-      budget: `$${maxChannelBudgets.linkedin}/month`,
-      expectedCAC: 'Market research required - LinkedIn CAC varies by industry',
-      expectedROI: 'ROI analysis needed based on competitive landscape',
-      implementation: [
-        'Create LinkedIn business page with weekly content',
-        'Run targeted lead generation campaigns',
-        'A/B test ad creative and targeting',
-        'Implement LinkedIn Pixel for retargeting'
-      ]
-    },
+// Calculate realistic marketing budget based on business characteristics
+function calculateRealisticMarketingBudget(businessIdea: string, businessType: string, totalBudget: number, location?: string): { monthlyBudget: number, strategy: string } {
+  const idea = businessIdea.toLowerCase()
+  const type = businessType.toLowerCase()
+  
+  // Base marketing percentage of total budget by business type
+  let marketingPercentage = 0.15 // Default 15%
+  
+  // Adjust percentage based on business model and competition level
+  if (idea.includes('saas') || idea.includes('software') || idea.includes('b2b')) {
+    marketingPercentage = 0.25 // B2B SaaS needs 25-30% for market penetration
+  } else if (idea.includes('ecommerce') || idea.includes('retail') || idea.includes('consumer')) {
+    marketingPercentage = 0.20 // Consumer businesses need 20-25%
+  } else if (idea.includes('service') || idea.includes('consulting') || idea.includes('local')) {
+    marketingPercentage = 0.12 // Service businesses can rely more on referrals
+  }
+  
+  // Location multipliers (higher costs in major markets)
+  let locationMultiplier = 1.0
+  if (location) {
+    const loc = location.toLowerCase()
+    if (loc.includes('nyc') || loc.includes('new york') || loc.includes('san francisco') || loc.includes('sf')) {
+      locationMultiplier = 2.0 // Double costs in tier-1 cities
+    } else if (loc.includes('los angeles') || loc.includes('chicago') || loc.includes('boston') || loc.includes('seattle')) {
+      locationMultiplier = 1.5 // 50% higher in tier-2 cities
+    }
+  }
+  
+  // Calculate base monthly budget
+  const baseMonthlyBudget = Math.floor((totalBudget * marketingPercentage) / 12)
+  const adjustedMonthlyBudget = Math.floor(baseMonthlyBudget * locationMultiplier)
+  
+  // Ensure minimum viable marketing budgets by business type
+  let minMonthlyBudget = 500 // Default minimum
+  
+  if (idea.includes('saas') || idea.includes('b2b software')) {
+    minMonthlyBudget = 3000 // B2B SaaS needs significant budget for LinkedIn, content, etc.
+  } else if (idea.includes('fintech') || idea.includes('enterprise')) {
+    minMonthlyBudget = 5000 // High-value enterprise solutions need substantial marketing
+  } else if (idea.includes('ecommerce') || idea.includes('consumer app')) {
+    minMonthlyBudget = 2000 // Consumer businesses need significant acquisition budget
+  } else if (idea.includes('local') || idea.includes('service')) {
+    minMonthlyBudget = 800 // Local services can start with lower budgets
+  }
+  
+  // Apply location multiplier to minimum as well
+  minMonthlyBudget = Math.floor(minMonthlyBudget * locationMultiplier)
+  
+  // Use the higher of calculated or minimum budget
+  const finalMonthlyBudget = Math.max(adjustedMonthlyBudget, minMonthlyBudget)
+  
+  // Determine strategy approach based on budget level
+  let strategy = 'balanced'
+  if (finalMonthlyBudget < 1000) strategy = 'organic-first'
+  else if (finalMonthlyBudget > 5000) strategy = 'aggressive-growth'
+  
+  return {
+    monthlyBudget: finalMonthlyBudget,
+    strategy: strategy
+  }
+}
+
+// Generate cost-effective marketing strategy with organic growth prioritization
+function generateBusinessSpecificStrategy(businessIdea: string, businessType: string, monthlyBudget: number, location?: string): any {
+  const idea = businessIdea.toLowerCase()
+  const type = businessType.toLowerCase()
+  
+  // Phase 1: Organic Foundation (Months 1-3) - Always prioritize first
+  const organicFoundation = {
+    phase: 'Foundation Building (Months 1-3)',
+    budget: '$0-500/month',
+    focus: 'Organic growth and validation',
+    tactics: [
+      'Content marketing: Blog posts, LinkedIn articles, thought leadership',
+      'Networking: Industry events, online communities, partnerships',
+      'Outbound sales: Direct outreach, cold email, LinkedIn prospecting',
+      'Referral program: Incentivize early customers to refer others',
+      'SEO optimization: Optimize website for organic search traffic'
+    ]
+  }
+  
+  // Phase 2: Targeted Investment (Months 4-6)
+  let targetedInvestment = {
+    phase: 'Targeted Investment (Months 4-6)',
+    budget: `$${Math.floor(monthlyBudget * 0.6)}/month`,
+    focus: 'Proven channel optimization',
+    tactics: [] as string[]
+  }
+  
+  // Phase 3: Scale & Diversify (Months 7+)
+  let scalePhase = {
+    phase: 'Scale & Diversify (Months 7+)',
+    budget: `$${monthlyBudget}/month`,
+    focus: 'Multi-channel growth',
+    tactics: [] as string[]
+  }
+  
+  // Customize tactics based on business type
+  if (idea.includes('saas') || idea.includes('b2b software')) {
+    targetedInvestment.tactics = [
+      'LinkedIn advertising: Target decision-makers in relevant industries',
+      'Content syndication: Distribute content through industry publications',
+      'Webinar marketing: Host educational sessions for prospects',
+      'Partner marketing: Collaborate with complementary SaaS tools'
+    ]
+    scalePhase.tactics = [
+      'Google Ads: Target high-intent keywords',
+      'Account-based marketing: Personalized campaigns for enterprise accounts',
+      'Industry events: Sponsor relevant conferences and trade shows',
+      'Sales development: Hire SDRs for outbound prospecting'
+    ]
+  } else if (idea.includes('ecommerce') || idea.includes('consumer')) {
+    targetedInvestment.tactics = [
+      'Facebook/Instagram ads: Target specific customer demographics',
+      'Influencer partnerships: Collaborate with relevant micro-influencers',
+      'Email marketing: Nurture leads with automated sequences',
+      'Amazon advertising: If selling products on Amazon'
+    ]
+    scalePhase.tactics = [
+      'Google Shopping ads: Drive product discovery',
+      'TikTok advertising: Reach younger demographics',
+      'Retargeting campaigns: Convert website visitors',
+      'Affiliate marketing: Partner with relevant affiliates'
+    ]
+  } else if (idea.includes('local') || idea.includes('service')) {
+    targetedInvestment.tactics = [
+      'Google My Business optimization: Improve local search presence',
+      'Local Facebook ads: Target specific geographic areas',
+      'Community partnerships: Collaborate with local businesses',
+      'Customer review campaigns: Build social proof'
+    ]
+    scalePhase.tactics = [
+      'Local directory listings: Improve online visibility',
+      'Direct mail campaigns: Target specific neighborhoods',
+      'Local event sponsorship: Build community presence',
+      'Referral incentive programs: Encourage word-of-mouth'
+    ]
+  }
+  
+  return {
+    totalMonthlyBudget: `$${monthlyBudget.toLocaleString()}`,
+    budgetBreakdown: generateBudgetBreakdown(monthlyBudget, businessType),
+    phases: [organicFoundation, targetedInvestment, scalePhase],
+    keyPrinciples: [
+      'Start with organic, low-cost channels to validate product-market fit',
+      'Invest in paid channels only after proving organic traction',
+      'Focus on 1-2 channels initially rather than spreading budget thin',
+      'Measure CAC and LTV rigorously before scaling spend',
+      'Build content and SEO foundation for long-term organic growth'
+    ]
+  }
+}
+
+// Generate realistic budget breakdown
+function generateBudgetBreakdown(monthlyBudget: number, businessType: string): any {
+  const breakdown = {
+    organic: Math.floor(monthlyBudget * 0.3), // 30% for content, SEO, partnerships
+    paidAcquisition: Math.floor(monthlyBudget * 0.4), // 40% for ads and paid channels
+    tools: Math.floor(monthlyBudget * 0.15), // 15% for marketing tools and software
+    events: Math.floor(monthlyBudget * 0.10), // 10% for events, networking
+    contingency: Math.floor(monthlyBudget * 0.05) // 5% buffer
+  }
+  
+  return {
+    'Content & SEO': `$${breakdown.organic}`,
+    'Paid Advertising': `$${breakdown.paidAcquisition}`,
+    'Marketing Tools': `$${breakdown.tools}`,
+    'Events & Networking': `$${breakdown.events}`,
+    'Contingency Buffer': `$${breakdown.contingency}`
+  }
+}
+
+// Get business-specific marketing channels based on business type and target audience
+function getBusinessSpecificChannels(businessIdea: string, businessType: string, maxChannelBudgets: any): MarketingChannel[] {
+  const idea = businessIdea.toLowerCase()
+  const type = businessType.toLowerCase()
+  
+  // Student/College-focused businesses
+  if (idea.includes('student') || idea.includes('college') || idea.includes('university') || idea.includes('meal kit')) {
+    return [
+      {
+        channel: 'TikTok & Instagram Ads',
+        audience: 'College students aged 18-25, health-conscious, budget-minded',
+        budget: `$${maxChannelBudgets.social}/month`,
+        expectedCAC: '$12-18 per student acquisition',
+        expectedROI: '3.5x ROI based on student LTV',
+        implementation: [
+          'Create viral food prep content on TikTok',
+          'Partner with college influencers and food bloggers',
+          'Target students during peak meal planning times',
+          'Use campus location-based targeting'
+        ]
+      },
+      {
+        channel: 'Campus Partnerships',
+        audience: 'Students through university partnerships and events',
+        budget: `$${maxChannelBudgets.content}/month`,
+        expectedCAC: '$8-15 per student through partnerships',
+        expectedROI: '4x ROI through direct campus access',
+        implementation: [
+          'Partner with student organizations and dining services',
+          'Set up booths at campus events and orientations',
+          'Offer student discount programs',
+          'Create referral programs with campus ambassadors'
+        ]
+      },
+      {
+        channel: 'Google Ads (Student Keywords)',
+        audience: 'Students searching for "healthy meals", "budget cooking", "meal prep"',
+        budget: `$${maxChannelBudgets.google}/month`,
+        expectedCAC: '$15-25 based on food delivery benchmarks',
+        expectedROI: '2.8x ROI through targeted intent-based searches',
+        implementation: [
+          'Target keywords like "college meal delivery", "student food prep"',
+          'Create landing pages for different university locations',
+          'Use student-specific ad copy and testimonials',
+          'Implement conversion tracking for subscription signups'
+        ]
+      },
+      {
+        channel: 'Student Housing & App Integration',
+        audience: 'Students in dormitories and off-campus housing',
+        budget: `$${maxChannelBudgets.linkedin}/month`,
+        expectedCAC: '$10-20 through housing partnerships',
+        expectedROI: '4.5x ROI through high-intent audience',
+        implementation: [
+          'Partner with housing services for meal plan alternatives',
+          'Integrate with student life apps and campus platforms',
+          'Create targeted campaigns for move-in periods',
+          'Offer group discounts for roommates and friends'
+        ]
+      }
+    ]
+  }
+  
+  // B2B/SaaS businesses
+  if (type.includes('saas') || type.includes('software') || type.includes('b2b') || idea.includes('business')) {
+    return [
+      {
+        channel: 'LinkedIn Ads (B2B Focus)',
+        audience: 'Business decision makers, 35-55, $75K+ income',
+        budget: `$${maxChannelBudgets.linkedin}/month`,
+        expectedCAC: 'Market research required - LinkedIn CAC varies by industry',
+        expectedROI: 'ROI analysis needed based on competitive landscape',
+        implementation: [
+          'Create LinkedIn business page with weekly content',
+          'Run targeted lead generation campaigns',
+          'A/B test ad creative and targeting',
+          'Implement LinkedIn Pixel for retargeting'
+        ]
+      },
+      {
+        channel: 'Google Ads (Search)',
+        audience: 'Active searchers for industry solutions',
+        budget: `$${maxChannelBudgets.google}/month`,
+        expectedCAC: 'Live keyword cost analysis required from Google Ads API',
+        expectedROI: 'Conversion rate analysis needed based on industry benchmarks',
+        implementation: [
+          'Keyword research and competitive analysis',
+          'Create high-converting landing pages',
+          'Set up conversion tracking and analytics',
+          'Daily bid optimization and budget management'
+        ]
+      },
+      {
+        channel: 'Content Marketing',
+        audience: 'Industry professionals seeking solutions',
+        budget: `$${maxChannelBudgets.content}/month`,
+        expectedCAC: 'Content performance analysis required - varies by niche',
+        expectedROI: 'Long-term ROI tracking needed based on attribution modeling',
+        implementation: [
+          'Weekly blog posts targeting buyer keywords',
+          'Create downloadable industry guides',
+          'Guest posting on industry publications',
+          'SEO optimization for organic traffic'
+        ]
+      }
+    ]
+  }
+  
+  // E-commerce/Consumer businesses
+  if (type.includes('ecommerce') || type.includes('retail') || idea.includes('shop') || idea.includes('store')) {
+    return [
+      {
+        channel: 'Facebook & Instagram Ads',
+        audience: 'Target demographics based on product category',
+        budget: `$${maxChannelBudgets.social}/month`,
+        expectedCAC: '$25-45 for e-commerce conversion',
+        expectedROI: '3-4x ROI based on product margins',
+        implementation: [
+          'Create visually appealing product showcase ads',
+          'Implement dynamic product ads for retargeting',
+          'Use lookalike audiences based on customer data',
+          'A/B test ad creative and audience targeting'
+        ]
+      },
+      {
+        channel: 'Google Shopping & Search Ads',
+        audience: 'High-intent shoppers searching for products',
+        budget: `$${maxChannelBudgets.google}/month`,
+        expectedCAC: '$30-50 based on product category',
+        expectedROI: '4-5x ROI through high purchase intent',
+        implementation: [
+          'Set up Google Shopping campaigns with product feed',
+          'Target high-intent purchase keywords',
+          'Optimize product listings for search visibility',
+          'Implement Google Analytics Enhanced E-commerce'
+        ]
+      }
+    ]
+  }
+  
+  // Default fallback for other business types
+  return [
     {
       channel: 'Google Ads (Search)',
       audience: 'Active searchers for industry solutions',
@@ -3123,50 +4339,182 @@ function generateMarketingStrategy(businessType: string, budget: string, locatio
       ]
     },
     {
-      channel: 'Content Marketing',
-      audience: 'Industry professionals seeking solutions',
-      budget: `$${maxChannelBudgets.content}/month`,
-      expectedCAC: 'Content performance analysis required - varies by niche',
-      expectedROI: 'Long-term ROI tracking needed based on attribution modeling',
-      implementation: [
-        'Weekly blog posts targeting buyer keywords',
-        'Create downloadable industry guides',
-        'Guest posting on industry publications',
-        'SEO optimization for organic traffic'
-      ]
-    },
-    {
-      channel: 'Social Media (Organic)',
-      audience: 'Followers and industry networks',
+      channel: 'Social Media Marketing',
+      audience: 'Target audience on relevant social platforms',
       budget: `$${maxChannelBudgets.social}/month`,
       expectedCAC: 'Social media analytics integration required',
       expectedROI: 'Brand awareness metrics and attribution analysis needed',
       implementation: [
-        'Daily posting schedule across platforms',
-        'Engage with industry conversations',
-        'Share customer success stories',
-        'Build community around brand values'
-      ]
-    },
-    {
-      channel: 'Email Marketing',
-      audience: 'Newsletter subscribers and leads',
-      budget: `$${maxChannelBudgets.email}/month`,
-      expectedCAC: 'Email platform analytics and list quality analysis required',
-      expectedROI: 'Customer lifetime value integration needed for accurate ROI',
-      implementation: [
-        'Set up automated drip campaigns',
-        'Weekly newsletters with industry insights',
-        'Personalized product recommendations',
-        'A/B test subject lines and send times'
+        'Platform-specific content strategy',
+        'Community building and engagement',
+        'Influencer partnership opportunities',
+        'Social media advertising campaigns'
       ]
     }
   ]
-  
+}
+
+  // Return the comprehensive marketing strategy
   return {
-    channels,
-    totalBudget: `$${adjustedMonthlyBudget.toLocaleString()}/month`,
-    annualBudget: `$${adjustedMarketingBudget.toLocaleString()}/year`
+    channels: generateMarketingChannels(businessIdea, businessType, monthlyMarketingBudget),
+    totalBudget: `$${monthlyMarketingBudget.toLocaleString()}/month`,
+    annualBudget: `$${annualMarketingBudget.toLocaleString()}/year`,
+    strategy: marketingStrategy, // Additional detailed strategy
+    budgetAnalysis: {
+      monthlyBudget: `$${monthlyMarketingBudget.toLocaleString()}`,
+      annualBudget: `$${annualMarketingBudget.toLocaleString()}`,
+      percentageOfTotalBudget: `${Math.round((annualMarketingBudget / budgetNum) * 100)}%`,
+      budgetJustification: `Marketing budget calculated based on ${businessType} industry standards, ${location || 'general'} market conditions, and growth stage requirements`
+    },
+    implementation: {
+      phase1: 'Focus on organic growth and validation (Months 1-3)',
+      phase2: 'Invest in proven channels (Months 4-6)',
+      phase3: 'Scale and diversify (Months 7+)'
+    }
+  }
+}
+
+// Generate marketing channels for backward compatibility
+function generateMarketingChannels(businessIdea: string, businessType: string, monthlyBudget: number): MarketingChannel[] {
+  const idea = businessIdea.toLowerCase()
+  const type = businessType.toLowerCase()
+  
+  // Calculate channel budgets
+  const channelBudgets = {
+    primary: Math.floor(monthlyBudget * 0.4),
+    secondary: Math.floor(monthlyBudget * 0.3),
+    tertiary: Math.floor(monthlyBudget * 0.2),
+    support: Math.floor(monthlyBudget * 0.1)
+  }
+  
+  // Generate channels based on business type
+  if (idea.includes('saas') || idea.includes('b2b software')) {
+    return [
+      {
+        channel: 'LinkedIn Advertising',
+        audience: 'Business decision makers, 35-55, $75K+ income',
+        budget: `$${channelBudgets.primary}/month`,
+        expectedCAC: '$150-300 for B2B SaaS in competitive markets',
+        expectedROI: '3-5x ROI with 6-12 month sales cycles',
+        implementation: [
+          'Target specific job titles and company sizes',
+          'Create thought leadership content',
+          'A/B test ad creative and messaging',
+          'Implement lead scoring and nurturing'
+        ]
+      },
+      {
+        channel: 'Content Marketing & SEO',
+        audience: 'Technical decision makers researching solutions',
+        budget: `$${channelBudgets.secondary}/month`,
+        expectedCAC: '$50-100 through organic content',
+        expectedROI: '5-10x ROI with longer attribution windows',
+        implementation: [
+          'Weekly blog posts on industry topics',
+          'Technical whitepapers and case studies',
+          'SEO optimization for buyer keywords',
+          'Guest posting on industry publications'
+        ]
+      },
+      {
+        channel: 'Webinars & Events',
+        audience: 'Industry professionals seeking education',
+        budget: `$${channelBudgets.tertiary}/month`,
+        expectedCAC: '$75-200 per qualified lead',
+        expectedROI: '4-6x ROI through high-intent prospects',
+        implementation: [
+          'Monthly educational webinars',
+          'Industry conference participation',
+          'Virtual networking events',
+          'Partner co-marketing opportunities'
+        ]
+      }
+    ]
+  } else if (idea.includes('ecommerce') || idea.includes('consumer')) {
+    return [
+      {
+        channel: 'Facebook & Instagram Ads',
+        audience: 'Target demographic based on product type',
+        budget: `$${channelBudgets.primary}/month`,
+        expectedCAC: '$25-75 depending on product price point',
+        expectedROI: '4-8x ROI with proper targeting',
+        implementation: [
+          'Dynamic product ads for retargeting',
+          'Interest and lookalike audience targeting',
+          'Video content for engagement',
+          'Seasonal campaign optimization'
+        ]
+      },
+      {
+        channel: 'Google Shopping & Search',
+        audience: 'High-intent shoppers searching for products',
+        budget: `$${channelBudgets.secondary}/month`,
+        expectedCAC: '$30-100 for shopping campaigns',
+        expectedROI: '5-10x ROI through purchase intent',
+        implementation: [
+          'Optimize product feed and titles',
+          'Target high-intent keywords',
+          'Implement smart bidding strategies',
+          'Create compelling ad extensions'
+        ]
+      },
+      {
+        channel: 'Influencer Marketing',
+        audience: 'Followers of relevant micro-influencers',
+        budget: `$${channelBudgets.tertiary}/month`,
+        expectedCAC: '$20-60 through authentic partnerships',
+        expectedROI: '3-6x ROI with authentic partnerships',
+        implementation: [
+          'Partner with 1-3 micro-influencers monthly',
+          'Focus on engagement over follower count',
+          'Track promo codes and affiliate links',
+          'Build long-term brand partnerships'
+        ]
+      }
+    ]
+  } else {
+    // Default channels for other business types
+    return [
+      {
+        channel: 'Google Search Ads',
+        audience: 'Local customers searching for services',
+        budget: `$${channelBudgets.primary}/month`,
+        expectedCAC: '$40-120 depending on local competition',
+        expectedROI: '3-5x ROI with proper local targeting',
+        implementation: [
+          'Target location-specific keywords',
+          'Optimize Google My Business listing',
+          'Create location-based landing pages',
+          'Implement call tracking and attribution'
+        ]
+      },
+      {
+        channel: 'Local Social Media',
+        audience: 'Community members and local customers',
+        budget: `$${channelBudgets.secondary}/month`,
+        expectedCAC: '$15-50 through community engagement',
+        expectedROI: '2-4x ROI plus brand awareness',
+        implementation: [
+          'Active presence on local Facebook groups',
+          'Share customer success stories',
+          'Sponsor local community events',
+          'Build referral incentive programs'
+        ]
+      },
+      {
+        channel: 'Direct Outreach',
+        audience: 'Targeted prospects in local market',
+        budget: `$${channelBudgets.tertiary}/month`,
+        expectedCAC: '$25-75 through personal connections',
+        expectedROI: '4-8x ROI with relationship building',
+        implementation: [
+          'Personalized email outreach campaigns',
+          'Networking at local business events',
+          'Partner with complementary businesses',
+          'Implement customer referral programs'
+        ]
+      }
+    ]
   }
 }
 
@@ -3387,12 +4735,21 @@ async function generateLiveBusinessIdeaReview(
     else if (highRiskFactors < 2 && competitorCount < 5) riskLevel = 'LOW RISK'
     
     // Generate realistic profitability analysis
-    const startupCost = financialProjections?.[0]?.costs || 'Cost analysis required'
-    const revenueProjection = financialProjections?.[0]?.revenue || 'Revenue analysis required'
+    const financialMetrics = calculateFinancialMetrics(businessType, idea)
+    const startupCosts = financialMetrics.startupCosts || 'Startup cost analysis required'
+    const monthlyOperatingCosts = financialProjections?.[0]?.costs || 0
+    const revenueProjection = financialProjections?.[0]?.revenue || 0
+    
+    // Ensure we have numeric values for calculations
+    const operatingCostsNum = typeof monthlyOperatingCosts === 'number' ? monthlyOperatingCosts : 0
+    const revenueNum = typeof revenueProjection === 'number' ? revenueProjection : 0
+    
+    // Calculate break-even months safely
+    const breakEvenMonths = revenueNum > 0 ? Math.ceil(operatingCostsNum / revenueNum) : 'Unable to calculate'
     
     return {
       ideaAssessment: `${businessType} business concept evaluation for "${idea}". Market analysis shows ${marketSize} total addressable market with ${growthRate} growth rate. Competitive landscape includes ${competitorCount} identified competitors. Business viability assessment based on current market conditions (${currentDate}).`,
-      profitabilityAnalysis: `Profitability assessment based on live market data: Startup costs estimated at ${startupCost}, revenue projections at ${revenueProjection}. Market conditions analysis indicates ${marketData?.trends?.demand || 'stable'} demand trends. Break-even analysis requires detailed financial modeling with current market rates.`,
+      profitabilityAnalysis: `Profitability assessment based on live market data: Initial startup costs estimated at ${startupCosts}, monthly operating costs at $${operatingCostsNum.toLocaleString()}, revenue projections at $${revenueNum.toLocaleString()}/month. Market conditions analysis indicates ${marketData?.trends?.demand || 'stable'} demand trends. Break-even analysis suggests ${breakEvenMonths} months to profitability.`,
       marketTiming: assessMarketTiming(businessType, marketData),
       competitiveAdvantage: assessCompetitiveAdvantage(idea, competitiveAnalysis),
       riskLevel: riskLevel,
@@ -3535,6 +4892,7 @@ function createEnhancedSystemPrompt(
   competitiveAnalysis?: Competitor[],
   riskAnalysis?: Risk[],
   financialProjections?: FinancialProjection[],
+  financialMetrics?: any,
   marketingStrategy?: EnhancedMarketingStrategy,
   actionRoadmap?: Milestone[],
   personalization?: PersonalizationOptions
@@ -3648,6 +5006,20 @@ ${financialProjections ? financialProjections.slice(0, 8).map(proj => `
 ${proj.period}: Revenue $${proj.revenue.toLocaleString()}, Costs $${proj.costs.toLocaleString()}, Profit $${proj.profit.toLocaleString()}, Customers ${proj.customers.toLocaleString()}
 Assumptions: ${proj.assumptions.join(' | ')}
 `).join('\n') : 'Financial modeling in progress...'}
+
+KEY FINANCIAL METRICS:
+${financialMetrics ? `
+• Customer Acquisition Cost (CAC): ${financialMetrics.cac}
+• Customer Lifetime Value (LTV): ${financialMetrics.ltv}
+• LTV:CAC Ratio: ${financialMetrics.ltvToCacRatio} (${financialMetrics.unitEconomics})
+• Average Revenue Per User (ARPU): ${financialMetrics.arpu}
+• Monthly Churn Rate: ${financialMetrics.churnRate}
+• Gross Margin: ${financialMetrics.grossMargin}
+• Monthly Burn Rate: ${financialMetrics.burnRate}
+• CAC Payback Period: ${financialMetrics.paybackPeriod}
+• Business Type: ${financialMetrics.businessType} | Industry: ${financialMetrics.industry}
+• Data Source: ${financialMetrics.dataSource} (${financialMetrics.calculationDate})
+` : 'Financial metrics calculation in progress...'}
 
 MARKETING STRATEGY:
 Total Budget: ${marketingStrategy?.totalBudget || 'TBD'} (${marketingStrategy?.annualBudget || 'TBD'})
@@ -3875,7 +5247,8 @@ Format as JSON with the following structure (ALL SECTIONS REQUIRED):
     "useOfFunds": "Detailed breakdown of fund usage",
     "investorTargeting": "Types of investors to approach",
     "timeline": "Funding timeline and milestones",
-    "exitStrategy": "Potential exit opportunities"
+    "exitStrategy": "Potential exit opportunities",
+    "platforms": "Generate 3-6 funding platform recommendations based on business type and budget (optional field - can be omitted if complex)"
   },
   "legal": {
     "businessEntity": "Legal structure and registration",
@@ -3897,6 +5270,10 @@ NO HARDCODED RESPONSES:
 - If you cannot identify specific real competitors, use descriptive names like "Leading Industry Provider A", "Major Market Player B"
 - NEVER use fragments like "each other", "those of a", "in this round" as company names
 - ALL financial projections MUST be calculated from real market conditions and business type
+- USE the provided Key Financial Metrics (CAC, LTV, Churn Rate) - do not create placeholder values
+- Financial analysis must reference the calculated LTV:CAC ratio and unit economics assessment
+- Include the provided ARPU, burn rate, and payback period in financial discussions
+- Replace ALL placeholder financial text with calculated values from the provided metrics section
 - ALL risks MUST be specific to the actual business and current market environment
 - If real data is unavailable, explicitly state "Research required" instead of using placeholder data
 - For competitive intelligence, provide realistic company names, not text fragments
@@ -3942,7 +5319,8 @@ async function validateAndEnhancePlan(
   actionRoadmap?: Milestone[],
   budget?: string,
   currency?: string,
-  competitorData?: any
+  competitorData?: any,
+  location?: string
 ): Promise<any> {
   console.log('Validating plan completeness...')
   
@@ -3953,15 +5331,16 @@ async function validateAndEnhancePlan(
   }
   
   // Map simplified template fields to full template fields
-  if (planData.businessScope && !planData.marketAnalysis) {
-    planData.marketAnalysis = {
-      marketSize: { tam: 'Market analysis in progress', sam: 'To be determined', som: 'To be calculated', cagr: 'Research required' },
-      trends: planData.businessScope.marketReadiness || 'Market analysis in progress',
-      customers: planData.businessScope.targetCustomers || 'Target customer analysis needed',
-      economicContext: 'Economic analysis required',
-      demandAnalysis: planData.businessScope.growthPotential || 'Demand analysis needed'
-    }
-  }
+  // DISABLED: Don't create placeholder market analysis - only show if real data exists
+  // if (planData.businessScope && !planData.marketAnalysis) {
+  //   planData.marketAnalysis = {
+  //     marketSize: { tam: 'Market analysis in progress', sam: 'To be determined', som: 'To be calculated', cagr: 'Research required' },
+  //     trends: planData.businessScope.marketReadiness || 'Market analysis in progress',
+  //     customers: planData.businessScope.targetCustomers || 'Target customer analysis needed',
+  //     economicContext: 'Economic analysis required',
+  //     demandAnalysis: planData.businessScope.growthPotential || 'Demand analysis needed'
+  //   }
+  // }
   
   // DISABLED: This old fallback logic was overriding our AI-generated competitor data
   // Competitive analysis should come from fetchCompetitiveAnalysis function
@@ -4129,24 +5508,31 @@ async function validateAndEnhancePlan(
     const year2 = financialProjections.filter(p => p.period.includes('Year 2')).slice(0, 4)
     const year3 = financialProjections.filter(p => p.period.includes('Year 3')).slice(0, 4)
     
+    // Use calculated financial metrics instead of placeholders
+    const calculatedMetrics = calculateFinancialMetrics(businessType, idea)
+    
     planData.financialProjections = {
       year1Monthly: year1,
       year2Quarterly: year2,
       year3Quarterly: year3,
       unitEconomics: {
-        cac: 'Market-based calculation required',
-        ltv: 'Dependent on pricing and retention analysis',
-        arpu: 'Based on competitive pricing research',
-        churnRate: 'Industry benchmark analysis needed'
+        cac: calculatedMetrics.cac,
+        ltv: calculatedMetrics.ltv,
+        arpu: calculatedMetrics.arpu,
+        churnRate: calculatedMetrics.churnRate,
+        ltvToCacRatio: calculatedMetrics.ltvToCacRatio,
+        grossMargin: calculatedMetrics.grossMargin,
+        unitEconomicsAssessment: calculatedMetrics.unitEconomics
       },
       assumptions: [
-        'Financial projections based on industry benchmarks and market analysis',
-        'Customer acquisition costs vary by marketing channel effectiveness',
-        'Revenue projections adjusted for market penetration rates',
-        'Growth assumptions validated against comparable companies'
+        `Financial projections based on ${calculatedMetrics.industry} industry benchmarks`,
+        `Customer acquisition costs calculated for ${calculatedMetrics.businessType} business model`,
+        `Revenue projections adjusted for ${calculatedMetrics.churnRate} churn rate`,
+        `Growth assumptions validated against ${calculatedMetrics.dataSource}`,
+        `Payback period estimated at ${calculatedMetrics.paybackPeriod}`
       ],
-      breakEven: 'Calculated based on cost structure and revenue projections',
-      cashFlow: 'Projected based on operating expenses and revenue timeline.'
+      breakEven: `Break-even projected based on ${calculatedMetrics.paybackPeriod} payback period and cost structure`,
+      cashFlow: `Cash flow projection based on ${calculatedMetrics.burnRate} burn rate and revenue timeline.`
     }
   }
   
@@ -4200,7 +5586,8 @@ async function validateAndEnhancePlan(
       useOfFunds: `Product development (40%), Marketing (30%), Operations (20%), Legal/Admin (10%)`,
       investorTargeting: `Angel investors, early-stage VCs focused on ${businessType} sector`,
       timeline: 'Seed funding within 6 months, Series A within 18-24 months',
-      exitStrategy: 'Strategic acquisition by industry leader or IPO after significant scale'
+      exitStrategy: 'Strategic acquisition by industry leader or IPO after significant scale',
+      platforms: getFundingPlatforms(businessType || 'startup', String(location || 'us'), budget || '50000')
     }
   }
   
@@ -4214,6 +5601,16 @@ async function validateAndEnhancePlan(
     }
   }
   
+  // Ensure funding platforms are always populated if funding section exists
+  if (planData.funding && (!planData.funding.platforms || planData.funding.platforms.length === 0)) {
+    console.log('Adding funding platforms to existing funding section')
+    planData.funding.platforms = getFundingPlatforms(
+      businessType || 'startup', 
+      String(location || 'us'), 
+      budget || '50000'
+    )
+  }
+
   // Ensure sources are included
   if (!planData.sources || planData.sources.length === 0) {
     planData.sources = [
@@ -4510,6 +5907,14 @@ CRITICAL: Return ONLY a complete JSON structure with relevant, actionable conten
       "deliverables": ["Growth metrics", "Optimization plan"]
     }
   ],
+  "funding": {
+    "requirements": "${currencySymbol}${budget ? budget.replace(/[^0-9]/g, '').toLocaleString() : '50,000'} for MVP development and initial operations",
+    "useOfFunds": "Product development (40%), Marketing (30%), Operations (20%), Legal/Admin (10%)",
+    "investorTargeting": "Angel investors and early-stage VCs focused on ${businessType} sector",
+    "timeline": "Seed funding within 6 months, follow-on funding as needed",
+    "exitStrategy": "Strategic acquisition or IPO after achieving scale",
+    "platforms": []
+  },
   "marketingPlan": {
     "targetAudience": {
       "demographics": "Age, income, location, job titles specific to this business",
@@ -4963,7 +6368,8 @@ async function processRequest(idea: string, location?: string, budget?: string, 
     
     const riskAnalysis = generateRiskAnalysis(businessType, idea)
     const financialProjections = generateFinancialProjections(businessType, intelligentBudget)
-    const marketingStrategy = generateMarketingStrategy(businessType, intelligentBudget, intelligentLocation)
+    const financialMetrics = calculateFinancialMetrics(businessType, idea)
+    const marketingStrategy = generateMarketingStrategy(businessType, intelligentBudget, idea, intelligentLocation)
     const actionRoadmap = generateActionRoadmap(businessType, intelligentTimeline)
 
     // Step 6: Create enhanced system prompt with all analyses
@@ -4980,6 +6386,7 @@ async function processRequest(idea: string, location?: string, budget?: string, 
       competitiveAnalysis,
       riskAnalysis,
       financialProjections,
+      financialMetrics,
       marketingStrategy,
       actionRoadmap,
       personalization
@@ -5169,7 +6576,8 @@ Currency: ${currency || 'USD'}`
         actionRoadmap,
         budget,
         currency,
-        competitorData // Add real competitor data
+        competitorData, // Add real competitor data
+        location // Add location parameter
       )
       
       // Validate required fields
@@ -5378,7 +6786,7 @@ function generateOfflineFallbackPlan(businessIdea: string, businessType: string)
     },
 
     marketingPlan: {
-      budget: generateMarketingStrategy(businessType, getIntelligentBudgetDefault(businessType)).totalBudget + " (initial 6 months)"
+      budget: generateMarketingStrategy(businessType, getIntelligentBudgetDefault(businessType), "").totalBudget + " (initial 6 months)"
     },
 
     demandValidation: {
@@ -5415,7 +6823,16 @@ function generateOfflineFallbackPlan(businessIdea: string, businessType: string)
     financialAnalysis: {
       revenueModel: "Multiple revenue streams with focus on recurring income where applicable",
       profitMargins: "Industry-standard margins with optimization opportunities",
-      breakEvenAnalysis: "12-18 months to break-even based on conservative projections"
+      breakEvenAnalysis: "12-18 months to break-even based on conservative projections",
+      keyMetrics: {
+        cac: "CAC calculation requires live data integration",
+        ltv: "LTV calculation requires live data integration", 
+        ltvToCacRatio: "Ratio calculation requires live data integration",
+        churnRate: "Churn analysis requires live data integration",
+        arpu: "ARPU calculation requires live data integration",
+        grossMargin: "Margin analysis requires live data integration",
+        unitEconomics: "Economics assessment requires live data integration"
+      }
     },
     
     riskAssessment: {

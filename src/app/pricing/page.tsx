@@ -16,44 +16,50 @@ const PRICING_PLANS = [
     subtitle: "Best for personal use.",
     price: "Free",
     features: [
-      "Employee directory",
-      "Task management", 
-      "Calendar integration",
-      "File storage",
-      "Communication tools",
-      "Reporting and analytics"
+      "1 business plan per day",
+      "Basic financial projections",
+      "Market size analysis",
+      "Risk assessment",
+      "PDF export",
+      "Essential business tools"
+    ],
+    limitations: [
+      "No competitor analysis",
+      "No market positioning",
+      "No growth strategies",
+      "Limited market data"
     ],
     buttonText: "Get Started",
     isPopular: false
   },
   {
-    name: "Enterprise",
-    subtitle: "For large teams & corporations.",
+    name: "Pro",
+    subtitle: "For entrepreneurs & startups.",
     price: "$20",
     period: "per month",
     features: [
-      "Advanced employee directory",
-      "Project management",
-      "Resource scheduling",
-      "Version control",
-      "Team collaboration", 
-      "Advanced analytics"
+      "Unlimited business plans",
+      "Advanced competitor analysis",
+      "Market positioning strategies",
+      "Growth & scaling roadmaps",
+      "Live market data integration",
+      "Priority customer support"
     ],
     buttonText: "Get Started",
     isPopular: true
   },
   {
-    name: "Business",
-    subtitle: "Best for business owners.",
+    name: "Pro+",
+    subtitle: "For agencies & consultants.",
     price: "$120",
     period: "per month",
     features: [
-      "Customizable employee directory",
-      "Client project management",
-      "Client meeting schedule",
-      "Compliance tracking",
-      "Client communication",
-      "Create custom reports tailored"
+      "Everything in Pro",
+      "Custom branding & white-label",
+      "API access for integrations",
+      "Advanced analytics dashboard",
+      "Dedicated account manager",
+      "Custom market research reports"
     ],
     buttonText: "Get Started",
     isPopular: false
@@ -111,6 +117,23 @@ const PricingCard = memo(({ plan, onButtonClick }: {
           </li>
         ))}
       </ul>
+      
+      {/* Limitations for Basic plan */}
+      {plan.name === "Basic" && (plan as any).limitations && (
+        <div className="mt-6 pt-6 border-t border-white/10">
+          <h4 className="text-white/60 font-medium mb-3 text-sm">Limitations</h4>
+          <ul className="space-y-2">
+            {(plan as any).limitations.map((limitation: string, limitationIndex: number) => (
+              <li key={limitationIndex} className="flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full border border-red-400/40 flex items-center justify-center">
+                  <div className="w-1 h-1 bg-red-400 rounded-full"></div>
+                </div>
+                <span className="text-red-300/60 text-xs">{limitation}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   </div>
 ))
@@ -197,11 +220,11 @@ export default function PricingPage() {
             </div>
             
             <h1 className="text-3xl md:text-6xl font-light text-white mb-6 md:mb-8 leading-tight drop-shadow-2xl">
-              Discover Products<br />
-              <span className="block font-normal text-white/90 drop-shadow-xl">With the Best Pricing</span>
+              Choose Your Plan<br />
+              <span className="block font-normal text-white/90 drop-shadow-xl">Start Building Your Business</span>
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto mb-12 drop-shadow-md">
-              Select from best plan, ensuring a perfect match. Need more or less? Customize your subscription for a seamless fit!
+              Generate professional business plans with AI. From basic concepts to advanced market analysis - choose the plan that fits your needs.
             </p>
 
             {/* Billing Toggle */}
