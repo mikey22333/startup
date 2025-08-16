@@ -1,9 +1,9 @@
 # Required API Keys for Live Market Data Integration
 
 ## Currently Configured ✅
-- **TOGETHER_AI**: ✅ Configured (`tgp_v1_WNrqobg2Z6GgYZ8Equ9uAnuAA7zSqYj1vcWgi2bgt_I`)
-- **OPENROUTER**: ✅ Configured (`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`)
-- **GOOGLE_CSE**: ✅ Configured (`AIzaSyAwK-fIk8c60hmCDERKcGMpe74_LvhByyY`)
+- **TOGETHER_AI**: ✅ Configured (via environment variable)
+- **OPENROUTER**: ✅ Configured (via environment variable)
+- **GOOGLE_CSE**: ✅ Configured (via environment variable)
 - **SUPABASE**: ✅ Configured (Database for verified industry data)
 
 ## Additional APIs Needed for Live Data Integration 🔑
