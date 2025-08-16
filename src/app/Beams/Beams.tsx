@@ -1,13 +1,12 @@
-/* eslint-disable react/no-unknown-property */
+"use client";
 import {
   forwardRef,
   useImperativeHandle,
   useEffect,
   useRef,
   useMemo,
+  FC,
   ReactNode,
-  memo,
-  useCallback
 } from "react";
 
 import * as THREE from "three";
@@ -18,28 +17,44 @@ import { degToRad } from "three/src/math/MathUtils.js";
 
 import "./Beams.css";
 
-interface MaterialConfig {
+type UniformValue = THREE.IUniform<unknown> | unknown;
+
+interface ExtendMaterialConfig {
   header: string;
   vertexHeader?: string;
   fragmentHeader?: string;
+  material?: THREE.MeshPhysicalMaterialParameters & { fog?: boolean };
+  uniforms?: Record<string, UniformValue>;
   vertex?: Record<string, string>;
   fragment?: Record<string, string>;
-  material?: any;
-  uniforms?: Record<string, any>;
 }
 
-function extendMaterial(BaseMaterial: any, cfg: MaterialConfig) {
-  const physical = THREE.ShaderLib.physical;
+type ShaderWithDefines = THREE.ShaderLibShader & {
+  defines?: Record<string, string | number | boolean>;
+};
+
+function extendMaterial<T extends THREE.Material = THREE.Material>(
+  BaseMaterial: new (params?: THREE.MaterialParameters) => T,
+  cfg: ExtendMaterialConfig
+): THREE.ShaderMaterial {
+  const physical = THREE.ShaderLib.physical as ShaderWithDefines;
   const {
     vertexShader: baseVert,
     fragmentShader: baseFrag,
     uniforms: baseUniforms,
   } = physical;
-  const baseDefines = (physical as any).defines ?? {};
+  const baseDefines = physical.defines ?? {};
 
-  const uniforms = THREE.UniformsUtils.clone(baseUniforms);
+  const uniforms: Record<string, THREE.IUniform> =
+    THREE.UniformsUtils.clone(baseUniforms);
 
-  const defaults = new BaseMaterial(cfg.material || {});
+  const defaults = new BaseMaterial(cfg.material || {}) as T & {
+    color?: THREE.Color;
+    roughness?: number;
+    metalness?: number;
+    envMap?: THREE.Texture;
+    envMapIntensity?: number;
+  };
 
   if (defaults.color) uniforms.diffuse.value = defaults.color;
   if ("roughness" in defaults) uniforms.roughness.value = defaults.roughness;
@@ -51,8 +66,8 @@ function extendMaterial(BaseMaterial: any, cfg: MaterialConfig) {
   Object.entries(cfg.uniforms ?? {}).forEach(([key, u]) => {
     uniforms[key] =
       u !== null && typeof u === "object" && "value" in u
-        ? (u)
-        : ({ value: u });
+        ? (u as THREE.IUniform<unknown>)
+        : ({ value: u } as THREE.IUniform<unknown>);
   });
 
   let vert = `${cfg.header}\n${cfg.vertexHeader ?? ""}\n${baseVert}`;
@@ -77,11 +92,7 @@ function extendMaterial(BaseMaterial: any, cfg: MaterialConfig) {
   return mat;
 }
 
-interface CanvasWrapperProps {
-  children: ReactNode;
-}
-
-const CanvasWrapper = ({ children }: CanvasWrapperProps) => (
+const CanvasWrapper: FC<{ children: ReactNode }> = ({ children }) => (
   <Canvas dpr={[1, 2]} frameloop="always" className="beams-container">
     {children}
   </Canvas>
@@ -183,7 +194,7 @@ interface BeamsProps {
   rotation?: number;
 }
 
-const Beams = ({
+const Beams: FC<BeamsProps> = ({
   beamWidth = 2,
   beamHeight = 15,
   beamNumber = 12,
@@ -192,8 +203,11 @@ const Beams = ({
   noiseIntensity = 1.75,
   scale = 0.2,
   rotation = 0,
-}: BeamsProps) => {
-  const meshRef = useRef(null);
+}) => {
+  const meshRef = useRef<
+    THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>
+  >(null!);
+
   const beamMaterial = useMemo(
     () =>
       extendMaterial(THREE.MeshStandardMaterial, {
@@ -276,7 +290,7 @@ function createStackedPlanesBufferGeometry(
   height: number,
   spacing: number,
   heightSegments: number
-) {
+): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   const numVertices = n * (heightSegments + 1) * 2;
   const numFaces = n * heightSegments * 2;
@@ -327,37 +341,39 @@ function createStackedPlanesBufferGeometry(
   return geometry;
 }
 
-interface MergedPlanesProps {
-  material: THREE.ShaderMaterial;
-  width: number;
-  count: number;
-  height: number;
-}
-
-const MergedPlanes = forwardRef<THREE.Mesh, MergedPlanesProps>(({ material, width, count, height }, ref) => {
-  const mesh = useRef<THREE.Mesh>(null);
-  useImperativeHandle(ref, () => mesh.current!);
+const MergedPlanes = forwardRef<
+  THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>,
+  {
+    material: THREE.ShaderMaterial;
+    width: number;
+    count: number;
+    height: number;
+  }
+>(({ material, width, count, height }, ref) => {
+  const mesh = useRef<THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>>(
+    null!
+  );
+  useImperativeHandle(ref, () => mesh.current);
   const geometry = useMemo(
     () => createStackedPlanesBufferGeometry(count, width, height, 0, 100),
     [count, width, height]
   );
   useFrame((_, delta) => {
-    if (mesh.current) {
-      (mesh.current.material as any).uniforms.time.value += 1.0 * delta;
-    }
+    mesh.current.material.uniforms.time.value += 0.1 * delta;
   });
   return <mesh ref={mesh} geometry={geometry} material={material} />;
 });
 MergedPlanes.displayName = "MergedPlanes";
 
-interface PlaneNoiseProps {
-  material: THREE.ShaderMaterial;
-  width: number;
-  count: number;
-  height: number;
-}
-
-const PlaneNoise = forwardRef<THREE.Mesh, PlaneNoiseProps>((props, ref) => (
+const PlaneNoise = forwardRef<
+  THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>,
+  {
+    material: THREE.ShaderMaterial;
+    width: number;
+    count: number;
+    height: number;
+  }
+>((props, ref) => (
   <MergedPlanes
     ref={ref}
     material={props.material}
@@ -368,29 +384,26 @@ const PlaneNoise = forwardRef<THREE.Mesh, PlaneNoiseProps>((props, ref) => (
 ));
 PlaneNoise.displayName = "PlaneNoise";
 
-interface DirLightProps {
-  position: [number, number, number];
-  color: string;
-}
-
-const DirLight = ({
+const DirLight: FC<{ position: [number, number, number]; color: string }> = ({
   position,
   color,
-}: DirLightProps) => {
-  const dir = useRef<THREE.DirectionalLight>(null);
+}) => {
+  const dir = useRef<THREE.DirectionalLight>(null!);
   useEffect(() => {
     if (!dir.current) return;
-    const cam = dir.current.shadow?.camera;
-    if (!cam) return;
+    const cam = dir.current.shadow.camera as THREE.Camera & {
+      top: number;
+      bottom: number;
+      left: number;
+      right: number;
+      far: number;
+    };
     cam.top = 24;
     cam.bottom = -24;
     cam.left = -24;
     cam.right = 24;
     cam.far = 64;
-    if (dir.current.shadow) {
-      dir.current.shadow.bias = -0.004;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    dir.current.shadow.bias = -0.004;
   }, []);
   return (
     <directionalLight
@@ -402,4 +415,4 @@ const DirLight = ({
   );
 };
 
-export default memo(Beams);
+export default Beams;

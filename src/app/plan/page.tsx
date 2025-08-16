@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense, useRef } from 'react'
+import { useState, useEffect, useCallback, Suspense, useRef, memo, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import PlanCard from '@/components/PlanCard'
+import PageTransition from '@/components/PageTransition'
 import dynamic from 'next/dynamic'
 
 // Dynamically import Beams to avoid SSR issues
@@ -129,19 +130,24 @@ interface PlanData {
   thirtyDayPlan?: Record<string, SimplifiedPhase>
 }
 
-function PlanPageContent() {
+const PlanPageContent = memo(() => {
   const searchParams = useSearchParams()
   const [plan, setPlan] = useState<PlanData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const hasCalledAPI = useRef(false)
 
-  const idea = searchParams.get('idea')
-  const location = searchParams.get('location')
-  const budget = searchParams.get('budget')
-  const timeline = searchParams.get('timeline')
-  const businessType = searchParams.get('businessType')
-  const currency = searchParams.get('currency')
+  // Memoize search params
+  const searchParamsData = useMemo(() => ({
+    idea: searchParams.get('idea'),
+    location: searchParams.get('location'),
+    budget: searchParams.get('budget'),
+    timeline: searchParams.get('timeline'),
+    businessType: searchParams.get('businessType'),
+    currency: searchParams.get('currency')
+  }), [searchParams])
+
+  const { idea, location, budget, timeline, businessType, currency } = searchParamsData
 
   const generatePlan = useCallback(async () => {
     // Prevent duplicate API calls
@@ -230,7 +236,7 @@ function PlanPageContent() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-neutral-50 via-white to-neutral-50 relative overflow-hidden">
+      <div className="bg-black relative overflow-hidden">
         {/* Add the same 3D animated background with homepage settings */}
         <div className="fixed inset-0 w-full h-full z-0">
           <Beams
@@ -247,7 +253,7 @@ function PlanPageContent() {
         
         {/* Minimalistic loading content */}
         <div className="relative z-10 flex items-center justify-center p-4 py-20 md:py-32">
-          <div className="bg-black/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/40 p-8 md:p-12 max-w-lg text-center">
+          <div className="bg-black/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/40 p-8 md:p-12 max-w-2xl text-center">
             
             {/* Simple elegant loading indicator */}
             <div className="mb-8 md:mb-12">
@@ -282,7 +288,7 @@ function PlanPageContent() {
 
               {/* Premium quote */}
               <p className="text-white/60 text-sm font-light italic mt-8 md:mt-12">
-                "Every successful business started with a great plan"
+                &ldquo;Every successful business started with a great plan&rdquo;
               </p>
             </div>
           </div>
@@ -324,21 +330,16 @@ function PlanPageContent() {
       <PlanCard plan={plan} isLoading={loading} />
     </div>
   )
-}
+})
 
-export default function PlanPage() {
+PlanPageContent.displayName = 'PlanPageContent'
+
+export default memo(function PlanPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center py-20 md:py-32">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 md:h-32 md:w-32 border-b-2 border-blue-600 mb-6 md:mb-8"></div>
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4">
-            Loading...
-          </h2>
-        </div>
-      </div>
-    }>
-      <PlanPageContent />
-    </Suspense>
+    <PageTransition>
+      <Suspense fallback={<div />}>
+        <PlanPageContent />
+      </Suspense>
+    </PageTransition>
   )
-}
+})

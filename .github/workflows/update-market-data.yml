@@ -1,0 +1,59 @@
+name: Update Market Data
+
+on:
+  schedule:
+    # Run every 6 hours at minutes 0, 6, 12, 18 UTC
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual triggering
+    inputs:
+      force_update:
+        description: 'Force update all industries'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+        - 'false'
+        - 'true'
+
+env:
+  DEPLOYMENT_URL: ${{ secrets.DEPLOYMENT_URL || 'https://your-app.vercel.app' }}
+  CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+jobs:
+  update-market-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Update Market Data
+      run: |
+        if [ "${{ github.event.inputs.force_update }}" = "true" ]; then
+          echo "🔥 Running force update for all industries..."
+          curl -X POST "${{ env.DEPLOYMENT_URL }}/api/market-data" \
+            -H "Content-Type: application/json" \
+            -H "X-Cron-Secret: ${{ env.CRON_SECRET }}" \
+            -d '{"action": "force_update_all"}' \
+            --fail --show-error --silent | jq '.'
+        else
+          echo "🔄 Running scheduled market data updates..."
+          curl -X POST "${{ env.DEPLOYMENT_URL }}/api/market-data" \
+            -H "Content-Type: application/json" \
+            -H "X-Cron-Secret: ${{ env.CRON_SECRET }}" \
+            -d '{"action": "update_all"}' \
+            --fail --show-error --silent | jq '.'
+        fi
+
+    - name: Health Check
+      run: |
+        echo "📊 Checking market data system health..."
+        curl -X GET "${{ env.DEPLOYMENT_URL }}/api/market-data?action=stats" \
+          --fail --show-error --silent | jq '.'
+        echo "✅ Market data update workflow completed"
+
+    - name: Notify on Failure
+      if: failure()
+      run: |
+        echo "❌ Market data update failed"
+        curl -X GET "${{ env.DEPLOYMENT_URL }}/api/market-data?action=health" || echo "Health check also failed"

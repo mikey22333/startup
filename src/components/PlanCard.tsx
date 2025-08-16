@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2 } from 'lucide-react'
+import { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react'
+import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield } from 'lucide-react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -38,7 +38,26 @@ const safeRender = (value: any): string => {
       if (value.SOM) parts.push(`SOM: ${value.SOM}`)
       return parts.join(', ')
     }
-    return JSON.stringify(value)
+    // Handle common object patterns like {name, advantage}, {name, description}, etc.
+    if ('name' in value && 'advantage' in value) {
+      return `${value.name}${value.advantage ? ` (${value.advantage})` : ''}`
+    }
+    if ('name' in value && 'description' in value) {
+      return `${value.name}${value.description ? ` - ${value.description}` : ''}`
+    }
+    if ('name' in value) {
+      return value.name
+    }
+    // Handle arrays
+    if (Array.isArray(value)) {
+      return value.map(safeRender).join(', ')
+    }
+    // Fallback to JSON string but make it more readable
+    try {
+      return JSON.stringify(value, null, 0).replace(/[{}",]/g, ' ').trim()
+    } catch {
+      return String(value)
+    }
   }
   return String(value)
 }
@@ -58,8 +77,8 @@ const generateMarketGrowthData = (plan: any): { labels: string[], data: number[]
   
   // Extract growth rate from market analysis
   let baseGrowthRate = 5 // default 5% growth
-  if (plan.marketAnalysis?.marketSize?.cagr) {
-    const cagrMatch = plan.marketAnalysis.marketSize.cagr.match(/(\d+\.?\d*)%/)
+  if (plan?.marketAnalysis?.marketSize?.cagr) {
+    const cagrMatch = plan?.marketAnalysis?.marketSize?.cagr.match(/(\d+\.?\d*)%/)
     if (cagrMatch) {
       baseGrowthRate = parseFloat(cagrMatch[1])
     }
@@ -97,7 +116,7 @@ interface SimplifiedPhase {
 
 interface BusinessScope {
   targetCustomers?: string
-  competitors?: string[]
+  competitors?: (string | { name: string; advantage?: string })[]
   growthPotential?: string
   marketReadiness?: string
 }
@@ -280,6 +299,19 @@ interface Legal {
 interface PlanData {
   summary?: string
   executiveSummary?: string
+  originalIdeaAcknowledgment?: string
+  businessIdeaReview?: {
+    ideaAssessment?: string
+    profitabilityAnalysis?: string
+    marketTiming?: string
+    competitiveAdvantage?: string
+    riskLevel?: string
+    recommendationScore?: number
+    criticalSuccess?: string
+    successFactors?: string[]
+    challenges?: string[]
+    potentialPitfalls?: string[]
+  }
   marketAnalysis?: MarketAnalysis
   competitiveAnalysis?: CompetitiveAnalysis
   riskAnalysis?: Risk[]
@@ -384,13 +416,18 @@ interface DerivedStep {
   deliverables: string[]
 }
 
-export default function PlanCard({ plan, isLoading }: PlanCardProps) {
+export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
   const [activeSection, setActiveSection] = useState<string>('overview')
+
+  // Memoize section change handler
+  const handleSectionChange = useCallback((section: string) => {
+    setActiveSection(section)
+  }, [])
 
   if (isLoading) {
     return (
       <div className="bg-gradient-to-br from-neutral-50 via-white to-neutral-50 py-8 md:py-16">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="space-y-6 md:space-y-8">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto bg-neutral-100 rounded-2xl animate-pulse" />
@@ -446,8 +483,8 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
   }
 
   const derivedActionPlan: DerivedStep[] = (() => {
-    if (plan?.actionPlan && plan.actionPlan.length) {
-      return plan.actionPlan.map(s => ({
+    if (plan?.actionPlan && plan?.actionPlan.length) {
+      return plan?.actionPlan.map(s => ({
         name: s.stepName || 'Unnamed Step',
         phase: s.phase || 'Planning',
         description: s.description || 'No description available',
@@ -457,8 +494,8 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
       }))
     }
     
-    if (plan.thirtyDayPlan) {
-      return Object.values(plan.thirtyDayPlan).map((p, idx) => {
+    if (plan?.thirtyDayPlan) {
+      return Object.values(plan?.thirtyDayPlan).map((p, idx) => {
         const actions = Array.isArray(p.actions) ? p.actions.join(', ') : (p.actions || 'No actions specified')
         return {
           name: p.title || `Phase ${idx + 1}`,
@@ -499,7 +536,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
 
   return (
     <div className="bg-gradient-to-br from-neutral-50 via-white to-neutral-50 py-6 md:py-12">
-      <div className="max-w-5xl mx-auto px-5 md:px-8 lg:px-12">
+      <div className="max-w-7xl mx-auto px-5 md:px-8 lg:px-12">
         
         {/* Header */}
         <div className="text-center mb-8 md:mb-12">
@@ -509,8 +546,8 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
             <div className="w-2 h-2 bg-neutral-800 rounded-full" />
           </div>
           
-          <h1 className="text-2xl md:text-5xl font-light text-neutral-900 mb-4 md:mb-6 max-w-4xl mx-auto leading-tight">
-            {plan.feasibility?.marketType || 'Custom'} Project
+          <h1 className="text-2xl md:text-5xl font-light text-neutral-900 mb-4 md:mb-6 max-w-6xl mx-auto leading-tight">
+            {plan?.feasibility?.marketType || 'Custom'} Project
           </h1>
           
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 mb-6 md:mb-8">
@@ -535,13 +572,13 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
               <div className="p-2 bg-neutral-50 rounded-xl group-hover:bg-neutral-100 transition-colors">
                 <Building2 className="w-4 md:w-5 h-4 md:h-5 text-neutral-600" />
               </div>
-              <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(plan.feasibility?.difficultyLevel)}`}>
-                {plan.feasibility?.difficultyLevel || 'Unknown'}
+              <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(plan?.feasibility?.difficultyLevel)}`}>
+                {plan?.feasibility?.difficultyLevel || 'Unknown'}
               </span>
             </div>
             <div className="space-y-1">
               <p className="text-xs text-neutral-500 font-medium tracking-wide uppercase">Business Type</p>
-              <p className="text-lg md:text-xl font-semibold text-neutral-900">{plan.feasibility?.marketType || 'Custom'}</p>
+              <p className="text-lg md:text-xl font-semibold text-neutral-900">{plan?.feasibility?.marketType || 'Custom'}</p>
             </div>
           </div>
 
@@ -554,7 +591,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
             </div>
             <div className="space-y-1">
               <p className="text-xs text-neutral-500 font-medium tracking-wide uppercase">Time to Launch</p>
-              <p className="text-lg md:text-xl font-semibold text-neutral-900">{plan.feasibility?.estimatedTimeToLaunch || 'TBD'}</p>
+              <p className="text-lg md:text-xl font-semibold text-neutral-900">{plan?.feasibility?.estimatedTimeToLaunch || 'TBD'}</p>
             </div>
           </div>
 
@@ -567,7 +604,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
             </div>
             <div className="space-y-1">
               <p className="text-xs text-neutral-500 font-medium tracking-wide uppercase">Investment Needed</p>
-              <p className="text-lg md:text-xl font-semibold text-neutral-900">{plan.feasibility?.estimatedStartupCost || 'TBD'}</p>
+              <p className="text-lg md:text-xl font-semibold text-neutral-900">{plan?.feasibility?.estimatedStartupCost || 'TBD'}</p>
             </div>
           </div>
 
@@ -581,7 +618,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
             <div className="space-y-1">
               <p className="text-xs text-neutral-500 font-medium tracking-wide uppercase">Marketing Budget</p>
               <p className="text-lg md:text-xl font-semibold text-neutral-900">
-                {plan.marketingStrategy?.totalBudget || plan.marketingPlan?.budget || 'TBD'}
+                {plan?.marketingPlan?.budget || plan?.marketingStrategy?.totalBudget || 'TBD'}
               </p>
             </div>
           </div>
@@ -590,11 +627,149 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
         {/* Executive Summary */}
         <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-black shadow-lg mb-8 md:mb-16">
           <h2 className="text-xl md:text-2xl font-light text-neutral-900 mb-4 md:mb-6">Executive Summary</h2>
-          <p className="text-base md:text-lg text-neutral-700 leading-relaxed font-light">{plan.summary}</p>
+          <p className="text-base md:text-lg text-neutral-700 leading-relaxed font-light">{plan?.executiveSummary || plan?.summary}</p>
         </div>
 
+        {/* Original Business Idea Acknowledgment - Hidden per user request */}
+        {false && plan?.originalIdeaAcknowledgment && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-blue-200 shadow-lg mb-8 md:mb-16">
+            <div className="flex items-center space-x-3 mb-4 md:mb-6">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <Lightbulb className="w-4 h-4 text-white" />
+              </div>
+              <h2 className="text-xl md:text-2xl font-light text-neutral-900">Your Business Idea</h2>
+            </div>
+            <p className="text-base md:text-lg text-neutral-700 leading-relaxed font-light">{plan?.originalIdeaAcknowledgment}</p>
+          </div>
+        )}
+
+        {/* Business Idea Review */}
+        {plan?.businessIdeaReview && (
+          <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-black shadow-lg mb-8 md:mb-16">
+            <div className="flex items-center space-x-3 mb-6 md:mb-8">
+              <div className="w-1 h-6 md:h-8 bg-blue-500 rounded-full" />
+              <h2 className="text-xl md:text-2xl font-light text-neutral-900">Business Idea Review</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                {/* Idea Assessment */}
+                <div>
+                  <h3 className="text-lg font-medium text-neutral-900 mb-3">Idea Assessment</h3>
+                  <p className="text-neutral-700 leading-relaxed">{plan?.businessIdeaReview?.ideaAssessment}</p>
+                </div>
+
+                {/* Profitability Analysis */}
+                <div>
+                  <h3 className="text-lg font-medium text-neutral-900 mb-3">Profitability Analysis</h3>
+                  <p className="text-neutral-700 leading-relaxed">{plan?.businessIdeaReview?.profitabilityAnalysis}</p>
+                </div>
+
+                {/* Market Timing */}
+                <div>
+                  <h3 className="text-lg font-medium text-neutral-900 mb-3">Market Timing</h3>
+                  <p className="text-neutral-700 leading-relaxed">{plan?.businessIdeaReview?.marketTiming}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {/* Recommendation Score */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-medium text-neutral-900">Recommendation Score</h3>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {plan?.businessIdeaReview?.recommendationScore}/10
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full" 
+                      style={{ width: `${(plan?.businessIdeaReview?.recommendationScore || 0) * 10}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Risk Level */}
+                <div>
+                  <h3 className="text-lg font-medium text-neutral-900 mb-3">Risk Assessment</h3>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      plan?.businessIdeaReview?.riskLevel?.includes('LOW') ? 'bg-green-100 text-green-800' :
+                      plan?.businessIdeaReview?.riskLevel?.includes('MEDIUM') ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {plan?.businessIdeaReview?.riskLevel}
+                    </span>
+                  </div>
+                  <p className="text-neutral-700 text-sm leading-relaxed">{plan?.businessIdeaReview?.riskLevel}</p>
+                </div>
+
+                {/* Critical Success Factor */}
+                <div>
+                  <h3 className="text-lg font-medium text-neutral-900 mb-3">Critical Success Factor</h3>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <p className="text-amber-800 font-medium">{plan?.businessIdeaReview?.criticalSuccess}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Success Factors */}
+            {plan?.businessIdeaReview?.successFactors && plan?.businessIdeaReview?.successFactors.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-neutral-200">
+                <h3 className="text-lg font-medium text-neutral-900 mb-4">Key Success Factors</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {plan?.businessIdeaReview?.successFactors.map((factor: string, index: number) => (
+                    <div key={index} className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span className="text-neutral-700">{factor}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Challenges & Potential Pitfalls */}
+            <div className="mt-8 pt-6 border-t border-neutral-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Challenges */}
+                {plan?.businessIdeaReview?.challenges && plan?.businessIdeaReview?.challenges.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-neutral-900 mb-4">Major Challenges</h3>
+                    <div className="space-y-2">
+                      {plan?.businessIdeaReview?.challenges.map((challenge: string, index: number) => (
+                        <div key={index} className="flex items-start space-x-2">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <span className="text-neutral-700">{challenge}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Potential Pitfalls */}
+                {plan?.businessIdeaReview?.potentialPitfalls && plan?.businessIdeaReview?.potentialPitfalls.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-neutral-900 mb-4">Potential Pitfalls</h3>
+                    <div className="space-y-2">
+                      {plan?.businessIdeaReview?.potentialPitfalls.map((pitfall: string, index: number) => (
+                        <div key={index} className="flex items-start space-x-2">
+                          <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <span className="text-neutral-700">{pitfall}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Market Analysis & Business Scope */}
-        {plan.businessScope && (
+        {plan?.businessScope && (
           <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-black shadow-lg mb-8 md:mb-16">
             <div className="flex items-center space-x-3 mb-6 md:mb-8">
               <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
@@ -603,7 +778,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
               <div className="space-y-6 md:space-y-8">
-                {plan.businessScope.targetCustomers && (
+                {plan?.businessScope?.targetCustomers && (
                   <div>
                     <div className="flex items-center space-x-3 mb-3 md:mb-4">
                       <div className="p-2 bg-neutral-50 rounded-xl">
@@ -611,11 +786,11 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                       </div>
                       <h3 className="text-base md:text-lg font-medium text-neutral-900">Target Customers</h3>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light">{plan.businessScope.targetCustomers}</p>
+                    <p className="text-neutral-700 leading-relaxed font-light">{plan?.businessScope?.targetCustomers}</p>
                   </div>
                 )}
 
-                {plan.businessScope.growthPotential && (
+                {plan?.businessScope?.growthPotential && (
                   <div>
                     <div className="flex items-center space-x-3 mb-3 md:mb-4">
                       <div className="p-2 bg-neutral-50 rounded-xl">
@@ -623,13 +798,13 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                       </div>
                       <h3 className="text-base md:text-lg font-medium text-neutral-900">Growth Potential</h3>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light">{plan.businessScope.growthPotential}</p>
+                    <p className="text-neutral-700 leading-relaxed font-light">{plan?.businessScope?.growthPotential}</p>
                   </div>
                 )}
               </div>
 
               <div className="space-y-6 md:space-y-8">
-                {plan.businessScope.competitors && plan.businessScope.competitors.length > 0 && (
+                {plan?.businessScope?.competitors && plan?.businessScope?.competitors.length > 0 && (
                   <div>
                     <div className="flex items-center space-x-3 mb-3 md:mb-4">
                       <div className="p-2 bg-neutral-50 rounded-xl">
@@ -638,17 +813,19 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                       <h3 className="text-base md:text-lg font-medium text-neutral-900">Competition & Advantage</h3>
                     </div>
                     <div className="space-y-2 md:space-y-3">
-                      {plan.businessScope.competitors?.map((competitor, index) => (
+                      {plan?.businessScope?.competitors?.map((competitor, index) => (
                         <div key={index} className="flex items-center space-x-3">
                           <div className="w-1 h-1 bg-neutral-400 rounded-full" />
-                          <span className="text-neutral-700 font-light text-sm md:text-base">{competitor}</span>
+                          <span className="text-neutral-700 font-light text-sm md:text-base">
+                            {typeof competitor === 'string' ? competitor : competitor?.name || safeRender(competitor)}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {plan.businessScope.marketReadiness && (
+                {plan?.businessScope?.marketReadiness && (
                   <div>
                     <div className="flex items-center space-x-3 mb-3 md:mb-4">
                       <div className="p-2 bg-neutral-50 rounded-xl">
@@ -656,7 +833,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                       </div>
                       <h3 className="text-base md:text-lg font-medium text-neutral-900">Market Readiness</h3>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light">{plan.businessScope.marketReadiness}</p>
+                    <p className="text-neutral-700 leading-relaxed font-light">{plan?.businessScope?.marketReadiness}</p>
                   </div>
                 )}
               </div>
@@ -665,7 +842,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
         )}
 
         {/* 8-Pillar Business Framework Analysis */}
-        {(plan.demandValidation || plan.valueProposition || plan.operations || plan.marketingStrategy || plan.financialAnalysis || plan.riskAssessment || plan.growthStrategy) && (
+        {(plan?.demandValidation || plan?.valueProposition || plan?.operations || plan?.marketingStrategy || plan?.financialAnalysis || plan?.riskAssessment || plan?.growthStrategy) && (
           <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-black shadow-lg mb-8 md:mb-16">
             <div className="flex items-center space-x-3 mb-6 md:mb-8">
               <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
@@ -677,7 +854,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
               {/* Group items in responsive rows */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                 {/* Demand Validation */}
-                {plan.demandValidation && (
+                {plan?.demandValidation && (
                   <div className="space-y-3 md:space-y-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 md:w-10 h-8 md:h-10 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -685,29 +862,29 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                       </div>
                       <h3 className="text-base md:text-lg font-medium text-neutral-900">Market Validation</h3>
                     </div>
-                    {plan.demandValidation.validationMethods && (
+                    {plan?.demandValidation?.validationMethods && (
                       <div className="space-y-2">
                         <h4 className="font-medium text-neutral-800 text-sm md:text-base">Validation Methods:</h4>
                         <ul className="space-y-1">
-                          {plan.demandValidation.validationMethods.map((method, index) => (
+                          {plan?.demandValidation?.validationMethods.map((method, index) => (
                             <li key={index} className="text-neutral-700 text-sm flex items-start space-x-2">
                               <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                              <span>{method}</span>
+                              <span>{typeof method === 'string' ? method : safeRender(method)}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
-                    {plan.demandValidation.marketSize && (
+                    {plan?.demandValidation?.marketSize && (
                       <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">
-                        <strong>Market Size:</strong> {safeRender(plan.demandValidation.marketSize)}
+                        <strong>Market Size:</strong> {safeRender(plan?.demandValidation?.marketSize)}
                       </p>
                     )}
                   </div>
                 )}
 
                 {/* Value Proposition */}
-                {plan.valueProposition && (
+                {plan?.valueProposition && (
                   <div className="space-y-3 md:space-y-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 md:w-10 h-8 md:h-10 bg-purple-50 rounded-xl flex items-center justify-center">
@@ -715,18 +892,18 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                       </div>
                       <h3 className="text-base md:text-lg font-medium text-neutral-900">Value Proposition</h3>
                     </div>
-                    {plan.valueProposition.uniqueDifferentiator && (
-                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base"><strong>Key Differentiator:</strong> {plan.valueProposition.uniqueDifferentiator}</p>
+                    {plan?.valueProposition?.uniqueDifferentiator && (
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base"><strong>Key Differentiator:</strong> {plan?.valueProposition?.uniqueDifferentiator}</p>
                     )}
-                    {plan.valueProposition.competitiveHook && (
-                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base"><strong>Competitive Hook:</strong> {plan.valueProposition.competitiveHook}</p>
+                    {plan?.valueProposition?.competitiveHook && (
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base"><strong>Competitive Hook:</strong> {plan?.valueProposition?.competitiveHook}</p>
                     )}
                   </div>
                 )}
               </div>
 
               {/* Operations Section */}
-              {plan.operations && (
+              {plan?.operations && (
                 <div className="space-y-3 md:space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 md:w-10 h-8 md:h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
@@ -736,21 +913,21 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                   </div>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                    {plan.operations.deliveryProcess && (
+                    {plan?.operations?.deliveryProcess && (
                       <div className="space-y-2">
                         <h4 className="font-medium text-neutral-800 text-sm md:text-base">Delivery Process:</h4>
-                        <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.operations.deliveryProcess}</p>
+                        <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan?.operations?.deliveryProcess}</p>
                       </div>
                     )}
 
-                    {plan.operations.suppliers && (
+                    {plan?.operations?.suppliers && (
                       <div className="space-y-2">
                         <h4 className="font-medium text-neutral-800 text-sm md:text-base">Key Suppliers:</h4>
                         <ul className="space-y-1">
                           {plan.operations.suppliers.map((supplier, index) => (
                             <li key={index} className="text-neutral-700 text-sm flex items-start space-x-2">
                               <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                              <span>{supplier}</span>
+                              <span>{typeof supplier === 'string' ? supplier : safeRender(supplier)}</span>
                             </li>
                           ))}
                         </ul>
@@ -807,7 +984,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                         <h4 className="font-medium text-neutral-800 text-sm md:text-base">Key Risks:</h4>
                         <ul className="space-y-1">
                           {plan.riskAssessment.topRisks.map((risk, index) => (
-                            <li key={index} className="text-neutral-700 text-sm">{risk}</li>
+                            <li key={index} className="text-neutral-700 text-sm">{typeof risk === 'string' ? risk : safeRender(risk)}</li>
                           ))}
                         </ul>
                       </div>
@@ -888,7 +1065,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                         {plan.growthStrategy.upsellOpportunities.map((opportunity, index) => (
                           <li key={index} className="text-neutral-700 text-sm flex items-start space-x-2">
                             <ArrowRight className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
-                            <span>{opportunity}</span>
+                            <span>{typeof opportunity === 'string' ? opportunity : safeRender(opportunity)}</span>
                           </li>
                         ))}
                       </ul>
@@ -1617,7 +1794,7 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                         <div className="flex flex-wrap gap-2">
                           {milestone.dependencies.map((dep, depIndex) => (
                             <span key={depIndex} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                              {dep}
+                              {typeof dep === 'string' ? dep : safeRender(dep)}
                             </span>
                           ))}
                         </div>
@@ -1763,54 +1940,58 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                 <h2 className="text-xl md:text-2xl font-light text-neutral-900">Funding Strategy</h2>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                {plan.funding.requirements && (
-                  <div className="space-y-3 md:space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 md:w-10 h-8 md:h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                        <DollarSign className="w-4 md:w-5 h-4 md:h-5 text-green-600" />
+              <div className="space-y-8 md:space-y-10">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                  {plan.funding.requirements && (
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 md:w-10 h-8 md:h-10 bg-green-50 rounded-xl flex items-center justify-center">
+                          <DollarSign className="w-4 md:w-5 h-4 md:h-5 text-green-600" />
+                        </div>
+                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Funding Requirements</h3>
                       </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Funding Requirements</h3>
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base pl-11 md:pl-13">{plan.funding.requirements}</p>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.funding.requirements}</p>
-                  </div>
-                )}
+                  )}
 
-                {plan.funding.useOfFunds && (
-                  <div className="space-y-3 md:space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 md:w-10 h-8 md:h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                        <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-blue-600" />
+                  {plan.funding.useOfFunds && (
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 md:w-10 h-8 md:h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                          <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-blue-600" />
+                        </div>
+                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Use of Funds</h3>
                       </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Use of Funds</h3>
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base pl-11 md:pl-13">{plan.funding.useOfFunds}</p>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.funding.useOfFunds}</p>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {plan.funding.investorTargeting && (
-                  <div className="space-y-3 md:space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 md:w-10 h-8 md:h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                        <Users className="w-4 md:w-5 h-4 md:h-5 text-purple-600" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                  {plan.funding.investorTargeting && (
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 md:w-10 h-8 md:h-10 bg-purple-50 rounded-xl flex items-center justify-center">
+                          <Users className="w-4 md:w-5 h-4 md:h-5 text-purple-600" />
+                        </div>
+                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Investor Targeting</h3>
                       </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Investor Targeting</h3>
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base pl-11 md:pl-13">{plan.funding.investorTargeting}</p>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.funding.investorTargeting}</p>
-                  </div>
-                )}
+                  )}
 
-                {plan.funding.exitStrategy && (
-                  <div className="space-y-3 md:space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 md:w-10 h-8 md:h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                        <ArrowRight className="w-4 md:w-5 h-4 md:h-5 text-orange-600" />
+                  {plan.funding.exitStrategy && (
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 md:w-10 h-8 md:h-10 bg-orange-50 rounded-xl flex items-center justify-center">
+                          <ArrowRight className="w-4 md:w-5 h-4 md:h-5 text-orange-600" />
+                        </div>
+                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Exit Strategy</h3>
                       </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Exit Strategy</h3>
+                      <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base pl-11 md:pl-13">{plan.funding.exitStrategy}</p>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.funding.exitStrategy}</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1823,52 +2004,52 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
                 <h2 className="text-xl md:text-2xl font-light text-neutral-900">Legal & Compliance</h2>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 auto-rows-max">
                 {plan.legal.businessEntity && (
-                  <div className="space-y-3 md:space-y-4">
+                  <div className="bg-blue-50 rounded-xl p-6 space-y-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 md:w-10 h-8 md:h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                        <Building2 className="w-4 md:w-5 h-4 md:h-5 text-blue-600" />
+                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-blue-600" />
                       </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Business Entity</h3>
+                      <h3 className="text-lg font-semibold text-neutral-900">Business Entity</h3>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.legal.businessEntity}</p>
+                    <p className="text-neutral-700 leading-relaxed text-sm md:text-base">{plan.legal.businessEntity}</p>
                   </div>
                 )}
 
                 {plan.legal.intellectualProperty && (
-                  <div className="space-y-3 md:space-y-4">
+                  <div className="bg-purple-50 rounded-xl p-6 space-y-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 md:w-10 h-8 md:h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                        <Lightbulb className="w-4 md:w-5 h-4 md:h-5 text-purple-600" />
+                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <Lightbulb className="w-5 h-5 text-purple-600" />
                       </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Intellectual Property</h3>
+                      <h3 className="text-lg font-semibold text-neutral-900">Intellectual Property</h3>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.legal.intellectualProperty}</p>
+                    <p className="text-neutral-700 leading-relaxed text-sm md:text-base">{plan.legal.intellectualProperty}</p>
                   </div>
                 )}
 
                 {plan.legal.compliance && (
-                  <div className="space-y-3 md:space-y-4">
+                  <div className="bg-green-50 rounded-xl p-6 space-y-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 md:w-10 h-8 md:h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                        <CheckCircle2 className="w-4 md:w-5 h-4 md:h-5 text-green-600" />
+                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
                       </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Regulatory Compliance</h3>
+                      <h3 className="text-lg font-semibold text-neutral-900">Regulatory Compliance</h3>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.legal.compliance}</p>
+                    <p className="text-neutral-700 leading-relaxed text-sm md:text-base">{plan.legal.compliance}</p>
                   </div>
                 )}
 
                 {plan.legal.insurance && (
-                  <div className="space-y-3 md:space-y-4">
+                  <div className="bg-orange-50 rounded-xl p-6 space-y-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 md:w-10 h-8 md:h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                        <Users className="w-4 md:w-5 h-4 md:h-5 text-orange-600" />
+                      <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-orange-600" />
                       </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Insurance Requirements</h3>
+                      <h3 className="text-lg font-semibold text-neutral-900">Insurance Requirements</h3>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed font-light text-sm md:text-base">{plan.legal.insurance}</p>
+                    <p className="text-neutral-700 leading-relaxed text-sm md:text-base">{plan.legal.insurance}</p>
                   </div>
                 )}
               </div>
@@ -2059,4 +2240,4 @@ export default function PlanCard({ plan, isLoading }: PlanCardProps) {
       </div>
     </div>
   )
-}
+})
