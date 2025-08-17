@@ -2,6 +2,7 @@
 
 import { useState, memo, lazy } from 'react'
 import { useRouter } from 'next/navigation'
+import { Menu, X } from 'lucide-react'
 import PageTransition from '@/components/PageTransition'
 
 // Lazy load heavy components
@@ -14,6 +15,7 @@ export default memo(function ContactPage() {
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,8 +53,8 @@ export default memo(function ContactPage() {
   return (
     <PageTransition>
       <div className="bg-black relative">
-        {/* Navigation */}
-        <nav className="absolute top-6 left-6 right-6 z-20 flex justify-between items-center">
+        {/* Desktop Navigation */}
+        <nav className="absolute top-6 left-6 right-6 z-20 hidden md:flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <button 
               onClick={() => router.push('/pricing')}
@@ -75,6 +77,73 @@ export default memo(function ContactPage() {
             Sign In
           </button>
         </nav>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="fixed top-6 left-6 z-50 p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/20 text-white hover:bg-black/60 transition-all duration-300"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Mobile Overlay */}
+          {isMobileMenuOpen && (
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          )}
+
+          {/* Mobile Slide-out Menu */}
+          <div className={`fixed top-0 left-0 h-full w-80 bg-black/90 backdrop-blur-xl border-r border-white/10 z-50 transform transition-transform duration-300 ease-in-out ${
+            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}>
+            {/* Close Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute top-6 right-6 p-2 text-white/70 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Menu Items */}
+            <div className="pt-20 px-8">
+              <nav className="space-y-6">
+                <button
+                  onClick={() => {
+                    router.push('/pricing')
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className="flex items-center w-full text-left text-white/90 hover:text-white text-lg font-medium py-3 px-4 rounded-lg hover:bg-white/10 transition-all duration-200"
+                >
+                  Pricing
+                </button>
+                
+                <button
+                  onClick={() => {
+                    router.push('/')
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className="flex items-center w-full text-left text-white/90 hover:text-white text-lg font-medium py-3 px-4 rounded-lg hover:bg-white/10 transition-all duration-200"
+                >
+                  Home
+                </button>
+                
+                <button
+                  onClick={() => {
+                    /* TODO: Implement authentication */
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className="flex items-center w-full text-left text-white/90 hover:text-white text-lg font-medium py-3 px-4 rounded-lg hover:bg-white/10 transition-all duration-200"
+                >
+                  Sign In
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
       
       {/* 3D Background */}
       <div className="fixed inset-0 z-0">
