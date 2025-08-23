@@ -217,3 +217,15 @@ src/app/admin/
 # Documentation with sensitive info
 MARKET_DATA_ENV.md
 SECURITY_CHECKLIST.md
+
+# SQL files and database scripts
+*.sql
+**/*.sql
+database/
+migrations/
+db-scripts/
+
+# Test scripts and utilities
+test-*.js
+reset-*.js
+*-test.js

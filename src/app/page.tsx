@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useCallback, useMemo, memo, lazy, Suspense } from 'react';
+import { useState, useCallback, useMemo, memo, lazy, Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Menu, X } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
 
 // Lazy load heavy components
 const Beams = lazy(() => import("@/components/Beams"))
@@ -96,7 +98,29 @@ export default memo(function HomePage() {
   const [timeline, setTimeline] = useState('')
   const [businessType, setBusinessType] = useState('')
   const [currency, setCurrency] = useState('USD')
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const router = useRouter()
+  const { user, signOut } = useAuth()
+
+  // Get user's first letter for profile
+  const getUserInitial = () => {
+    if (!user?.user_metadata?.full_name) return 'U'
+    return user.user_metadata.full_name.charAt(0).toUpperCase()
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (isDropdownOpen && !target.closest('.dropdown-container')) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isDropdownOpen])
 
   // Memoized handlers
   const handleSubmit = useCallback((e: React.FormEvent) => {
@@ -117,6 +141,19 @@ export default memo(function HomePage() {
   const handleExampleClick = useCallback((prompt: string) => {
     setIdea(prompt)
   }, [])
+
+  const toggleMobileNav = useCallback(() => {
+    setIsMobileNavOpen(prev => !prev)
+  }, [])
+
+  const closeMobileNav = useCallback(() => {
+    setIsMobileNavOpen(false)
+  }, [])
+
+  const handleNavigation = useCallback((path: string) => {
+    router.push(path)
+    closeMobileNav()
+  }, [router, closeMobileNav])
 
   // Memoized options
   const timelineOptions = useMemo(() => [
@@ -167,8 +204,88 @@ export default memo(function HomePage() {
 
   return (
     <div className="bg-black relative">
-      {/* Navigation - Left Side */}
-      <div className="absolute top-6 left-6 z-20 flex items-center space-x-4">
+      {/* Mobile Navigation Overlay */}
+      {isMobileNavOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={closeMobileNav}
+        />
+      )}
+
+      {/* Mobile Navigation Sidebar */}
+      <div className={`fixed top-0 left-0 h-full w-64 bg-black/90 backdrop-blur-md border-r border-white/10 z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+        isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="p-6">
+          {/* Close Button */}
+          <button
+            onClick={closeMobileNav}
+            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Logo/Brand */}
+          <div className="mb-8 mt-4">
+            <h2 className="text-xl font-bold text-white">Idea2Action</h2>
+            <p className="text-white/60 text-sm mt-1">Business Planning</p>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="space-y-4">
+            <button
+              onClick={() => handleNavigation('/workspace')}
+              className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
+            >
+              My Workspace
+            </button>
+            <button
+              onClick={() => handleNavigation('/pricing')}
+              className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
+            >
+              Pricing
+            </button>
+            <button
+              onClick={() => handleNavigation('/contact')}
+              className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
+            >
+              Contact
+            </button>
+            {user ? (
+              <div className="border-t border-white/10 mt-6 pt-6">
+                <div className="flex items-center space-x-3 px-4 py-3 text-white/90">
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium">
+                    {getUserInitial()}
+                  </div>
+                  <span className="text-sm">{user.user_metadata?.full_name || 'User'}</span>
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium mt-2"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => router.push('/auth')}
+                className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium border-t border-white/10 mt-6 pt-6"
+              >
+                Sign In
+              </button>
+            )}
+          </nav>
+        </div>
+      </div>
+
+      {/* Desktop Navigation - Left Side */}
+      <div className="absolute top-6 left-6 z-20 hidden lg:flex items-center space-x-4">
+        <button 
+          onClick={() => router.push('/workspace')}
+          className="px-6 py-2.5 text-white/95 hover:text-white bg-black/20 hover:bg-black/30 rounded-full transition-all duration-300 font-medium text-sm border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl tracking-wide"
+        >
+          My Workspace
+        </button>
         <button 
           onClick={() => router.push('/pricing')}
           className="px-6 py-2.5 text-white/95 hover:text-white bg-black/20 hover:bg-black/30 rounded-full transition-all duration-300 font-medium text-sm border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl tracking-wide"
@@ -183,14 +300,53 @@ export default memo(function HomePage() {
         </button>
       </div>
 
-      {/* Navigation - Sign In/Sign Up */}
-      <div className="absolute top-6 right-6 z-20">
-        <button 
-          onClick={() => {/* TODO: Implement authentication */}}
-          className="px-6 py-2.5 text-white/95 hover:text-white bg-black/20 hover:bg-black/30 rounded-full transition-all duration-300 font-medium text-sm border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl tracking-wide"
+      {/* Mobile Hamburger Menu */}
+      <div className="absolute top-6 left-6 z-20 lg:hidden">
+        <button
+          onClick={toggleMobileNav}
+          className="p-2 text-white/90 hover:text-white bg-black/20 hover:bg-black/30 rounded-lg transition-all duration-300 border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg"
         >
-          Sign In
+          <Menu className="w-6 h-6" />
         </button>
+      </div>
+
+      {/* Desktop Navigation - Profile/Sign In */}
+      <div className="absolute top-6 right-6 z-20 hidden lg:block">
+        {user ? (
+          <div className="relative dropdown-container">
+            <button 
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-300 border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl flex items-center justify-center text-white font-medium"
+            >
+              {getUserInitial()}
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-black/90 backdrop-blur-md rounded-lg border border-white/10 shadow-xl py-2">
+                <div className="px-4 py-3 border-b border-white/10">
+                  <p className="text-white text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
+                  <p className="text-white/60 text-xs">{user.email}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    signOut()
+                    setIsDropdownOpen(false)
+                  }}
+                  className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button 
+            onClick={() => router.push('/auth')}
+            className="px-6 py-2.5 text-white/95 hover:text-white bg-black/20 hover:bg-black/30 rounded-full transition-all duration-300 font-medium text-sm border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl tracking-wide"
+          >
+            Sign In
+          </button>
+        )}
       </div>
       
       {/* 3D Background */}

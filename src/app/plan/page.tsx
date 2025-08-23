@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, Suspense, useRef, memo, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useAuth } from '@/components/AuthProvider'
+import { supabase } from '@/lib/supabase'
 import PlanCard from '@/components/PlanCard'
 import PageTransition from '@/components/PageTransition'
 import dynamic from 'next/dynamic'
@@ -132,6 +134,7 @@ interface PlanData {
 
 const PlanPageContent = memo(() => {
   const searchParams = useSearchParams()
+  const { user } = useAuth()
   const [plan, setPlan] = useState<PlanData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -139,6 +142,7 @@ const PlanPageContent = memo(() => {
 
   // Memoize search params
   const searchParamsData = useMemo(() => ({
+    id: searchParams.get('id'),
     idea: searchParams.get('idea'),
     location: searchParams.get('location'),
     budget: searchParams.get('budget'),
@@ -147,10 +151,10 @@ const PlanPageContent = memo(() => {
     currency: searchParams.get('currency')
   }), [searchParams])
 
-  const { idea, location, budget, timeline, businessType, currency } = searchParamsData
+  const { id, idea, location, budget, timeline, businessType, currency } = searchParamsData
 
   const generatePlan = useCallback(async () => {
-    // Prevent duplicate API calls
+    // This function is now mainly for manual retries
     if (hasCalledAPI.current) {
       console.log('API call already in progress or completed (generatePlan)')
       return
@@ -163,11 +167,21 @@ const PlanPageContent = memo(() => {
 
       console.log('Making API call with:', { idea: idea?.substring(0, 50), location, budget, timeline, businessType, currency })
 
+      // Get the session token to send with the request
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      
+      // Add authorization header if user is signed in
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+
       const response = await fetch('/api/generatePlan', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           idea,
           location,
@@ -194,19 +208,121 @@ const PlanPageContent = memo(() => {
   }, [idea, location, budget, timeline, businessType, currency])
 
   // Stable hash for current parameter set
-  const paramHash = JSON.stringify({ idea, location, budget, timeline, businessType, currency })
+  const paramHash = JSON.stringify({ id, idea, location, budget, timeline, businessType, currency })
+  const previousParamHash = useRef<string>('')
 
   useEffect(() => {
+    // Reset API call flag if parameters actually changed
+    if (previousParamHash.current !== paramHash) {
+      hasCalledAPI.current = false
+      previousParamHash.current = paramHash
+    }
+
+    // If we have an ID, load existing plan
+    if (id) {
+      const loadPlan = async () => {
+        try {
+          setLoading(true)
+          setError(null)
+
+          if (!user) {
+            setError('Please sign in to view your business plans')
+            return
+          }
+
+          const { data, error } = await supabase
+            .from('business_plans')
+            .select('*')
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .single()
+
+          if (error) {
+            throw error
+          }
+
+          if (!data) {
+            throw new Error('Business plan not found')
+          }
+
+          // Set the plan data from the database
+          setPlan(data.plan_data)
+        } catch (error: any) {
+          setError(error.message || 'Failed to load business plan')
+        } finally {
+          setLoading(false)
+        }
+      }
+      
+      loadPlan()
+      return
+    }
+
+    // Otherwise, generate new plan
     if (!idea) {
       setError('No business idea provided')
       setLoading(false)
       return
     }
 
-    // Reset flag when params change
-    hasCalledAPI.current = false
-    generatePlan()
-  }, [paramHash, generatePlan, idea])
+    // Prevent duplicate API calls
+    if (hasCalledAPI.current) {
+      console.log('API call already in progress or completed')
+      return
+    }
+    
+    const doGeneratePlan = async () => {
+      if (hasCalledAPI.current) return
+      hasCalledAPI.current = true
+      
+      try {
+        setLoading(true)
+        setError(null)
+
+        console.log('Making API call with:', { idea: idea?.substring(0, 50), location, budget, timeline, businessType, currency })
+
+        // Get the session token to send with the request
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        }
+        
+        // Add authorization header if user is signed in
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`
+        }
+
+        const response = await fetch('/api/generatePlan', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            idea,
+            location,
+            budget,
+            timeline,
+            businessType,
+            currency,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: `Server error: ${response.statusText}` }))
+          throw new Error(errorData.error || `Failed to generate plan: ${response.statusText}`)
+        }
+
+        const planData = await response.json()
+        setPlan(planData)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to generate plan')
+        hasCalledAPI.current = false // Reset on error so user can retry
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    doGeneratePlan()
+  }, [paramHash, user, id, idea, location, budget, timeline, businessType, currency])
 
   const exportToPDF = async () => {
     if (!plan) return

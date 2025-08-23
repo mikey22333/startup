@@ -3,6 +3,8 @@
 import { useState, useMemo, useCallback, memo, lazy, Suspense } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/AuthProvider'
+import { useSubscription } from '@/hooks/useSubscription'
 
 // Lazy load the Beams component for better performance
 const Beams = lazy(() => import("@/components/Beams"))
@@ -38,7 +40,7 @@ const PRICING_PLANS = [
     price: "$20",
     period: "per month",
     features: [
-      "Unlimited business plans",
+      "5 business plans per day",
       "Advanced competitor analysis",
       "Market positioning strategies",
       "Growth & scaling roadmaps",
@@ -54,6 +56,7 @@ const PRICING_PLANS = [
     price: "$120",
     period: "per month",
     features: [
+      "Unlimited business plans",
       "Everything in Pro",
       "Custom branding & white-label",
       "API access for integrations",
@@ -67,15 +70,33 @@ const PRICING_PLANS = [
 ]
 
 // Memoized pricing card component
-const PricingCard = memo(({ plan, onButtonClick }: { 
+const PricingCard = memo(({ 
+  plan, 
+  onButtonClick, 
+  isCurrentPlan, 
+  isUpgrade, 
+  usageInfo 
+}: { 
   plan: typeof PRICING_PLANS[0], 
-  onButtonClick: () => void 
+  onButtonClick: () => void,
+  isCurrentPlan?: boolean,
+  isUpgrade?: boolean,
+  usageInfo?: { used: number, limit: number | 'unlimited' }
 }) => (
   <div
     className={`relative bg-black/70 backdrop-blur-md rounded-2xl p-8 border transition-all duration-300 hover:bg-black/80 hover:scale-105 ${
       plan.isPopular ? 'border-white/30 shadow-2xl' : 'border-white/10'
-    }`}
+    } ${isCurrentPlan ? 'border-green-400/50 bg-green-900/20' : ''}`}
   >
+    {/* Current Plan Badge */}
+    {isCurrentPlan && (
+      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+        <span className="bg-green-500 text-black px-3 py-1 rounded-full text-xs font-medium">
+          Current Plan
+        </span>
+      </div>
+    )}
+
     {/* Icon */}
     <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mb-6">
       <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -90,18 +111,42 @@ const PricingCard = memo(({ plan, onButtonClick }: {
         <span className="text-4xl font-bold text-white">{plan.price}</span>
         {plan.period && <span className="text-white/60 ml-2">{plan.period}</span>}
       </div>
+
+      {/* Usage Info for Current Plan */}
+      {isCurrentPlan && usageInfo && (
+        <div className="mb-6 p-3 bg-white/5 rounded-lg border border-white/10">
+          <h4 className="text-white/80 text-sm font-medium mb-2">Today's Usage</h4>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-white/60">
+              {usageInfo.used} / {usageInfo.limit === 'unlimited' ? '∞' : usageInfo.limit} plans
+            </span>
+            <span className={`font-medium ${
+              usageInfo.limit !== 'unlimited' && usageInfo.used >= usageInfo.limit 
+                ? 'text-red-400' 
+                : 'text-green-400'
+            }`}>
+              {usageInfo.limit === 'unlimited' 
+                ? 'Unlimited' 
+                : `${Math.max(0, (usageInfo.limit as number) - usageInfo.used)} left`}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
 
     {/* CTA Button */}
     <button
       onClick={onButtonClick}
+      disabled={isCurrentPlan}
       className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-300 mb-8 ${
-        plan.isPopular
+        isCurrentPlan
+          ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+          : plan.isPopular
           ? 'bg-white text-black hover:bg-white/90 shadow-lg'
           : 'bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/20'
       }`}
     >
-      {plan.buttonText}
+      {isCurrentPlan ? 'Current Plan' : isUpgrade ? 'Upgrade' : plan.buttonText}
     </button>
 
     {/* Features */}
@@ -143,6 +188,8 @@ PricingCard.displayName = 'PricingCard'
 export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(false)
   const router = useRouter()
+  const { user } = useAuth()
+  const { usageStatus, upgradeSubscription, loading: subscriptionLoading } = useSubscription()
 
   // Memoized handlers
   const handleBack = useCallback(() => {
@@ -157,10 +204,39 @@ export default function PricingPage() {
     setIsAnnual(true)
   }, [])
 
-  const handlePlanSelect = useCallback((planName: string) => {
+  const handlePlanSelect = useCallback(async (planName: string) => {
     console.log(`Selected plan: ${planName}`)
-    // Add plan selection logic here
-  }, [])
+    
+    if (!user) {
+      router.push('/auth')
+      return
+    }
+
+    try {
+      let tierMap: { [key: string]: 'free' | 'pro' | 'pro+' } = {
+        'Basic': 'free',
+        'Pro': 'pro',
+        'Pro+': 'pro+'
+      }
+      
+      const newTier = tierMap[planName]
+      if (!newTier) return
+
+      // If user is already on this tier or higher, no need to upgrade
+      if (usageStatus?.subscriptionTier === newTier) {
+        alert(`You're already on the ${planName} plan!`)
+        return
+      }
+
+      // For now, just simulate the upgrade (in a real app, you'd integrate with Stripe/payment processor)
+      const result = await upgradeSubscription(newTier)
+      alert(`Successfully upgraded to ${planName} plan! Your daily usage has been reset.`)
+      
+    } catch (err) {
+      console.error('Upgrade failed:', err)
+      alert(err instanceof Error ? err.message : 'Upgrade failed')
+    }
+  }, [user, router, usageStatus, upgradeSubscription])
 
   // Memoized Beams props
   const beamsProps = useMemo(() => ({
@@ -250,13 +326,32 @@ export default function PricingPage() {
 
           {/* Pricing Cards */}
           <div className="grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {PRICING_PLANS.map((plan) => (
-              <PricingCard
-                key={plan.name}
-                plan={plan}
-                onButtonClick={() => handlePlanSelect(plan.name)}
-              />
-            ))}
+            {PRICING_PLANS.map((plan) => {
+              const tierMap: { [key: string]: 'free' | 'pro' | 'pro+' } = {
+                'Basic': 'free',
+                'Pro': 'pro',
+                'Pro+': 'pro+'
+              }
+              
+              const planTier = tierMap[plan.name]
+              const isCurrentPlan = usageStatus?.subscriptionTier === planTier
+              const currentTierRank = usageStatus?.subscriptionTier === 'free' ? 0 
+                                   : usageStatus?.subscriptionTier === 'pro' ? 1 
+                                   : 2
+              const planTierRank = planTier === 'free' ? 0 : planTier === 'pro' ? 1 : 2
+              const isUpgrade = planTierRank > (currentTierRank || 0)
+              
+              return (
+                <PricingCard
+                  key={plan.name}
+                  plan={plan}
+                  onButtonClick={() => handlePlanSelect(plan.name)}
+                  isCurrentPlan={isCurrentPlan}
+                  isUpgrade={isUpgrade}
+                  usageInfo={isCurrentPlan ? usageStatus?.dailyUsage : undefined}
+                />
+              )
+            })}
           </div>
         </div>
       </main>

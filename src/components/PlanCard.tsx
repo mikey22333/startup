@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react'
-import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield } from 'lucide-react'
+import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield, FileText, File, Code, ChevronDown } from 'lucide-react'
+import { exportToAdvancedPDF, exportToWord, exportToHTML, exportToJSON, type BusinessPlan } from '@/lib/exportService'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -220,6 +221,13 @@ interface CompetitiveAnalysis {
   positioningMap?: string
   competitiveAdvantages?: string
   marketGaps?: string
+  yourBusiness?: {
+    name?: string
+    pricing?: string
+    keyStrength?: string
+    mainWeakness?: string
+    marketShare?: string
+  }
 }
 
 interface Risk {
@@ -234,6 +242,7 @@ interface Risk {
 }
 
 interface FinancialProjection {
+  period?: string
   month?: number
   quarter?: string
   revenue: number
@@ -319,6 +328,7 @@ interface PlanData {
   summary?: string
   executiveSummary?: string
   originalIdeaAcknowledgment?: string
+  currency?: string
   businessIdeaReview?: {
     ideaAssessment?: string
     profitabilityAnalysis?: string
@@ -372,6 +382,17 @@ interface PlanData {
   financialAnalysis?: FinancialAnalysis
   riskAssessment?: RiskAssessment
   growthStrategy?: GrowthStrategy
+  
+  // Additional export fields
+  competitiveIntelligence?: any
+  marketIntelligence?: any
+  gotoMarketStrategy?: any
+  strategicMilestones?: any
+  milestones?: any
+  actionRoadmap?: any
+  nextSevenDays?: any
+  additionalResources?: any
+  
   feasibility?: {
     marketType?: string
     difficultyLevel?: string
@@ -555,12 +576,211 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
     }
   }
 
-  const exportToPDF = async () => {
-    console.log('Exporting to PDF...')
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' })
+  const exportMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Clear export status after 3 seconds
+  useEffect(() => {
+    if (exportStatus.type) {
+      const timer = setTimeout(() => {
+        setExportStatus({ type: null, message: '' })
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [exportStatus])
+
+  const handleExport = async (format: 'pdf' | 'pdf-advanced' | 'word' | 'html' | 'json') => {
+    if (!plan) return
+    
+    setIsExporting(true)
+    setShowExportMenu(false)
+    
+    try {
+      // Transform plan data to match export service interface with ALL sections
+      const exportData: BusinessPlan = {
+        feasibility: {
+          marketType: plan.feasibility?.marketType || 'Custom',
+          difficultyLevel: plan.feasibility?.difficultyLevel || 'Moderate',
+          timeToLaunch: plan.feasibility?.estimatedTimeToLaunch || '4-6 months',
+          investmentNeeded: plan.feasibility?.estimatedStartupCost || '$10,000',
+          marketingBudget: plan.marketingPlan?.budget || plan.marketingStrategy?.totalBudget || '$500-1,500/month'
+        },
+        executiveSummary: plan.executiveSummary || plan.summary || '',
+        
+        // Business Idea Review Section
+        businessIdeaReview: plan.businessIdeaReview ? {
+          ideaAssessment: plan.businessIdeaReview.ideaAssessment || '',
+          profitabilityAnalysis: plan.businessIdeaReview.profitabilityAnalysis || '',
+          marketTiming: plan.businessIdeaReview.marketTiming || '',
+          recommendationScore: plan.businessIdeaReview.recommendationScore || 0,
+          riskLevel: plan.businessIdeaReview.riskLevel || '',
+          criticalSuccess: plan.businessIdeaReview.criticalSuccess || '',
+          successFactors: plan.businessIdeaReview.successFactors || [],
+          challenges: plan.businessIdeaReview.challenges || [],
+          potentialPitfalls: plan.businessIdeaReview.potentialPitfalls || []
+        } : undefined,
+
+        // Business Scope Section  
+        businessScope: plan.businessScope ? {
+          targetCustomers: plan.businessScope.targetCustomers || '',
+          growthPotential: plan.businessScope.growthPotential || '',
+          competitors: plan.businessScope.competitors || [],
+          marketReadiness: plan.businessScope.marketReadiness || ''
+        } : undefined,
+
+        // Comprehensive Business Analysis
+        demandValidation: plan.demandValidation || undefined,
+        valueProposition: plan.valueProposition || undefined,
+        operations: plan.operations || undefined,
+        
+        marketAnalysis: typeof plan.marketAnalysis === 'string' ? plan.marketAnalysis : 
+          (plan.marketAnalysis ? JSON.stringify(plan.marketAnalysis) : ''),
+        businessModel: typeof plan.valueProposition === 'string' ? plan.valueProposition :
+          (plan.valueProposition ? JSON.stringify(plan.valueProposition) : 
+          plan.businessScope?.targetCustomers || ''),
+        financialProjections: (() => {
+          // Generate HTML table directly (same as website display)
+          let htmlTable = '<table style="border-collapse: collapse; width: 100%; margin: 10px 0; border: 1px solid #ddd;">'
+          htmlTable += '<thead><tr>'
+          htmlTable += '<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2; text-align: left;">Month</th>'
+          htmlTable += '<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2; text-align: left;">Revenue</th>'
+          htmlTable += '<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2; text-align: left;">Costs</th>'
+          htmlTable += '<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2; text-align: left;">Profit</th>'
+          htmlTable += '<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2; text-align: left;">Customers</th>'
+          htmlTable += '</tr></thead><tbody>'
+          
+          // Generate 12 months of data
+          for (let i = 1; i <= 12; i++) {
+            const revenue = Math.floor(1000 * i * (1 + i * 0.15))
+            const costs = Math.floor(revenue * 0.6)
+            const profit = revenue - costs
+            const customers = Math.floor(i * 5 + (i * i * 0.5))
+            
+            htmlTable += '<tr>'
+            htmlTable += `<td style="border: 1px solid #ddd; padding: 8px;">Month ${i}</td>`
+            htmlTable += `<td style="border: 1px solid #ddd; padding: 8px; text-align: right;">$${revenue.toLocaleString()}</td>`
+            htmlTable += `<td style="border: 1px solid #ddd; padding: 8px; text-align: right;">$${costs.toLocaleString()}</td>`
+            htmlTable += `<td style="border: 1px solid #ddd; padding: 8px; text-align: right;">$${profit.toLocaleString()}</td>`
+            htmlTable += `<td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${customers.toLocaleString()}</td>`
+            htmlTable += '</tr>'
+          }
+          
+          htmlTable += '</tbody></table>'
+          console.log('Generated Financial Projections Table:', htmlTable)
+          console.log('Table includes <table:', htmlTable.includes('<table'))
+          return htmlTable
+        })(),
+        
+        // Enhanced Financial Analysis
+        financialAnalysis: plan.financialAnalysis || undefined,
+        
+        marketingStrategy: typeof plan.marketingStrategy === 'string' ? plan.marketingStrategy :
+          (plan.marketingStrategy ? JSON.stringify(plan.marketingStrategy) : ''),
+        operationsOverview: plan.operations?.deliveryProcess || 
+          (Array.isArray(plan.operations?.suppliers) ? plan.operations.suppliers.join(', ') : plan.operations?.suppliers) || '',
+        riskAssessment: typeof plan.riskAssessment === 'string' ? plan.riskAssessment :
+          (plan.riskAssessment ? JSON.stringify(plan.riskAssessment) : ''),
+        
+        // Implementation and Action Plans
+        implementation: plan.actionPlan ? JSON.stringify(plan.actionPlan) : '',
+        actionPlan: plan.actionPlan || [],
+        thirtyDayPlan: plan.thirtyDayPlan || undefined,
+        
+        legal: typeof plan.legal === 'string' ? plan.legal :
+          (plan.legal ? JSON.stringify(plan.legal) : ''),
+        tools: (plan.recommendedTools || []).map((tool: any) => ({
+          name: tool.name || tool,
+          purpose: tool.description || tool.purpose || '',
+          pricing: tool.cost || tool.pricing || 'Contact for pricing',
+          category: tool.category || 'Business Tool'
+        })),
+        funding: (plan.funding?.platforms || []).map((platform: any) => ({
+          platform: platform.name || platform.platform || 'Unknown Platform',
+          type: platform.type || 'Investment',
+          range: platform.range || platform.investmentRange || 'Varies',
+          fees: platform.fees || platform.platformFee || 'Contact for details',
+          timeline: platform.timeline || platform.timeframe || 'Varies',
+          successRate: platform.successRate || 'N/A',
+          description: platform.description || platform.details || ''
+        })),
+
+        // Additional sections that are shown on website but missing from export
+        growthStrategy: plan.growthStrategy || undefined,
+        competitiveAnalysis: plan.competitiveAnalysis || undefined,
+        competitiveIntelligence: plan.competitiveIntelligence || plan.competitiveAnalysis || undefined,
+        marketIntelligence: plan.marketIntelligence || undefined,
+        gotoMarketStrategy: plan.gotoMarketStrategy || plan.marketingStrategy || undefined,
+        strategicMilestones: plan.strategicMilestones || plan.milestones || undefined,
+        actionRoadmap: plan.actionRoadmap || plan.actionPlan || undefined,
+        nextSevenDays: plan.nextSevenDays || plan.thirtyDayPlan || undefined,
+        milestones: plan.milestones || undefined,
+        resources: plan.resources || plan.additionalResources || undefined
+      }
+
+      switch (format) {
+        case 'pdf':
+          await exportToAdvancedPDF(exportData)
+          setExportStatus({ type: 'success', message: 'Complete PDF with all sections exported successfully!' })
+          break
+        case 'pdf-advanced':
+          await exportToAdvancedPDF(exportData)
+          setExportStatus({ type: 'success', message: 'Advanced PDF with all sections exported successfully!' })
+          break
+        case 'word':
+          await exportToWord(exportData)
+          setExportStatus({ type: 'success', message: 'Word document exported successfully!' })
+          break
+        case 'html':
+          await exportToHTML(exportData)
+          setExportStatus({ type: 'success', message: 'HTML file exported successfully!' })
+          break
+        case 'json':
+          await exportToJSON(exportData)
+          setExportStatus({ type: 'success', message: 'JSON data exported successfully!' })
+          break
+      }
+    } catch (error) {
+      console.error('Export failed:', error)
+      setExportStatus({ type: 'error', message: 'Export failed. Please try again.' })
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   return (
     <div className="bg-gradient-to-br from-neutral-50 via-white to-neutral-50 py-6 md:py-12">
+      {/* Export Status Notification */}
+      {exportStatus.type && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+          exportStatus.type === 'success' 
+            ? 'bg-green-100 border border-green-200 text-green-800' 
+            : 'bg-red-100 border border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center space-x-2">
+            {exportStatus.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <div className="w-4 h-4 rounded-full border-2 border-red-600" />
+            )}
+            <span className="text-sm font-medium">{exportStatus.message}</span>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-5 md:px-8 lg:px-12">
         
         {/* Header */}
@@ -576,13 +796,76 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
           </h1>
           
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 mb-6 md:mb-8">
+          <div className="relative" ref={exportMenuRef}>
             <button
-              onClick={exportToPDF}
-              className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition-all text-sm font-medium"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={isExporting}
+              className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download className="w-4 h-4" />
-              <span>Export PDF</span>
+              {isExporting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Export</span>
+                  <ChevronDown className="w-3 h-3" />
+                </>
+              )}
             </button>
+            
+            {showExportMenu && (
+              <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-neutral-200 rounded-lg shadow-lg z-10">
+                <div className="py-1">
+                  <button
+                    onClick={() => handleExport('pdf')}
+                    className="flex items-center space-x-3 w-full px-4 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-red-500" />
+                    <div>
+                      <div className="font-medium">PDF Document</div>
+                      <div className="text-xs text-neutral-500">With charts & rich formatting</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleExport('word')}
+                    className="flex items-center space-x-3 w-full px-4 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                  >
+                    <File className="w-4 h-4 text-blue-500" />
+                    <div>
+                      <div className="font-medium">Word Document</div>
+                      <div className="text-xs text-neutral-500">Editable format</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleExport('html')}
+                    className="flex items-center space-x-3 w-full px-4 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                  >
+                    <Code className="w-4 h-4 text-orange-500" />
+                    <div>
+                      <div className="font-medium">Web Page</div>
+                      <div className="text-xs text-neutral-500">HTML format</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleExport('json')}
+                    className="flex items-center space-x-3 w-full px-4 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                  >
+                    <Code className="w-4 h-4 text-green-500" />
+                    <div>
+                      <div className="font-medium">JSON Data</div>
+                      <div className="text-xs text-neutral-500">Raw data format</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
             
             <button className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-full hover:bg-neutral-50 transition-all text-sm font-medium">
               <span>New Plan</span>
@@ -672,7 +955,7 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
         {plan?.businessIdeaReview && (
           <div className="bg-white rounded-2xl p-6 md:p-8 lg:p-12 border-2 border-black shadow-lg mb-8 md:mb-16">
             <div className="flex items-center space-x-3 mb-6 md:mb-8">
-              <div className="w-1 h-6 md:h-8 bg-blue-500 rounded-full" />
+              <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
               <h2 className="text-xl md:text-2xl font-light text-neutral-900">Business Idea Review</h2>
             </div>
 
@@ -1255,9 +1538,6 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                     <button className="px-3 py-1.5 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg">
                       Graph
                     </button>
-                    <button className="px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-50 rounded-lg transition-colors">
-                      Table
-                    </button>
                   </div>
                   <div className="flex items-center space-x-2 text-xs text-neutral-500">
                     <span>Monthly market growth</span>
@@ -1625,11 +1905,21 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                     </thead>
                     <tbody>
                       <tr className="bg-green-50">
-                        <td className="border border-neutral-200 px-4 py-2 text-sm font-medium text-green-900">Your Business</td>
-                        <td className="border border-neutral-200 px-4 py-2 text-sm text-green-800">Competitive pricing</td>
-                        <td className="border border-neutral-200 px-4 py-2 text-sm text-green-800">Innovation & customer focus</td>
-                        <td className="border border-neutral-200 px-4 py-2 text-sm text-green-800">New to market</td>
-                        <td className="border border-neutral-200 px-4 py-2 text-sm text-green-800">0% (launching)</td>
+                        <td className="border border-neutral-200 px-4 py-2 text-sm font-medium text-green-900">
+                          {plan.competitiveAnalysis.yourBusiness?.name || 'Your Business'}
+                        </td>
+                        <td className="border border-neutral-200 px-4 py-2 text-sm text-green-800">
+                          {plan.competitiveAnalysis.yourBusiness?.pricing || 'Competitive pricing'}
+                        </td>
+                        <td className="border border-neutral-200 px-4 py-2 text-sm text-green-800">
+                          {plan.competitiveAnalysis.yourBusiness?.keyStrength || 'Innovation & customer focus'}
+                        </td>
+                        <td className="border border-neutral-200 px-4 py-2 text-sm text-green-800">
+                          {plan.competitiveAnalysis.yourBusiness?.mainWeakness || 'New to market'}
+                        </td>
+                        <td className="border border-neutral-200 px-4 py-2 text-sm text-green-800">
+                          {plan.competitiveAnalysis.yourBusiness?.marketShare || '0% (launching)'}
+                        </td>
                       </tr>
                       {plan.competitiveAnalysis.competitors.slice(0, 4).map((competitor, index) => (
                         <tr key={index} className="hover:bg-neutral-50">
@@ -1793,35 +2083,67 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const month = i + 1
-                      const revenue = Math.floor(1000 * month * (1 + month * 0.15))
-                      const costs = Math.floor(revenue * 0.6)
-                      const profit = revenue - costs
-                      const customers = Math.floor(month * 5 + (month * month * 0.5))
-                      
-                      return (
-                        <tr key={month} className="hover:bg-neutral-50">
-                          <td className="border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-900">
-                            Month {month}
-                          </td>
-                          <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
-                            ${revenue.toLocaleString()}
-                          </td>
-                          <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
-                            ${costs.toLocaleString()}
-                          </td>
-                          <td className={`border border-neutral-200 px-3 py-2 text-sm text-right font-medium ${
-                            profit > 0 ? 'text-green-700' : 'text-red-700'
-                          }`}>
-                            ${profit.toLocaleString()}
-                          </td>
-                          <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
-                            {customers.toLocaleString()}
-                          </td>
-                        </tr>
-                      )
-                    })}
+                    {plan.financialProjections?.year1Monthly ? 
+                      plan.financialProjections.year1Monthly.slice(0, 12).map((projection, index) => {
+                        const month = index + 1
+                        // Get currency symbol from plan data, fallback to $ if not available
+                        const currencySymbol = plan.currency === 'INR' ? '₹' : 
+                                             plan.currency === 'EUR' ? '€' : 
+                                             plan.currency === 'GBP' ? '£' : '$'
+                        
+                        return (
+                          <tr key={month} className="hover:bg-neutral-50">
+                            <td className="border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-900">
+                              Month {month}
+                            </td>
+                            <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
+                              {currencySymbol}{projection.revenue.toLocaleString()}
+                            </td>
+                            <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
+                              {currencySymbol}{projection.costs.toLocaleString()}
+                            </td>
+                            <td className={`border border-neutral-200 px-3 py-2 text-sm text-right font-medium ${
+                              projection.profit > 0 ? 'text-green-700' : 'text-red-700'
+                            }`}>
+                              {currencySymbol}{projection.profit.toLocaleString()}
+                            </td>
+                            <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
+                              {projection.customers.toLocaleString()}
+                            </td>
+                          </tr>
+                        )
+                      }) :
+                      // Fallback for when financial projections data is not available
+                      Array.from({ length: 12 }, (_, i) => {
+                        const month = i + 1
+                        const revenue = Math.floor(1000 * month * (1 + month * 0.15))
+                        const costs = Math.floor(revenue * 0.6)
+                        const profit = revenue - costs
+                        const customers = Math.floor(month * 5 + (month * month * 0.5))
+                        
+                        return (
+                          <tr key={month} className="hover:bg-neutral-50">
+                            <td className="border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-900">
+                              Month {month}
+                            </td>
+                            <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
+                              ${revenue.toLocaleString()}
+                            </td>
+                            <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
+                              ${costs.toLocaleString()}
+                            </td>
+                            <td className={`border border-neutral-200 px-3 py-2 text-sm text-right font-medium ${
+                              profit > 0 ? 'text-green-700' : 'text-red-700'
+                            }`}>
+                              ${profit.toLocaleString()}
+                            </td>
+                            <td className="border border-neutral-200 px-3 py-2 text-sm text-right text-neutral-700">
+                              {customers.toLocaleString()}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    }
                   </tbody>
                 </table>
               </div>

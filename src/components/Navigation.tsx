@@ -34,12 +34,20 @@ const Navigation = memo(() => {
         <div className="flex items-center justify-between h-16">
           
           {/* Pricing Link - Top Left Corner */}
-          <button 
-            onClick={handlePricingClick}
-            className="text-neutral-300 hover:text-white transition-colors font-medium"
-          >
-            Pricing
-          </button>
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={handlePricingClick}
+              className="text-neutral-300 hover:text-white transition-colors font-medium"
+            >
+              Pricing
+            </button>
+            <button 
+              onClick={() => router.push('/workspace')}
+              className="text-neutral-300 hover:text-white transition-colors font-medium"
+            >
+              Workspace
+            </button>
+          </div>
 
           {/* Logo - Center */}
           <div className="flex items-center gap-3">
@@ -82,6 +90,12 @@ const Navigation = memo(() => {
                 className="block w-full text-left text-neutral-300 hover:text-white py-2"
               >
                 Pricing
+              </button>
+              <button 
+                onClick={() => router.push('/workspace')}
+                className="block w-full text-left text-neutral-300 hover:text-white py-2"
+              >
+                Workspace
               </button>
               <div className="pt-4 border-t border-white/10 space-y-3">
                 <button className="block w-full text-left text-neutral-300 hover:text-white py-2">
