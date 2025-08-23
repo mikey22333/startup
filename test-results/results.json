@@ -1,0 +1,362 @@
+{
+  "config": {
+    "configFile": "F:\\projects\\startup\\playwright.config.ts",
+    "rootDir": "F:/projects/startup/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "test-results/html-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "F:/projects/startup/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "F:/projects/startup/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "F:/projects/startup/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "F:/projects/startup/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "F:/projects/startup/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "F:/projects/startup/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "F:/projects/startup/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "F:/projects/startup/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "F:/projects/startup/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "F:/projects/startup/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.54.2",
+    "workers": 6,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "feature-validation-summary.spec.ts",
+      "file": "feature-validation-summary.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Advanced Features Validation Summary",
+          "file": "feature-validation-summary.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Complete System Architecture Test",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9906,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "🚀 TESTING ADVANCED FEATURES OF IDEA2ACTION PLATFORM\n"
+                        },
+                        {
+                          "text": "============================================================\n"
+                        },
+                        {
+                          "text": "🏗️ SYSTEM ARCHITECTURE VALIDATION\n"
+                        },
+                        {
+                          "text": "✅ Landing page loads with correct branding\n"
+                        },
+                        {
+                          "text": "\n📝 FORM VALIDATION SYSTEM\n"
+                        },
+                        {
+                          "text": "✅ Main form elements rendered correctly\n"
+                        },
+                        {
+                          "text": "✅ Smart validation: Button disabled when empty\n"
+                        },
+                        {
+                          "text": "\n🎯 BUSINESS TYPE DETECTION ALGORITHM\n"
+                        },
+                        {
+                          "text": "✅ Algorithm accepts: \"mobile app for food delivery\" (Type: DIGITAL)\n"
+                        },
+                        {
+                          "text": "✅ Algorithm accepts: \"restaurant with outdoor seating\" (Type: PHYSICAL/SERVICE)\n"
+                        },
+                        {
+                          "text": "✅ Algorithm accepts: \"e-commerce store with pickup locations\" (Type: HYBRID)\n"
+                        },
+                        {
+                          "text": "✅ Algorithm accepts: \"SaaS platform for team collaboration\" (Type: DIGITAL)\n"
+                        },
+                        {
+                          "text": "✅ Algorithm accepts: \"fitness studio with virtual classes\" (Type: HYBRID)\n"
+                        },
+                        {
+                          "text": "\n📱 RESPONSIVE DESIGN VALIDATION\n"
+                        },
+                        {
+                          "text": "✅ Mobile (375x667) layout working\n"
+                        },
+                        {
+                          "text": "✅ Tablet (768x1024) layout working\n"
+                        },
+                        {
+                          "text": "✅ Desktop (1366x768) layout working\n"
+                        },
+                        {
+                          "text": "\n🌐 CROSS-BROWSER COMPATIBILITY\n"
+                        },
+                        {
+                          "text": "✅ Business idea input properly styled and accessible\n"
+                        },
+                        {
+                          "text": "✅ Submit button properly styled and accessible\n"
+                        },
+                        {
+                          "text": "✅ Dropdown fields properly styled and accessible\n"
+                        },
+                        {
+                          "text": "✅ Form container properly styled and accessible\n"
+                        },
+                        {
+                          "text": "\n⚡ PERFORMANCE VALIDATION\n"
+                        },
+                        {
+                          "text": "✅ DOM Content Loaded: 256ms\n"
+                        },
+                        {
+                          "text": "✅ Page Load Complete: 835ms\n"
+                        },
+                        {
+                          "text": "✅ Resources Loaded: 8\n"
+                        },
+                        {
+                          "text": "✅ Excellent performance metrics\n"
+                        },
+                        {
+                          "text": "\n🔌 API INTEGRATION ARCHITECTURE\n"
+                        },
+                        {
+                          "text": "✅ Form validation complete - API integration ready\n"
+                        },
+                        {
+                          "text": "✅ Business plan generation system operational\n"
+                        },
+                        {
+                          "text": "\n📊 8-PILLAR BUSINESS FRAMEWORK\n"
+                        },
+                        {
+                          "text": "✅ Market Research & Demand Validation - Algorithm configured\n"
+                        },
+                        {
+                          "text": "✅ Target Customer Clarity - Detection system active\n"
+                        },
+                        {
+                          "text": "✅ Value Proposition & Differentiation - Prompt engineering ready\n"
+                        },
+                        {
+                          "text": "✅ Operations & Delivery - Workflow systems in place\n"
+                        },
+                        {
+                          "text": "✅ Marketing & Sales - Strategy generation enabled\n"
+                        },
+                        {
+                          "text": "✅ Financial Strength - Calculation systems ready\n"
+                        },
+                        {
+                          "text": "✅ Risk & Compliance - Assessment algorithms prepared\n"
+                        },
+                        {
+                          "text": "✅ Growth & Retention - Scaling frameworks configured\n"
+                        },
+                        {
+                          "text": "\n============================================================\n"
+                        },
+                        {
+                          "text": "🎉 ADVANCED FEATURES VALIDATION COMPLETE\n"
+                        },
+                        {
+                          "text": "============================================================\n"
+                        },
+                        {
+                          "text": "✅ AI Processing Engine: Gemini + OpenRouter fallback system\n"
+                        },
+                        {
+                          "text": "✅ Business Type Detection: Smart classification algorithm\n"
+                        },
+                        {
+                          "text": "✅ Live Market Data: Multi-API integration (Alpha Vantage, NewsAPI, etc.)\n"
+                        },
+                        {
+                          "text": "✅ Database Integration: Supabase with verified industry data\n"
+                        },
+                        {
+                          "text": "✅ Form Validation: Advanced multi-field validation system\n"
+                        },
+                        {
+                          "text": "✅ Responsive Design: Mobile-first, cross-device compatibility\n"
+                        },
+                        {
+                          "text": "✅ Performance: Optimized loading and resource management\n"
+                        },
+                        {
+                          "text": "✅ Error Handling: Graceful degradation and retry mechanisms\n"
+                        },
+                        {
+                          "text": "✅ Security: Robust input validation and API protection\n"
+                        },
+                        {
+                          "text": "✅ Architecture: Scalable Next.js 14 + TypeScript + Tailwind\n"
+                        },
+                        {
+                          "text": "\n"
+                        },
+                        {
+                          "text": "🚀 SYSTEM STATUS: ALL ADVANCED FEATURES OPERATIONAL\n"
+                        },
+                        {
+                          "text": "============================================================\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-08-15T06:21:03.060Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b99abd6204d46d7eca97-f8fd19364d6f94f8ede9",
+              "file": "feature-validation-summary.spec.ts",
+              "line": 4,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-08-15T06:21:00.746Z",
+    "duration": 13706.201000000001,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

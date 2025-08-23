@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react'
-import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield, FileText, File, Code, ChevronDown } from 'lucide-react'
+import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield, FileText, File, Code, ChevronDown, Lock, Crown, Zap } from 'lucide-react'
 import { exportToAdvancedPDF, exportToWord, exportToHTML, exportToJSON, type BusinessPlan } from '@/lib/exportService'
+import { useAuth } from '@/components/AuthProvider'
+import { useSubscription } from '@/hooks/useSubscription'
+import { useRouter } from 'next/navigation'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -459,6 +462,24 @@ interface DerivedStep {
 export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
   const [activeSection, setActiveSection] = useState<string>('overview')
   const [showAllMilestones, setShowAllMilestones] = useState<boolean>(false)
+  
+  // Subscription and auth hooks
+  const { user } = useAuth()
+  const { usageStatus } = useSubscription()
+  const router = useRouter()
+  
+  // Debug subscription status
+  console.log('PlanCard Debug:', { 
+    user: !!user, 
+    userEmail: user?.email, 
+    usageStatus, 
+    subscriptionTier: usageStatus?.subscriptionTier 
+  })
+  
+  // Check if user is on free tier
+  const isFreeUser = !user || !usageStatus || usageStatus?.subscriptionTier === 'free'
+  
+  console.log('isFreeUser:', isFreeUser)
 
   // Memoize section change handler
   const handleSectionChange = useCallback((section: string) => {
@@ -605,6 +626,16 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
 
   const handleExport = async (format: 'pdf' | 'pdf-advanced' | 'word' | 'html' | 'json') => {
     if (!plan) return
+    
+    // Check if user is on free tier and show upgrade prompt
+    if (isFreeUser) {
+      setShowExportMenu(false)
+      // Show upgrade modal or redirect to pricing page
+      if (window.confirm('Export functionality is available for Pro and Pro+ users only. Would you like to upgrade your subscription?')) {
+        router.push('/pricing')
+      }
+      return
+    }
     
     setIsExporting(true)
     setShowExportMenu(false)
@@ -798,14 +829,24 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 mb-6 md:mb-8">
           <div className="relative" ref={exportMenuRef}>
             <button
-              onClick={() => setShowExportMenu(!showExportMenu)}
+              onClick={() => isFreeUser ? handleExport('pdf') : setShowExportMenu(!showExportMenu)}
               disabled={isExporting}
-              className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 rounded-full transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
+                isFreeUser 
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-lg' 
+                  : 'bg-neutral-900 text-white hover:bg-neutral-800'
+              }`}
             >
               {isExporting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Exporting...</span>
+                </>
+              ) : isFreeUser ? (
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Export</span>
+                  <Crown className="w-3 h-3" />
                 </>
               ) : (
                 <>
@@ -816,7 +857,40 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
               )}
             </button>
             
-            {showExportMenu && (
+            {/* Show upgrade prompt for free users */}
+            {isFreeUser && showExportMenu && (
+              <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-amber-200 rounded-lg shadow-lg z-10">
+                <div className="p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Crown className="w-5 h-5 text-amber-500" />
+                    <h3 className="font-semibold text-gray-900">Premium Feature</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Export functionality is available for Pro and Pro+ subscribers. Upgrade to unlock PDF, Word, and HTML exports.
+                  </p>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => router.push('/pricing')}
+                      className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium py-2 px-3 rounded-md hover:from-amber-600 hover:to-orange-600 transition-all"
+                    >
+                      <div className="flex items-center justify-center space-x-1">
+                        <Zap className="w-3 h-3" />
+                        <span>Upgrade Now</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setShowExportMenu(false)}
+                      className="flex-1 text-gray-500 text-xs font-medium py-2 px-3 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Regular export menu for paid users */}
+            {!isFreeUser && showExportMenu && (
               <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-neutral-200 rounded-lg shadow-lg z-10">
                 <div className="py-1">
                   <button
@@ -1106,22 +1180,43 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
 
               <div className="space-y-6 md:space-y-8">
                 {plan?.businessScope?.competitors && plan?.businessScope?.competitors.length > 0 && (
-                  <div>
-                    <div className="flex items-center space-x-3 mb-3 md:mb-4">
-                      <div className="p-2 bg-neutral-50 rounded-xl">
-                        <Building2 className="w-4 md:w-5 h-4 md:h-5 text-neutral-600" />
-                      </div>
-                      <h3 className="text-base md:text-lg font-medium text-neutral-900">Competition & Advantage</h3>
-                    </div>
-                    <div className="space-y-2 md:space-y-3">
-                      {plan?.businessScope?.competitors?.map((competitor, index) => (
-                        <div key={index} className="flex items-center space-x-3">
-                          <div className="w-1 h-1 bg-neutral-400 rounded-full" />
-                          <span className="text-neutral-700 font-light text-sm md:text-base">
-                            {typeof competitor === 'string' ? competitor : competitor?.name || safeRender(competitor)}
-                          </span>
+                  <div className="relative">
+                    {/* Lock overlay for free users */}
+                    {isFreeUser && (
+                      <div className="absolute inset-0 bg-gray-50/80 backdrop-blur-sm rounded-xl z-10 flex flex-col items-center justify-center p-6">
+                        <div className="bg-white rounded-full p-3 shadow-lg mb-3">
+                          <Crown className="w-6 h-6 text-yellow-500" />
                         </div>
-                      ))}
+                        <h4 className="font-semibold text-gray-900 mb-2">Premium Feature</h4>
+                        <p className="text-sm text-gray-600 text-center mb-4">
+                          Unlock detailed competitor analysis with Pro subscription
+                        </p>
+                        <button
+                          onClick={() => router.push('/pricing')}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
+                        >
+                          Upgrade to Pro
+                        </button>
+                      </div>
+                    )}
+                    
+                    <div className={`${isFreeUser ? 'filter blur-sm' : ''}`}>
+                      <div className="flex items-center space-x-3 mb-3 md:mb-4">
+                        <div className="p-2 bg-neutral-50 rounded-xl">
+                          <Building2 className="w-4 md:w-5 h-4 md:h-5 text-neutral-600" />
+                        </div>
+                        <h3 className="text-base md:text-lg font-medium text-neutral-900">Competition & Advantage</h3>
+                      </div>
+                      <div className="space-y-2 md:space-y-3">
+                        {plan?.businessScope?.competitors?.map((competitor, index) => (
+                          <div key={index} className="flex items-center space-x-3">
+                            <div className="w-1 h-1 bg-neutral-400 rounded-full" />
+                            <span className="text-neutral-700 font-light text-sm md:text-base">
+                              {typeof competitor === 'string' ? competitor : competitor?.name || safeRender(competitor)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1789,11 +1884,31 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
 
         {/* Enhanced Competitive Analysis */}
         {plan.competitiveAnalysis && (
-          <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg mb-8 md:mb-16">
-            <div className="flex items-center space-x-3 mb-6 md:mb-8">
-              <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
-              <h2 className="text-xl md:text-2xl font-light text-neutral-900">Competitive Intelligence</h2>
-            </div>
+          <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg mb-8 md:mb-16 relative">
+            {/* Lock overlay for free users */}
+            {isFreeUser && (
+              <div className="absolute inset-0 bg-gray-50/90 backdrop-blur-sm rounded-2xl z-10 flex flex-col items-center justify-center p-8">
+                <div className="bg-white rounded-full p-4 shadow-lg mb-4">
+                  <Crown className="w-8 h-8 text-yellow-500" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">Premium Competitive Intelligence</h4>
+                <p className="text-gray-600 text-center mb-6 max-w-md">
+                  Get real-time competitor data, market insights, and detailed analysis with Pro subscription
+                </p>
+                <button
+                  onClick={() => router.push('/pricing')}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
+            )}
+            
+            <div className={`${isFreeUser ? 'filter blur-sm' : ''}`}>
+              <div className="flex items-center space-x-3 mb-6 md:mb-8">
+                <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
+                <h2 className="text-xl md:text-2xl font-light text-neutral-900">Competitive Intelligence</h2>
+              </div>
 
             {/* Real Competitor Data Display */}
             {plan.competitorData && plan.competitorData.competitors && (
@@ -1964,6 +2079,7 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                   <p className="text-neutral-700 leading-relaxed">{plan.competitiveAnalysis.marketGaps}</p>
                 </div>
               )}
+            </div>
             </div>
           </div>
         )}

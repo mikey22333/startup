@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from './AuthProvider'
+import { useSubscription } from '@/hooks/useSubscription'
 
 export const UserMenu = () => {
   const { user, signOut } = useAuth()
+  const { usageStatus } = useSubscription()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -41,6 +43,22 @@ export const UserMenu = () => {
     .join('')
     .toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'
 
+  // Get usage display
+  const getUsageDisplay = () => {
+    if (!usageStatus) return 'Loading...'
+    
+    const { dailyUsage } = usageStatus
+    if (dailyUsage.limit === 'unlimited') {
+      return `${dailyUsage.used}/∞ plans today`
+    }
+    return `${dailyUsage.used}/${dailyUsage.limit} plans today`
+  }
+
+  const getTierDisplay = () => {
+    if (!usageStatus) return ''
+    return usageStatus.subscriptionTier.charAt(0).toUpperCase() + usageStatus.subscriptionTier.slice(1)
+  }
+
   return (
     <div className="relative" ref={menuRef}>
       <button
@@ -69,6 +87,19 @@ export const UserMenu = () => {
             <p className="text-sm text-gray-300">Signed in as</p>
             <p className="text-sm font-medium text-white truncate">
               {user.email}
+            </p>
+          </div>
+          
+          {/* Usage Information */}
+          <div className="px-4 py-3 border-b border-gray-700">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-gray-400">Plan</p>
+              <span className="text-xs px-2 py-1 bg-blue-600 text-white rounded-full">
+                {getTierDisplay()}
+              </span>
+            </div>
+            <p className="text-sm text-gray-300">
+              {getUsageDisplay()}
             </p>
           </div>
           

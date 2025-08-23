@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
-import { FileText, Plus, Calendar, DollarSign, MapPin, Trash2, ArrowLeft } from 'lucide-react';
+import { FileText, Plus, ArrowLeft, Trash2 } from 'lucide-react';
 
 interface BusinessPlan {
   id: string;
@@ -77,14 +77,13 @@ export default function Workspace() {
     
     if (diffInDays === 0) return 'Today';
     if (diffInDays === 1) return 'Yesterday';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
-    if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`;
-    return `${Math.floor(diffInDays / 365)} years ago`;
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w ago`;
+    return `${Math.floor(diffInDays / 30)}m ago`;
   };
 
   const getUserInitial = () => {
-    if (!user?.user_metadata?.full_name) return 'U';
+    if (!user?.user_metadata?.full_name) return user?.email?.charAt(0).toUpperCase() || 'U';
     return user.user_metadata.full_name.charAt(0).toUpperCase();
   };
 
@@ -94,13 +93,13 @@ export default function Workspace() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-700 rounded w-64 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-64 bg-gray-800 rounded-lg"></div>
+            <div className="h-6 bg-gray-200 rounded w-48 mb-8"></div>
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-100 rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -110,44 +109,35 @@ export default function Workspace() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-black border-b border-gray-800">
+      <div className="border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push('/')}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
               >
-                <ArrowLeft className="w-6 h-6" />
+                <ArrowLeft className="w-5 h-5" />
               </button>
-              <div>
-                <h1 className="text-3xl font-bold text-white">My Business Plans</h1>
-                <p className="text-gray-400 mt-2">Manage and view all your business plans</p>
-              </div>
+              <h1 className="text-2xl font-semibold text-gray-900">My Business Plans</h1>
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* User Profile */}
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center text-white text-sm font-medium">
                   {getUserInitial()}
                 </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-white">
-                    {user.user_metadata?.full_name || 'User'}
-                  </p>
-                  <p className="text-xs text-gray-400">{user.email}</p>
-                </div>
+                <span className="text-sm text-gray-600 hidden sm:block">{user.email}</span>
               </div>
               
               <button
                 onClick={() => router.push('/')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
+                className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
               >
-                <Plus className="w-5 h-5" />
-                Create New Plan
+                <Plus className="w-4 h-4" />
+                New Plan
               </button>
             </div>
           </div>
@@ -156,104 +146,70 @@ export default function Workspace() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg">
-            <p className="text-red-300">{error}</p>
+          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
         {businessPlans.length === 0 ? (
-          /* Empty State */
           <div className="text-center py-16">
-            <FileText className="w-20 h-20 text-gray-600 mx-auto mb-6" />
-            <h3 className="text-2xl font-semibold text-white mb-4">No business plans yet</h3>
-            <p className="text-gray-400 mb-8 max-w-md mx-auto">
-              Start creating your first business plan to see it here. Transform your ideas into actionable plans with AI assistance.
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No business plans yet</h3>
+            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+              Create your first business plan to get started with your entrepreneurial journey.
             </p>
             <button
               onClick={() => router.push('/')}
-              className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm rounded-lg transition-colors"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Your First Plan
+              <Plus className="w-4 h-4 mr-2" />
+              Create Plan
             </button>
           </div>
         ) : (
-          /* Business Plans Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="space-y-2">
             {businessPlans.map((plan) => (
               <div
                 key={plan.id}
-                className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:bg-gray-800 hover:border-gray-700 transition-all group cursor-pointer"
+                className="group border border-gray-100 rounded-lg p-4 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer relative"
                 onClick={() => router.push(`/plan?id=${plan.id}`)}
               >
-                {/* Plan Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <FileText className="w-8 h-8 text-blue-500 mb-3" />
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deletePlan(plan.id);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-400 transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Plan Content */}
-                <div className="mb-4">
-                  <h3 className="font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors text-lg line-clamp-2">
-                    {plan.title || 'Untitled Business Plan'}
-                  </h3>
-                  <p className="text-gray-400 text-sm line-clamp-3 leading-relaxed">
-                    {plan.business_idea || 'No description available'}
-                  </p>
-                </div>
-
-                {/* Plan Details */}
-                <div className="space-y-2 mb-4">
-                  {plan.location && (
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <MapPin className="w-3 h-3" />
-                      <span>{plan.location}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 flex-1">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-gray-600" />
                     </div>
-                  )}
-                  {plan.budget && (
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <DollarSign className="w-3 h-3" />
-                      <span>{plan.currency} {plan.budget}</span>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">
+                        {plan.title || plan.business_idea || 'Untitled Plan'}
+                      </h3>
+                      <div className="flex items-center space-x-3 mt-1">
+                        <span className="text-sm text-gray-500">{getTimeAgo(plan.created_at)}</span>
+                        {plan.business_type && (
+                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full uppercase tracking-wide">
+                            {plan.business_type}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  {plan.timeline && (
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Calendar className="w-3 h-3" />
-                      <span>{plan.timeline} days</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Calendar className="w-3 h-3" />
-                    <span>Created {getTimeAgo(plan.created_at)}</span>
                   </div>
-                </div>
-
-                {/* Plan Type Badge */}
-                {plan.business_type && (
-                  <div className="mb-4">
-                    <span className="px-2 py-1 bg-gray-800 text-xs rounded-md text-gray-400 capitalize">
-                      {plan.business_type}
-                    </span>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deletePlan(plan.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50"
+                      title="Delete plan"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                )}
-
-                {/* View Button */}
-                <div className="mt-4 pt-4 border-t border-gray-800">
-                  <button className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors">
-                    View Plan
-                  </button>
                 </div>
               </div>
             ))}

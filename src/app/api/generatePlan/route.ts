@@ -7542,7 +7542,31 @@ export async function POST(request: NextRequest) {
           
           console.log(`User ${user.email} (${userProfile.subscription_tier}) usage: ${userProfile.daily_plans_used}/${dailyLimit === Number.MAX_SAFE_INTEGER ? '∞' : dailyLimit}`)
         } else {
-          console.log('User found but no profile:', profileError?.message || 'Profile not found')
+          // User exists but no profile - create a default free profile
+          console.log('User found but no profile, creating default profile...')
+          const today = new Date().toISOString().split('T')[0]
+          
+          const { data: newProfile, error: createError } = await authenticatedClient
+            .from('profiles')
+            .upsert({
+              id: user.id,
+              email: user.email,
+              subscription_tier: 'free',
+              subscription_status: 'active',
+              daily_plans_used: 0,
+              daily_plans_reset_date: today,
+              subscription_started_at: new Date().toISOString(),
+              subscription_tier_changed_at: new Date().toISOString()
+            })
+            .select()
+            .single()
+          
+          if (newProfile && !createError) {
+            userProfile = newProfile
+            console.log(`Created default free profile for user ${user.email}`)
+          } else {
+            console.log('Failed to create profile:', createError?.message)
+          }
         }
       } else {
         console.log('Auth check failed:', userError?.message || 'No user found')

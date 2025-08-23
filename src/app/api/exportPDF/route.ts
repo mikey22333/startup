@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jsPDF from 'jspdf'
+import { createClient } from '@/lib/supabase-server'
 
 interface PlanData {
   businessType: 'DIGITAL' | 'PHYSICAL/SERVICE'
@@ -23,6 +24,47 @@ interface PlanData {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check user authentication and subscription
+    const authHeader = request.headers.get('authorization')
+    
+    if (authHeader?.startsWith('Bearer ')) {
+      const supabase = createClient()
+      
+      // Set the auth token for this request
+      await supabase.auth.setSession({
+        access_token: authHeader.substring(7),
+        refresh_token: ''
+      })
+      
+      // Get user from token
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (user && !userError) {
+        // Get user profile with subscription info
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile && !profileError) {
+          // Check if user is on free tier
+          if (profile.subscription_tier === 'free') {
+            return NextResponse.json({
+              error: 'Export functionality is available for Pro and Pro+ subscribers only. Please upgrade your subscription.',
+              upgradeRequired: true
+            }, { status: 403 })
+          }
+        }
+      }
+    } else {
+      // No auth header - treat as free user
+      return NextResponse.json({
+        error: 'Export functionality requires authentication and a Pro or Pro+ subscription.',
+        upgradeRequired: true
+      }, { status: 401 })
+    }
+
     const { plan }: { plan: PlanData } = await request.json()
 
     if (!plan) {
