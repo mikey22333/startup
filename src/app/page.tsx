@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, memo, lazy, Suspense, useEffect } from 
 import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import { useSubscription } from '@/hooks/useSubscription';
 
 // Lazy load heavy components
 const Beams = lazy(() => import("@/components/Beams"))
@@ -102,11 +103,28 @@ export default memo(function HomePage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const router = useRouter()
   const { user, signOut } = useAuth()
+  const { usageStatus } = useSubscription()
 
   // Get user's first letter for profile
   const getUserInitial = () => {
     if (!user?.user_metadata?.full_name) return 'U'
     return user.user_metadata.full_name.charAt(0).toUpperCase()
+  }
+
+  // Get usage display
+  const getUsageDisplay = () => {
+    if (!usageStatus) return 'Loading...'
+    
+    const { dailyUsage } = usageStatus
+    if (dailyUsage.limit === 'unlimited') {
+      return `${dailyUsage.used}/∞ plans today`
+    }
+    return `${dailyUsage.used}/${dailyUsage.limit} plans today`
+  }
+
+  const getTierDisplay = () => {
+    if (!usageStatus) return ''
+    return usageStatus.subscriptionTier.charAt(0).toUpperCase() + usageStatus.subscriptionTier.slice(1)
   }
 
   // Close dropdown when clicking outside
@@ -125,6 +143,14 @@ export default memo(function HomePage() {
   // Memoized handlers
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Check if user is authenticated
+    if (!user) {
+      // Redirect directly to auth page without showing any message
+      router.push('/auth')
+      return
+    }
+    
     if (idea.trim()) {
       const params = new URLSearchParams({
         idea: idea.trim(),
@@ -136,7 +162,7 @@ export default memo(function HomePage() {
       })
       router.push(`/plan?${params.toString()}`)
     }
-  }, [idea, location, budget, timeline, businessType, currency, router])
+  }, [idea, location, budget, timeline, businessType, currency, router, user])
 
   const handleExampleClick = useCallback((prompt: string) => {
     setIdea(prompt)
@@ -227,7 +253,7 @@ export default memo(function HomePage() {
 
           {/* Logo/Brand */}
           <div className="mb-8 mt-4">
-            <h2 className="text-xl font-bold text-white">Idea2Action</h2>
+            <h2 className="text-xl font-bold text-white">PlanSpark</h2>
             <p className="text-white/60 text-sm mt-1">Business Planning</p>
           </div>
 
@@ -322,20 +348,57 @@ export default memo(function HomePage() {
             </button>
             
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-black/90 backdrop-blur-md rounded-lg border border-white/10 shadow-xl py-2">
+              <div className="absolute right-0 mt-2 w-56 bg-black/90 backdrop-blur-md rounded-lg border border-white/10 shadow-xl py-2">
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-white text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
                   <p className="text-white/60 text-xs">{user.email}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    signOut()
-                    setIsDropdownOpen(false)
-                  }}
-                  className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
-                >
-                  Sign Out
-                </button>
+                
+                {/* Usage Information */}
+                <div className="px-4 py-3 border-b border-white/10">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-white/60">Plan</p>
+                    <span className="text-xs px-2 py-1 bg-blue-600 text-white rounded-full">
+                      {getTierDisplay()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-white/80">
+                    {getUsageDisplay()}
+                  </p>
+                </div>
+                
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      router.push('/workspace')
+                      setIsDropdownOpen(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
+                  >
+                    My Workspace
+                  </button>
+                  <button
+                    onClick={() => {
+                      router.push('/pricing')
+                      setIsDropdownOpen(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
+                  >
+                    Pricing
+                  </button>
+                </div>
+                
+                <div className="border-t border-white/10 pt-1">
+                  <button
+                    onClick={() => {
+                      signOut()
+                      setIsDropdownOpen(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-red-400 hover:text-red-300 hover:bg-white/10 transition-colors text-sm"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -364,7 +427,7 @@ export default memo(function HomePage() {
           </div>
           
           <h1 className="text-3xl md:text-6xl font-light text-white mb-6 md:mb-8 leading-tight drop-shadow-2xl">
-            Turn Your Business Idea Into
+            Spark Your Business Idea Into
             <span className="block font-normal text-white/90 drop-shadow-xl">Actionable Plans</span>
           </h1>
           <p className="text-base md:text-lg text-white mb-8 md:mb-12 max-w-3xl mx-auto font-light leading-relaxed drop-shadow-xl bg-black/20 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/20">
@@ -601,7 +664,7 @@ export default memo(function HomePage() {
               disabled={!idea.trim()}
               className="w-full bg-white/20 backdrop-blur-sm hover:bg-white/30 disabled:bg-white/10 text-white font-medium py-4 px-8 rounded-xl text-lg transition-all border border-white/30 shadow-lg"
             >
-              Generate My Action Plan →
+              {!user ? 'Sign In to Generate Plan →' : 'Generate My Action Plan →'}
             </button>
           </form>
         </div>

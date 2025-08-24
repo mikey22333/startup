@@ -468,18 +468,8 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
   const { usageStatus } = useSubscription()
   const router = useRouter()
   
-  // Debug subscription status
-  console.log('PlanCard Debug:', { 
-    user: !!user, 
-    userEmail: user?.email, 
-    usageStatus, 
-    subscriptionTier: usageStatus?.subscriptionTier 
-  })
-  
-  // Check if user is on free tier
-  const isFreeUser = !user || !usageStatus || usageStatus?.subscriptionTier === 'free'
-  
-  console.log('isFreeUser:', isFreeUser)
+  // Check if user is on free tier - only lock for confirmed free users
+  const isFreeUser = user && usageStatus && usageStatus.subscriptionTier === 'free'
 
   // Memoize section change handler
   const handleSectionChange = useCallback((section: string) => {

@@ -7572,11 +7572,16 @@ export async function POST(request: NextRequest) {
         console.log('Auth check failed:', userError?.message || 'No user found')
       }
     } catch (authError) {
-      console.log('Auth check failed, continuing as anonymous user:', authError)
-      // Continue as anonymous user - they'll have IP-based rate limiting
+      console.log('Auth check failed:', authError)
     }
     
-    // For anonymous users, continue with existing IP-based rate limiting
+    // Require authentication for plan generation
+    if (!user) {
+      return NextResponse.json({ 
+        error: 'Authentication required. Please sign in to generate a business plan.',
+        authRequired: true
+      }, { status: 401 })
+    }
 
     // Check if we should use offline mode due to consecutive API failures
     if (shouldUseOfflineMode()) {

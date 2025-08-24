@@ -140,6 +140,13 @@ const PlanPageContent = memo(() => {
   const [error, setError] = useState<string | null>(null)
   const hasCalledAPI = useRef(false)
 
+  // Redirect unauthenticated users to login
+  useEffect(() => {
+    if (!user && (searchParams.get('idea') || searchParams.get('id'))) {
+      window.location.href = '/auth?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)
+    }
+  }, [user, searchParams])
+
   // Memoize search params
   const searchParamsData = useMemo(() => ({
     id: searchParams.get('id'),
