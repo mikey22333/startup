@@ -66,6 +66,37 @@ const safeRender = (value: any): string => {
   return String(value)
 }
 
+// Extract tools from action plan steps
+const extractToolsFromActionPlan = (actionPlan: any[]): Array<{name: string, description: string, cost: string, purpose?: string, pricing?: string, link?: string}> => {
+  if (!actionPlan || !Array.isArray(actionPlan)) return []
+  
+  const tools: Array<{name: string, description: string, cost: string, purpose?: string, pricing?: string, link?: string}> = []
+  
+  actionPlan.forEach(step => {
+    if (step.recommendedTools && Array.isArray(step.recommendedTools)) {
+      step.recommendedTools.forEach((tool: string) => {
+        // Convert string tool to object format
+        const description = `Essential tool for ${step.stepName || 'business operations'}`
+        tools.push({
+          name: tool,
+          description: description,
+          purpose: description,
+          cost: step.estimatedCost || 'Varies',
+          pricing: step.estimatedCost || 'Varies',
+          link: undefined
+        })
+      })
+    }
+  })
+  
+  // Remove duplicates
+  const uniqueTools = tools.filter((tool, index, arr) => 
+    arr.findIndex(t => t.name.toLowerCase() === tool.name.toLowerCase()) === index
+  )
+  
+  return uniqueTools
+}
+
 // Generate market growth trend data based on real market analysis
 const generateMarketGrowthData = (plan: any): { labels: string[], data: number[] } => {
   // Generate last 12 months of market growth data
@@ -723,12 +754,22 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
         
         legal: typeof plan.legal === 'string' ? plan.legal :
           (plan.legal ? JSON.stringify(plan.legal) : ''),
-        tools: (plan.recommendedTools || []).map((tool: any) => ({
-          name: tool.name || tool,
-          purpose: tool.description || tool.purpose || '',
-          pricing: tool.cost || tool.pricing || 'Contact for pricing',
-          category: tool.category || 'Business Tool'
-        })),
+        tools: [
+          // Get tools from recommendedTools field (legacy)
+          ...(plan.recommendedTools || []).map((tool: any) => ({
+            name: tool.name || tool,
+            purpose: tool.description || tool.purpose || '',
+            pricing: tool.cost || tool.pricing || 'Contact for pricing',
+            category: tool.category || 'Business Tool'
+          })),
+          // Extract tools from action plan steps (new approach)
+          ...extractToolsFromActionPlan(plan.actionPlan || []).map(tool => ({
+            name: tool.name,
+            purpose: tool.description,
+            pricing: tool.cost,
+            category: 'Essential Tool'
+          }))
+        ],
         funding: (plan.funding?.platforms || []).map((platform: any) => ({
           platform: platform.name || platform.platform || 'Unknown Platform',
           type: platform.type || 'Investment',
@@ -2754,37 +2795,53 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
         )}
 
         {/* Essential Tools & Resources */}
-        {plan.recommendedTools && plan.recommendedTools.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg mb-8 md:mb-16">
-            <div className="flex items-center space-x-3 mb-6 md:mb-8">
-              <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
-              <h2 className="text-xl md:text-2xl font-light text-neutral-900">Essential Tools</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {plan.recommendedTools.slice(0, 6).map((tool, index) => (
-                <div key={index} className="p-4 md:p-6 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <h4 className="font-medium text-neutral-900 text-sm md:text-base flex-1 min-w-0">{tool.name}</h4>
-                    <span className="text-neutral-600 font-medium text-xs md:text-sm whitespace-nowrap ml-3">{tool.cost}</span>
+        {(() => {
+          // Extract tools from both legacy field and action plan steps
+          const allTools = [
+            ...(plan.recommendedTools || []),
+            ...extractToolsFromActionPlan(plan.actionPlan || [])
+          ]
+          return allTools.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 md:p-8 border-2 border-black shadow-lg mb-8 md:mb-16">
+              <div className="flex items-center space-x-3 mb-6 md:mb-8">
+                <div className="w-1 h-6 md:h-8 bg-black rounded-full" />
+                <h2 className="text-xl md:text-2xl font-light text-neutral-900">Essential Tools</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {allTools.slice(0, 6).map((tool, index) => (
+                  <div key={index} className="p-4 md:p-6 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <h4 className="font-medium text-neutral-900 text-sm md:text-base flex-1 min-w-0 pr-2">
+                        {typeof tool === 'string' ? tool : tool.name}
+                      </h4>
+                      <span className="text-neutral-600 font-medium text-xs md:text-sm whitespace-nowrap flex-shrink-0">
+                        {typeof tool === 'string' ? 'Varies' : (tool.cost || (tool as any).pricing || 'Varies')}
+                      </span>
+                    </div>
+                    <p className="text-xs md:text-sm text-neutral-600 font-light mb-3 leading-relaxed">
+                      {typeof tool === 'string' 
+                        ? 'Essential business tool' 
+                        : ((tool.description || (tool as any).purpose || 'Essential business tool').substring(0, 100) + '...')
+                      }
+                    </p>
+                    {typeof tool === 'object' && (tool.link || (tool as any).link) && (
+                      <a 
+                        href={(tool as any).link} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="inline-flex items-center space-x-2 text-neutral-700 hover:text-neutral-900 text-xs md:text-sm font-medium transition-colors"
+                      >
+                        <span>Learn More</span>
+                        <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
+                      </a>
+                    )}
                   </div>
-                  <p className="text-xs md:text-sm text-neutral-600 font-light mb-3 leading-relaxed">{tool.description.substring(0, 100)}...</p>
-                  {tool.link && (
-                    <a 
-                      href={tool.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="inline-flex items-center space-x-2 text-neutral-700 hover:text-neutral-900 text-xs md:text-sm font-medium transition-colors"
-                    >
-                      <span>Learn More</span>
-                      <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
-                    </a>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Footer */}
         <div className="text-center pt-8 md:pt-16 pb-6 md:pb-8">

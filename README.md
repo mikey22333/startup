@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-# PlanSpark - AI Business Plan Generator
+# Idea2Action - AI Business Plan Generator
 
 A production-ready AI web application that transforms business ideas into detailed, actionable 30-60-90 day plans.
 

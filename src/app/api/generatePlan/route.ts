@@ -6689,32 +6689,10 @@ async function injectVerifiedDatabaseData(planData: any, businessType: string, l
       console.log('No verified legal requirements found in database')
     }
     
-    // Extract tools from verified database data
-    const toolFacts = verifiedFacts.filter(f => f.category === 'Recommended Tool')
-    if (toolFacts.length > 0) {
-      planData.recommendedTools = toolFacts.map(tool => {
-        const parts = tool.content.split(':')
-        const name = parts[0].trim()
-        const remaining = parts.slice(1).join(':').trim()
-        
-        const costMatch = remaining.match(/\(([^)]+)\)$/)
-        const cost = costMatch ? costMatch[1] : 'Varies'
-        const description = remaining.replace(/\([^)]+\)$/, '').trim()
-        
-        return {
-          name: name,
-          description: description,
-          cost: cost,
-          alternatives: ['See database for alternatives'],
-          link: '#'
-        }
-      })
-      console.log(`Injected ${planData.recommendedTools.length} verified tools`)
-    } else {
-      planData.recommendedTools = []
-      console.log('No verified tools found in database')
-    }
-    
+    // Tools injection removed - AI now generates tools dynamically
+    // No database lookup for tools, AI will recommend based on business context
+    console.log('AI will generate essential tools based on business idea')
+
   } catch (error) {
     console.error('Error injecting verified database data:', error)
     // Ensure empty arrays if database query fails
@@ -6725,124 +6703,12 @@ async function injectVerifiedDatabaseData(planData: any, businessType: string, l
   return planData
 }
 
-async function getVerifiedFacts(businessType: string, location?: string) {
-  try {
-    // Check if Supabase is configured
-    if (!isSupabaseConfigured()) {
-      console.log('Supabase not configured, returning empty verified facts')
-      return []
-    }
-
-    // Try multiple business type variations for better matching
-    const businessTypeVariations = [
-      businessType,
-      businessType.toUpperCase(),
-      businessType.toLowerCase(),
-      businessType.replace('/', '_'),
-      businessType.replace('PHYSICAL/SERVICE', 'SERVICE'),
-      businessType.replace('PHYSICAL/SERVICE', 'PHYSICAL')
-    ]
-
-    let industries = null
-    let industryId = null
-
-    // Try to find matching industry with variations
-    for (const typeVariation of businessTypeVariations) {
-      const { data } = await supabase
-        .from('industries')
-        .select('*')
-        .eq('type', typeVariation)
-        .limit(1)
-
-      if (data?.length) {
-        industries = data
-        industryId = data[0].id
-        console.log(`Found industry match with type: ${typeVariation}`)
-        break
-      }
-    }
-
-    if (!industryId) {
-      console.log('No industry data found for any type variation:', businessTypeVariations)
-      console.log('Returning empty array - no verified data available')
-      return []
-    }
-
-    // Get legal requirements
-    const legalQuery = supabase
-      .from('legal_requirements')
-      .select('*')
-      .eq('industry_id', industryId)
-
-    if (location) {
-      legalQuery.ilike('location', `%${location}%`)
-    }
-
-    const { data: legalReqs } = await legalQuery.limit(5)
-
-    // Get startup costs
-    const costQuery = supabase
-      .from('avg_startup_costs')
-      .select('*')
-      .eq('industry_id', industryId)
-
-    if (location) {
-      costQuery.ilike('location', `%${location}%`)
-    }
-
-    const { data: costs } = await costQuery.limit(2)
-
-    // Get common tools
-    const { data: tools } = await supabase
-      .from('common_tools')
-      .select('*')
-      .eq('industry_id', industryId)
-      .limit(5)
-
-    const verifiedFacts: Array<{ category: string; content: string }> = []
-
-    // Format legal requirements - ONLY verified data
-    if (legalReqs?.length) {
-      legalReqs.forEach(req => {
-        verifiedFacts.push({
-          category: 'Legal Requirement',
-          content: `${req.requirement} - ${req.description}${req.cost_estimate ? ` (Est. cost: ${req.cost_estimate})` : ''}`
-        })
-      })
-    }
-
-    // Format startup costs - ONLY verified data
-    if (costs?.length) {
-      costs.forEach(cost => {
-        verifiedFacts.push({
-          category: 'Startup Costs',
-          content: `${cost.description}: $${cost.cost_range_min.toLocaleString()} - $${cost.cost_range_max.toLocaleString()}`
-        })
-      })
-    }
-
-    // Format common tools - ONLY verified data
-    if (tools?.length) {
-      tools.forEach(tool => {
-        verifiedFacts.push({
-          category: 'Recommended Tool',
-          content: `${tool.name}: ${tool.description} (${tool.cost})`
-        })
-      })
-    }
-
-    // Return only verified facts - no fallback supplementation
-    const legalCount = verifiedFacts.filter(f => f.category === 'Legal Requirement').length
-    const toolsCount = verifiedFacts.filter(f => f.category === 'Recommended Tool').length
-    const costsCount = verifiedFacts.filter(f => f.category === 'Startup Costs').length
-
-    console.log(`Verified data only - Legal: ${legalCount}, Tools: ${toolsCount}, Costs: ${costsCount}`)
-    return verifiedFacts
-  } catch (error) {
-    console.error('Error fetching verified facts:', error)
-    console.log('Returning empty array due to error - no fallback data')
-    return []
-  }
+async function getVerifiedFacts(businessType: string, location?: string): Promise<Array<{ category: string; content: string }>> {
+  // Completely AI-generated business plans - no database dependency
+  console.log('Using 100% AI-generated business plans - no database lookup')
+  console.log(`Business type: ${businessType}, Location: ${location || 'General'}`)
+  console.log('AI will generate all content including legal requirements, costs, and tools dynamically')
+  return []
 }
 
 async function generateSimplifiedPlan(idea: string, location?: string, budget?: string, timeline?: string, providedBusinessType?: string, currency?: string) {
