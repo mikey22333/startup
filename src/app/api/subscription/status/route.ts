@@ -3,27 +3,14 @@ import { createClient } from '@/lib/supabase-server'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get authorization header
-    const authHeader = request.headers.get('authorization')
-    
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Create Supabase client with auth token
+    // Create Supabase client for server-side operations 
     const supabase = createClient()
     
-    // Set the auth token for this request
-    await supabase.auth.setSession({
-      access_token: authHeader.substring(7),
-      refresh_token: ''
-    })
-    
-    // Get user from token
+    // Try to get user session from cookies (same as generatePlan)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (!user || userError) {
-      return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get user profile with subscription info

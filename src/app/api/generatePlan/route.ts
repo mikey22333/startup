@@ -7868,7 +7868,11 @@ Currency: ${currency || 'USD'}`
       // Try to get user session - this should work if middleware is properly setting cookies
       const { data: { user }, error: userError } = await supabaseServer.auth.getUser()
       
-      console.log('Auth check - User exists:', !!user, 'Error:', userError?.message || 'none');
+      if (userError) {
+        console.log('Auth check - User exists: false Error:', userError?.message || 'Auth session missing!')
+      } else {
+        console.log('Auth check - User exists:', !!user, 'User ID:', user?.id || 'none')
+      }
       
       if (user) {
         console.log('User authenticated, saving business plan to database. User ID:', user.id);

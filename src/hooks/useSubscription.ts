@@ -16,29 +16,24 @@ export interface UsageStatus {
 }
 
 export function useSubscription() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchUsageStatus = async () => {
-    if (!user) return
+    if (!user || authLoading) return
 
     try {
       setLoading(true)
       setError(null)
 
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.access_token) {
+      // Check if user is authenticated
+      if (!user) {
         throw new Error('Not authenticated')
       }
 
-      const response = await fetch('/api/subscription/status', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      })
+      const response = await fetch('/api/subscription/status')
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to fetch status' }))
@@ -96,10 +91,15 @@ export function useSubscription() {
   }
 
   useEffect(() => {
-    if (user) {
+    // Only fetch when auth is loaded and user exists
+    if (!authLoading && user) {
       fetchUsageStatus()
+    } else if (!authLoading && !user) {
+      // Clear usage status when user logs out
+      setUsageStatus(null)
+      setError(null)
     }
-  }, [user])
+  }, [user, authLoading])
 
   return {
     usageStatus,
