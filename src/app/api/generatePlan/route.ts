@@ -7792,13 +7792,23 @@ Currency: ${currency || 'USD'}`
       if (openBraces !== closeBraces) {
         console.error('Incomplete JSON detected - braces mismatch:', { openBraces, closeBraces })
         
+        // Try to salvage the JSON by finding the most complete valid structure
         const salvaged = extractBalancedJson(jsonContent)
         if (salvaged) {
           console.log('Salvaged balanced JSON of length:', salvaged.length)
           try {
             planData = JSON.parse(salvaged)
+            console.log('Successfully parsed salvaged JSON')
           } catch (e) {
             console.warn('Salvaged JSON still invalid, using fallback:', e)
+            // Clean up common JSON formatting issues before fallback
+            const cleaned = cleanJsonString(salvaged)
+            try {
+              planData = JSON.parse(cleaned)
+              console.log('Successfully parsed cleaned JSON')
+            } catch (e2) {
+              console.warn('Cleaned JSON also invalid, using simplified fallback')
+            }
           }
         }
 
@@ -7862,29 +7872,34 @@ Currency: ${currency || 'USD'}`
 
     // Save to workspace if user is authenticated
     try {
-      // Create Supabase client for server-side operations 
-      const supabaseServer = createClient()
+      // Use the same authenticated client that was used for usage tracking
+      let dbUser = user; // This is the user from request headers
       
-      // Try to get user session - this should work if middleware is properly setting cookies
-      const { data: { user }, error: userError } = await supabaseServer.auth.getUser()
-      
-      if (userError) {
-        console.log('Auth check - User exists: false Error:', userError?.message || 'Auth session missing!')
-      } else {
-        console.log('Auth check - User exists:', !!user, 'User ID:', user?.id || 'none')
+      if (!dbUser) {
+        // Fallback: Try to get user session from server client
+        const supabaseServer = createClient()
+        const { data: { user: sessionUser }, error: userError } = await supabaseServer.auth.getUser()
+        
+        if (userError) {
+          console.log('Auth check - Session auth failed:', userError?.message || 'Auth session missing!')
+        }
+        
+        dbUser = sessionUser;
       }
       
-      if (user) {
-        console.log('User authenticated, saving business plan to database. User ID:', user.id);
+      console.log('Auth check - User exists:', !!dbUser, 'User ID:', dbUser?.id || 'none')
+      
+      if (dbUser && authenticatedClient) {
+        console.log('User authenticated, saving business plan to database. User ID:', dbUser.id);
         
         // Generate a title from the business idea (first 50 chars)
         const title = idea.length > 50 ? idea.substring(0, 47) + '...' : idea;
         
-        // Save directly to business_plans table using server client
-        const { data: savedPlan, error: saveError } = await supabaseServer
+        // Use the same authenticated client for consistency
+        const { data: savedPlan, error: saveError } = await authenticatedClient
           .from('business_plans')
           .insert({
-            user_id: user.id,
+            user_id: dbUser.id,
             title: title,
             business_idea: idea,
             location: location || null,
@@ -7916,7 +7931,9 @@ Currency: ${currency || 'USD'}`
     }
 
     // Increment usage counter for authenticated users after successful generation
-    if (user && userProfile && authenticatedClient) {
+    // Use the same user reference for consistency
+    const finalUser = user; // The user from request headers
+    if (finalUser && userProfile && authenticatedClient) {
       try {
         const { error: updateError } = await authenticatedClient
           .from('profiles')
@@ -7928,7 +7945,7 @@ Currency: ${currency || 'USD'}`
         if (updateError) {
           console.error('Failed to update usage counter:', updateError)
         } else {
-          console.log(`Updated usage counter for user ${user.email}: ${userProfile.daily_plans_used + 1}`)
+          console.log(`Updated usage counter for user ${finalUser.email}: ${userProfile.daily_plans_used + 1}`)
         }
       } catch (updateError) {
         console.error('Error updating usage counter:', updateError)
@@ -7977,6 +7994,20 @@ function extractBalancedJson(raw: string): string | null {
     return raw.substring(start, lastComplete + 1)
   }
   return null
+}
+
+// Clean JSON string by fixing common formatting issues
+function cleanJsonString(jsonStr: string): string {
+  return jsonStr
+    // Remove trailing commas
+    .replace(/,(\s*[}\]])/g, '$1')
+    // Fix unescaped quotes (simple heuristic)
+    .replace(/([^\\])"([^"]*)"([^,}\]:])/g, '$1\\"$2\\"$3')
+    // Ensure proper spacing around colons and commas
+    .replace(/:\s*"/g, ': "')
+    .replace(/",\s*/g, '", ')
+    // Remove any non-JSON content at the end
+    .replace(/[^}]*$/, '')
 }
 
 // OpenRouter API fallback function

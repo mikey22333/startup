@@ -83,6 +83,13 @@ ${marketInsights.map(insight => `
 
   return `You are a business consultant. Create a comprehensive business plan using the 8-pillar framework for business success.
 
+CRITICAL FORMATTING REQUIREMENTS:
+- RESPOND ONLY WITH VALID JSON - NO additional text before or after
+- ENSURE all braces {} and brackets [] are properly matched
+- ESCAPE all quotes within string values using \"
+- VERIFY JSON validity before responding
+- NO trailing commas in objects or arrays
+
 CRITICAL: Address ALL 8 areas below for a complete analysis.
 ${marketResearch ? 'USE THE REAL-TIME MARKET RESEARCH DATA BELOW for accurate competitor analysis, market size, and customer insights.' : ''}
 
@@ -150,10 +157,6 @@ REQUIRED JSON STRUCTURE (complete and valid):
   },
   "feasibility": {
     "marketType": "${businessType}",
-    "difficultyLevel": "Easy|Moderate|Complex", 
-    "estimatedTimeToLaunch": "${timelineContext || '3-6 months'}",
-    "estimatedStartupCost": "${budgetContext || '$10,000-25,000'}"
-  },
     "difficultyLevel": "Easy|Moderate|Complex", 
     "estimatedTimeToLaunch": "${timelineContext || '3-6 months'}",
     "estimatedStartupCost": "${budgetContext || '$10,000-25,000'}"
@@ -275,7 +278,17 @@ ANALYSIS REQUIREMENTS:
 
 CURRENT DATE: August 2025 - Use current market context and opportunities.
 
-Keep responses comprehensive but concise. Ensure valid JSON format covering all 8 business pillars.`
+JSON VALIDATION CHECKLIST:
+✓ Opening and closing braces must match exactly
+✓ All string values must be properly quoted
+✓ No trailing commas after last array/object items
+✓ All quotes within strings must be escaped with \"
+✓ Numbers should not be quoted unless part of a string
+✓ Arrays should use [] brackets, objects should use {} braces
+
+Keep responses comprehensive but concise. Ensure valid JSON format covering all 8 business pillars.
+
+RESPOND WITH VALID JSON ONLY - NO additional text or explanations.`
 }
 
 function getCurrencySymbol(currency: string): string {
