@@ -26,9 +26,14 @@ export async function GET(request: NextRequest) {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     
-    if (!profile || profileError) {
+    if (profileError) {
+      console.error('Error fetching profile:', profileError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+    
+    if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 

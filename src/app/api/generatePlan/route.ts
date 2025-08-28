@@ -7945,7 +7945,7 @@ Currency: ${currency || 'USD'}`
         if (updateError) {
           console.error('Failed to update usage counter:', updateError)
         } else {
-          console.log(`Updated usage counter for user ${finalUser.email}: ${userProfile.daily_plans_used + 1}`)
+          console.log(`Updated usage counter for user ${finalUser.id}: ${userProfile.daily_plans_used + 1}`)
         }
       } catch (updateError) {
         console.error('Error updating usage counter:', updateError)
@@ -7998,16 +7998,21 @@ function extractBalancedJson(raw: string): string | null {
 
 // Clean JSON string by fixing common formatting issues
 function cleanJsonString(jsonStr: string): string {
-  return jsonStr
-    // Remove trailing commas
-    .replace(/,(\s*[}\]])/g, '$1')
-    // Fix unescaped quotes (simple heuristic)
-    .replace(/([^\\])"([^"]*)"([^,}\]:])/g, '$1\\"$2\\"$3')
-    // Ensure proper spacing around colons and commas
-    .replace(/:\s*"/g, ': "')
-    .replace(/",\s*/g, '", ')
-    // Remove any non-JSON content at the end
-    .replace(/[^}]*$/, '')
+  try {
+    // First attempt: just remove trailing commas which is the most common issue
+    let cleaned = jsonStr.replace(/,(\s*[}\]])/g, '$1')
+    
+    // Test if this basic fix works
+    JSON.parse(cleaned)
+    return cleaned
+  } catch {
+    // If basic fix didn't work, try more aggressive cleaning
+    return jsonStr
+      .replace(/,(\s*[}\]])/g, '$1')  // Remove trailing commas
+      .replace(/[\r\n]+/g, ' ')       // Replace newlines with spaces
+      .replace(/\s+/g, ' ')           // Normalize whitespace
+      .trim()                         // Remove leading/trailing whitespace
+  }
 }
 
 // OpenRouter API fallback function
