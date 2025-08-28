@@ -4,6 +4,8 @@ import { useState, useCallback, useMemo, memo, lazy, Suspense, useEffect } from 
 import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import { useSubscription } from '@/hooks/useSubscription';
+import NewPlanModal from '@/components/NewPlanModal';
 
 // Lazy load heavy components
 const Beams = lazy(() => import("@/components/Beams"))
@@ -100,8 +102,16 @@ export default memo(function HomePage() {
   const [currency, setCurrency] = useState('USD')
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isNewPlanModalOpen, setIsNewPlanModalOpen] = useState(false)
   const router = useRouter()
   const { user, signOut } = useAuth()
+  const { usageStatus } = useSubscription()
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 User state:', user ? user.email : 'No user')
+    console.log('🔍 Usage status:', usageStatus)
+  }, [user, usageStatus])
 
   // Get user's first letter for profile
   const getUserInitial = () => {
@@ -243,6 +253,14 @@ export default memo(function HomePage() {
 
           {/* Navigation Links */}
           <nav className="space-y-4">
+            {user && (
+              <button
+                onClick={() => handleNavigation('/dashboard')}
+                className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
+              >
+                Dashboard
+              </button>
+            )}
             <button
               onClick={() => handleNavigation('/workspace')}
               className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
@@ -267,8 +285,57 @@ export default memo(function HomePage() {
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium">
                     {getUserInitial()}
                   </div>
-                  <span className="text-sm">{user.user_metadata?.full_name || 'User'}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
+                    <p className="text-xs text-white/60">{user.email}</p>
+                  </div>
                 </div>
+                
+                {/* Mobile Usage Statistics */}
+                {usageStatus?.dailyUsage && (
+                  <div className="px-4 py-3 bg-white/5 rounded-lg mx-4 mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-white/70 text-xs font-medium">Daily Usage</span>
+                      <span className="text-white text-xs font-medium">
+                        {usageStatus.subscriptionTier?.toUpperCase() || 'FREE'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-white/60 text-xs">Plans Generated</span>
+                      <span className="text-white text-xs font-medium">
+                        {usageStatus.dailyUsage.used} / {usageStatus.dailyUsage.limit === 'unlimited' ? '∞' : usageStatus.dailyUsage.limit}
+                      </span>
+                    </div>
+                    
+                    {/* Progress bar */}
+                    <div className="w-full bg-white/10 rounded-full h-1.5 mb-1">
+                      <div 
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          usageStatus.dailyUsage.limit === 'unlimited' 
+                            ? 'bg-green-400' 
+                            : usageStatus.dailyUsage.used >= usageStatus.dailyUsage.limit
+                              ? 'bg-red-400' 
+                              : usageStatus.dailyUsage.used / (usageStatus.dailyUsage.limit as number) > 0.8
+                                ? 'bg-yellow-400'
+                                : 'bg-blue-400'
+                        }`}
+                        style={{
+                          width: usageStatus.dailyUsage.limit === 'unlimited' 
+                            ? '100%' 
+                            : `${Math.min(100, (usageStatus.dailyUsage.used / (usageStatus.dailyUsage.limit as number)) * 100)}%`
+                        }}
+                      />
+                    </div>
+                    
+                    {usageStatus.dailyUsage.remaining !== 'unlimited' && (
+                      <p className="text-white/50 text-xs">
+                        {usageStatus.dailyUsage.remaining} remaining today
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 <button
                   onClick={() => signOut()}
                   className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium mt-2"
@@ -332,11 +399,82 @@ export default memo(function HomePage() {
             </button>
             
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-black/90 backdrop-blur-md rounded-lg border border-white/10 shadow-xl py-2">
+              <div className="absolute right-0 mt-2 w-64 bg-black/90 backdrop-blur-md rounded-lg border border-white/10 shadow-xl py-2">
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-white text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
                   <p className="text-white/60 text-xs">{user.email}</p>
                 </div>
+                
+                {/* Usage Statistics */}
+                <div className="px-4 py-3 border-b border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white/70 text-xs font-medium">Daily Usage</span>
+                    <span className="text-white text-xs font-medium">
+                      {usageStatus?.subscriptionTier?.toUpperCase() || 'FREE'}
+                    </span>
+                  </div>
+                  
+                  {usageStatus?.dailyUsage ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60 text-xs">Plans Generated</span>
+                        <span className="text-white text-xs font-medium">
+                          {usageStatus.dailyUsage.used} / {usageStatus.dailyUsage.limit === 'unlimited' ? '∞' : usageStatus.dailyUsage.limit}
+                        </span>
+                      </div>
+                      
+                      {/* Progress bar */}
+                      <div className="w-full bg-white/10 rounded-full h-1.5">
+                        <div 
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            usageStatus.dailyUsage.limit === 'unlimited' 
+                              ? 'bg-green-400' 
+                              : usageStatus.dailyUsage.used >= usageStatus.dailyUsage.limit
+                                ? 'bg-red-400' 
+                                : usageStatus.dailyUsage.used / (usageStatus.dailyUsage.limit as number) > 0.8
+                                  ? 'bg-yellow-400'
+                                  : 'bg-blue-400'
+                          }`}
+                          style={{
+                            width: usageStatus.dailyUsage.limit === 'unlimited' 
+                              ? '100%' 
+                              : `${Math.min(100, (usageStatus.dailyUsage.used / (usageStatus.dailyUsage.limit as number)) * 100)}%`
+                          }}
+                        />
+                      </div>
+                      
+                      {usageStatus.dailyUsage.remaining !== 'unlimited' && (
+                        <p className="text-white/50 text-xs">
+                          {usageStatus.dailyUsage.remaining} plans remaining today
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-white/50 text-xs">Loading usage stats...</div>
+                  )}
+                </div>
+                
+                <div className="py-1 border-b border-white/10">
+                  <button
+                    onClick={() => {
+                      router.push('/dashboard')
+                      setIsDropdownOpen(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      router.push('/pricing')
+                      setIsDropdownOpen(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
+                  >
+                    Upgrade Plan
+                  </button>
+                </div>
+                
                 <button
                   onClick={() => {
                     signOut()
@@ -633,6 +771,12 @@ export default memo(function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* New Plan Modal */}
+      <NewPlanModal
+        isOpen={isNewPlanModalOpen}
+        onClose={() => setIsNewPlanModalOpen(false)}
+      />
     </div>
   )
 })

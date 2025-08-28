@@ -9,7 +9,15 @@ export async function GET(request: NextRequest) {
     // Try to get user session from cookies (same as generatePlan)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
+    console.log('Subscription API - Auth check:', {
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      error: userError?.message
+    })
+    
     if (!user || userError) {
+      console.log('Subscription API - Unauthorized:', userError?.message || 'No user')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

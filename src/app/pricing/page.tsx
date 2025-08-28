@@ -37,7 +37,7 @@ const PRICING_PLANS = [
   {
     name: "Pro",
     subtitle: "For entrepreneurs & startups.",
-    price: "$20",
+    price: "$19",
     period: "per month",
     features: [
       "5 business plans per day",
@@ -53,16 +53,11 @@ const PRICING_PLANS = [
   {
     name: "Pro+",
     subtitle: "For agencies & consultants.",
-    price: "$120",
+    price: "$39",
     period: "per month",
     features: [
       "Unlimited business plans",
-      "Everything in Pro",
-      "Custom branding & white-label",
-      "API access for integrations",
-      "Advanced analytics dashboard",
-      "Dedicated account manager",
-      "Custom market research reports"
+      "Everything in Pro"
     ],
     buttonText: "Get Started",
     isPopular: false

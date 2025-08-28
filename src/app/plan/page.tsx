@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback, Suspense, useRef, memo, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { MessageCircle } from 'lucide-react'
 import { useAuth } from '@/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import PlanCard from '@/components/PlanCard'
 import PageTransition from '@/components/PageTransition'
+import BusinessAdvisor from '@/components/BusinessAdvisor'
 import dynamic from 'next/dynamic'
 
 // Dynamically import Beams to avoid SSR issues
@@ -134,18 +136,20 @@ interface PlanData {
 
 const PlanPageContent = memo(() => {
   const searchParams = useSearchParams()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [plan, setPlan] = useState<PlanData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isAdvisorOpen, setIsAdvisorOpen] = useState(false)
+  const [isAdvisorMinimized, setIsAdvisorMinimized] = useState(false)
   const hasCalledAPI = useRef(false)
 
-  // Redirect unauthenticated users to login
+  // Redirect unauthenticated users to login - only after auth loading is complete
   useEffect(() => {
-    if (!user && (searchParams.get('idea') || searchParams.get('id'))) {
+    if (!authLoading && !user && (searchParams.get('idea') || searchParams.get('id'))) {
       window.location.href = '/auth?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)
     }
-  }, [user, searchParams])
+  }, [user, authLoading, searchParams])
 
   // Memoize search params
   const searchParamsData = useMemo(() => ({
@@ -451,6 +455,24 @@ const PlanPageContent = memo(() => {
   return (
     <div>
       <PlanCard plan={plan} isLoading={loading} />
+      
+      {/* Floating AI Advisor Button */}
+      <button
+        onClick={() => setIsAdvisorOpen(true)}
+        className="fixed right-6 bottom-6 w-14 h-14 bg-neutral-800 text-neutral-100 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group hover:scale-105 z-40"
+        title="Ask AI Business Advisor"
+      >
+        <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
+      </button>
+
+      {/* Business Advisor Chat */}
+      <BusinessAdvisor
+        isOpen={isAdvisorOpen}
+        onClose={() => setIsAdvisorOpen(false)}
+        isMinimized={isAdvisorMinimized}
+        onToggleMinimize={() => setIsAdvisorMinimized(!isAdvisorMinimized)}
+        planData={plan}
+      />
     </div>
   )
 })
