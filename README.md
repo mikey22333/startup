@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-# Idea2Action - AI Business Plan Generator
+# PlanSpark - AI Business Plan Generator
 
 A production-ready AI web application that transforms business ideas into detailed, actionable 30-60-90 day plans.
 
@@ -27,7 +27,7 @@ A production-ready AI web application that transforms business ideas into detail
 1. **Clone and install dependencies:**
    ```bash
    git clone <repository-url>
-   cd idea2action
+   cd planspark
    npm install
    ```
 
@@ -216,11 +216,11 @@ MIT License - see LICENSE file for details
 
 ## 🆘 Support
 
-For support, email support@idea2action.com or create an issue in this repository.
+For support, email support@planspark.com or create an issue in this repository.
 
 ---
 
-Built with ❤️ by the Idea2Action team
+Built with ❤️ by the PlanSpark team
 =======
 # startup
 >>>>>>> c1a1f8fe445728b37a31d7282f8fce7d39e3fff3

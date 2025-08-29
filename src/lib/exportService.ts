@@ -191,21 +191,68 @@ function parseContent(data: any): string {
   if (!data) return 'Not available'
   
   if (typeof data === 'string') {
-    return data.replace(/<[^>]*>/g, '').trim()
+    // Check if it's a JSON string that should be parsed
+    if (data.trim().startsWith('{') || data.trim().startsWith('[')) {
+      try {
+        data = JSON.parse(data)
+        // Continue processing as object/array
+      } catch (e) {
+        // If parsing fails, just clean HTML and return
+        return data.replace(/<[^>]*>/g, '').trim()
+      }
+    } else {
+      return data.replace(/<[^>]*>/g, '').trim()
+    }
   }
   
   if (Array.isArray(data)) {
     return data.map((item, index) => {
       if (typeof item === 'object' && item !== null) {
+        // Handle competitor objects specially
+        if (item.name && (item.description || item.marketShare || item.strengths)) {
+          let result = `${index + 1}. ${item.name}`
+          if (item.description) result += ` - ${item.description}`
+          if (item.marketShare) result += ` (Market Share: ${item.marketShare})`
+          if (item.funding) result += ` (Funding: ${item.funding})`
+          if (item.strengths && Array.isArray(item.strengths)) {
+            result += `\n   Strengths: ${item.strengths.join(', ')}`
+          }
+          if (item.weaknesses && Array.isArray(item.weaknesses)) {
+            result += `\n   Weaknesses: ${item.weaknesses.join(', ')}`
+          }
+          if (item.pricing) {
+            if (typeof item.pricing === 'object') {
+              result += `\n   Pricing: ${item.pricing.model || 'N/A'} - ${item.pricing.range || 'N/A'}`
+            } else {
+              result += `\n   Pricing: ${item.pricing}`
+            }
+          }
+          return result
+        }
+        // Handle step objects
         if (item.name || item.stepName || item.title) {
           const name = item.name || item.stepName || item.title
           const desc = item.description || item.purpose || ''
           return `${index + 1}. ${name}: ${desc}`
         }
-        return `${index + 1}. ${JSON.stringify(item).replace(/[{}"]/g, ' ').trim()}`
+        // Handle generic objects by extracting key-value pairs
+        const entries = Object.entries(item).filter(([key, value]) => 
+          value !== null && value !== undefined && value !== ''
+        )
+        if (entries.length > 0) {
+          return `${index + 1}. ${entries.map(([key, value]) => {
+            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+            if (Array.isArray(value)) {
+              return `${formattedKey}: ${value.join(', ')}`
+            }
+            return `${formattedKey}: ${value}`
+          }).join(', ')}`
+        }
+        // Last resort: stringify but make it readable
+        return `${index + 1}. ${Object.keys(item).join(', ')}: ${Object.values(item).map(v => Array.isArray(v) ? v.join(', ') : v).join(', ')}`
       }
       return `${index + 1}. ${item}`
-    }).join('\n')
+    }).join('\n\n')
   }
   
   if (typeof data === 'object' && data !== null) {
@@ -213,6 +260,14 @@ function parseContent(data: any): string {
       .filter(([key, value]) => value !== null && value !== undefined && value !== '')
       .map(([key, value]) => {
         const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+        if (Array.isArray(value)) {
+          return `${formattedKey}:\n  - ${value.join('\n  - ')}`
+        }
+        if (typeof value === 'object' && value !== null) {
+          // Handle nested objects
+          const nestedEntries = Object.entries(value).map(([k, v]) => `${k}: ${v}`).join(', ')
+          return `${formattedKey}: ${nestedEntries}`
+        }
         return `${formattedKey}: ${value}`
       })
       .join('\n')
@@ -349,6 +404,120 @@ function formatBusinessSection(sectionName: string, content: any): string {
         return formatted
       }
       return parseContent(content)
+      
+    case 'competitive analysis':
+      // Handle competitive analysis with proper object formatting
+      let competitiveData = content
+      
+      // If content is a string that looks like JSON, try to parse it
+      if (typeof content === 'string') {
+        if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+          try {
+            competitiveData = JSON.parse(content)
+          } catch (e) {
+            // If parsing fails, treat as regular string
+            return content
+          }
+        } else {
+          // If it's just a regular string, return it as is
+          return content
+        }
+      }
+      
+      if (typeof competitiveData === 'object' && competitiveData !== null) {
+        let formatted = 'Competitive Analysis:\n\n'
+        
+        // Handle market gaps
+        if (competitiveData.marketGaps) {
+          formatted += `• Market Gaps:\n`
+          if (typeof competitiveData.marketGaps === 'string') {
+            formatted += `  ${competitiveData.marketGaps}\n\n`
+          } else if (Array.isArray(competitiveData.marketGaps)) {
+            competitiveData.marketGaps.forEach((gap: string) => {
+              formatted += `  - ${gap}\n`
+            })
+            formatted += '\n'
+          }
+        }
+        
+        // Handle competitors
+        if (competitiveData.competitors) {
+          formatted += `• Competitors:\n`
+          if (Array.isArray(competitiveData.competitors)) {
+            competitiveData.competitors.forEach((competitor: any, index: number) => {
+              if (typeof competitor === 'object' && competitor !== null) {
+                formatted += `  ${index + 1}. ${competitor.name || 'Unnamed Competitor'}\n`
+                if (competitor.description) {
+                  formatted += `     Description: ${competitor.description}\n`
+                }
+                if (competitor.marketShare) {
+                  formatted += `     Market Share: ${competitor.marketShare}\n`
+                }
+                if (competitor.funding) {
+                  formatted += `     Funding: ${competitor.funding}\n`
+                }
+                if (competitor.strengths && Array.isArray(competitor.strengths)) {
+                  formatted += `     Strengths: ${competitor.strengths.join(', ')}\n`
+                }
+                if (competitor.weaknesses && Array.isArray(competitor.weaknesses)) {
+                  formatted += `     Weaknesses: ${competitor.weaknesses.join(', ')}\n`
+                }
+                if (competitor.pricing) {
+                  if (typeof competitor.pricing === 'object') {
+                    formatted += `     Pricing: ${competitor.pricing.model || 'N/A'} - ${competitor.pricing.range || 'N/A'}\n`
+                  } else {
+                    formatted += `     Pricing: ${competitor.pricing}\n`
+                  }
+                }
+                if (competitor.features && Array.isArray(competitor.features)) {
+                  formatted += `     Features: ${competitor.features.join(', ')}\n`
+                }
+              } else {
+                formatted += `  ${index + 1}. ${competitor}\n`
+              }
+              formatted += '\n'
+            })
+          } else if (typeof competitiveData.competitors === 'string') {
+            formatted += `  ${competitiveData.competitors}\n\n`
+          }
+        }
+        
+        // Handle your business positioning
+        if (competitiveData.yourBusiness) {
+          formatted += `• Your Business:\n`
+          if (typeof competitiveData.yourBusiness === 'object') {
+            Object.entries(competitiveData.yourBusiness).forEach(([key, value]) => {
+              const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+              formatted += `  ${formattedKey}: ${value}\n`
+            })
+          } else {
+            formatted += `  ${competitiveData.yourBusiness}\n`
+          }
+          formatted += '\n'
+        }
+        
+        // Handle positioning map
+        if (competitiveData.positioningMap) {
+          formatted += `• Positioning Map:\n`
+          formatted += `  ${competitiveData.positioningMap}\n\n`
+        }
+        
+        // Handle competitive advantages
+        if (competitiveData.competitiveAdvantages) {
+          formatted += `• Competitive Advantages:\n`
+          if (Array.isArray(competitiveData.competitiveAdvantages)) {
+            competitiveData.competitiveAdvantages.forEach((advantage: string) => {
+              formatted += `  - ${advantage}\n`
+            })
+          } else {
+            formatted += `  ${competitiveData.competitiveAdvantages}\n`
+          }
+          formatted += '\n'
+        }
+        
+        return formatted
+      }
+      return parseContent(competitiveData)
       
     case 'marketing strategy':
       if (typeof content === 'object' && content.channels) {

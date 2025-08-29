@@ -58,7 +58,7 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-600 bg-clip-text text-transparent mb-8">
-            Idea2Action
+            PlanSpark
           </h1>
           
           <p className="text-xl text-gray-600 mb-12 leading-relaxed">

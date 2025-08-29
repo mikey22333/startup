@@ -5,7 +5,7 @@
 
 - [x] Scaffold the Project - Project structure created with all necessary files and dependencies
 
-- [x] Customize the Project - Implemented full Idea2Action functionality including:
+- [x] Customize the Project - Implemented full PlanSpark functionality including:
   * Landing page with business idea input
   * Plan generation page with loading states  
   * AI-powered plan generation API with Together AI

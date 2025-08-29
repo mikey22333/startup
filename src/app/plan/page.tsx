@@ -257,7 +257,46 @@ const PlanPageContent = memo(() => {
           }
 
           // Set the plan data from the database
-          setPlan(data.plan_data)
+          // Parse any JSON strings that might have been serialized
+          const parsedPlanData = { ...data.plan_data }
+          
+          // Helper function to safely parse JSON strings
+          const safeParseJSON = (value: any, fieldName: string): any => {
+            if (typeof value === 'string') {
+              const trimmed = value.trim()
+              if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                try {
+                  return JSON.parse(trimmed)
+                } catch (e) {
+                  console.warn(`Failed to parse ${fieldName}:`, e)
+                  return value // Return original string if parsing fails
+                }
+              }
+            }
+            return value
+          }
+          
+          // Parse competitive analysis if it's a string
+          parsedPlanData.competitiveAnalysis = safeParseJSON(parsedPlanData.competitiveAnalysis, 'competitiveAnalysis')
+          
+          // Parse other potentially serialized objects
+          const fieldsToParseIfString = [
+            'businessScope', 'demandValidation', 'valueProposition', 'financialAnalysis',
+            'riskAssessment', 'growthStrategy', 'competitiveIntelligence', 'marketIntelligence',
+            'gotoMarketStrategy', 'strategicMilestones', 'actionRoadmap', 'resources',
+            'marketAnalysis', 'businessModel', 'implementation', 'legal'
+          ]
+          
+          fieldsToParseIfString.forEach(field => {
+            if (parsedPlanData[field]) {
+              parsedPlanData[field] = safeParseJSON(parsedPlanData[field], field)
+            }
+          })
+          
+          console.log('Parsed plan data - competitive analysis type:', typeof parsedPlanData.competitiveAnalysis)
+          console.log('Parsed plan data - competitive analysis structure:', parsedPlanData.competitiveAnalysis)
+          
+          setPlan(parsedPlanData)
         } catch (error: any) {
           setError(error.message || 'Failed to load business plan')
         } finally {

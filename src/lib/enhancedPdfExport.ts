@@ -23,6 +23,7 @@ export interface BusinessPlan {
   }
   executiveSummary: string
   marketAnalysis: string
+  competitiveAnalysis?: any
   businessModel: string
   financialProjections: string
   marketingStrategy: string
@@ -130,9 +131,53 @@ export async function exportToPDF(plan: BusinessPlan): Promise<void> {
       return false
     }
 
-    // Helper function to split long text
-    const splitText = (text: string, maxWidth: number, fontSize: number) => {
+    // Helper function to split long text and handle objects
+    const splitText = (content: any, maxWidth: number, fontSize: number) => {
       pdf.setFontSize(fontSize)
+      let text = content
+      
+      // Handle object content
+      if (typeof content === 'object' && content !== null) {
+        if (Array.isArray(content)) {
+          text = content.map((item, index) => {
+            if (typeof item === 'object' && item !== null) {
+              if (item.name && (item.description || item.marketShare || item.strengths)) {
+                let result = `${index + 1}. ${item.name}`
+                if (item.description) result += ` - ${item.description}`
+                if (item.marketShare) result += ` (Market Share: ${item.marketShare})`
+                if (item.strengths && Array.isArray(item.strengths)) {
+                  result += `\n   Strengths: ${item.strengths.join(', ')}`
+                }
+                if (item.weaknesses && Array.isArray(item.weaknesses)) {
+                  result += `\n   Weaknesses: ${item.weaknesses.join(', ')}`
+                }
+                return result
+              }
+              if (item.name || item.stepName || item.title) {
+                const name = item.name || item.stepName || item.title
+                const desc = item.description || item.purpose || ''
+                return `${index + 1}. ${name}: ${desc}`
+              }
+              return `${index + 1}. ${Object.entries(item).map(([k, v]) => `${k}: ${v}`).join(', ')}`
+            }
+            return `${index + 1}. ${item}`
+          }).join('\n\n')
+        } else {
+          text = Object.entries(content)
+            .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+            .map(([key, value]) => {
+              const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+              if (Array.isArray(value)) {
+                return `${formattedKey}:\n  - ${value.join('\n  - ')}`
+              }
+              return `${formattedKey}: ${value}`
+            })
+            .join('\n')
+        }
+      } else if (typeof content !== 'string') {
+        text = String(content)
+      }
+      
       return pdf.splitTextToSize(text, maxWidth)
     }
 
@@ -390,7 +435,9 @@ export async function exportToPDF(plan: BusinessPlan): Promise<void> {
 
     // Content Sections with better formatting
     const sections = [
+      { title: 'Executive Summary', content: plan.executiveSummary },
       { title: 'Market Analysis', content: plan.marketAnalysis },
+      { title: 'Competitive Analysis', content: plan.competitiveAnalysis },
       { title: 'Business Model', content: plan.businessModel },
       { title: 'Marketing Strategy', content: plan.marketingStrategy },
       { title: 'Operations Overview', content: plan.operationsOverview },

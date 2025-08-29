@@ -2810,31 +2810,41 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {allTools.slice(0, 6).map((tool, index) => (
-                  <div key={index} className="p-4 md:p-6 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <h4 className="font-medium text-neutral-900 text-sm md:text-base flex-1 min-w-0 pr-2">
+                  <div key={index} className="p-4 md:p-6 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors min-h-[160px] flex flex-col border border-neutral-200">
+                    {/* Tool Name */}
+                    <div className="mb-3">
+                      <h4 className="font-medium text-neutral-900 text-sm md:text-base leading-tight mb-2">
                         {typeof tool === 'string' ? tool : tool.name}
                       </h4>
-                      <span className="text-neutral-600 font-medium text-xs md:text-sm whitespace-nowrap flex-shrink-0">
-                        {typeof tool === 'string' ? 'Varies' : (tool.cost || (tool as any).pricing || 'Varies')}
-                      </span>
+                      {/* Price Tag - moved to its own line */}
+                      <div className="flex justify-end">
+                        <span className="inline-block text-neutral-600 font-medium text-xs bg-white px-3 py-1 rounded-full border border-neutral-300 shadow-sm">
+                          {typeof tool === 'string' ? 'Varies' : (tool.cost || (tool as any).pricing || 'Varies')}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-xs md:text-sm text-neutral-600 font-light mb-3 leading-relaxed">
+                    
+                    {/* Description */}
+                    <p className="text-xs md:text-sm text-neutral-600 font-light leading-relaxed flex-grow mb-3">
                       {typeof tool === 'string' 
                         ? 'Essential business tool' 
-                        : ((tool.description || (tool as any).purpose || 'Essential business tool').substring(0, 100) + '...')
+                        : (tool.description || (tool as any).purpose || 'Essential business tool')
                       }
                     </p>
+                    
+                    {/* Learn More Link */}
                     {typeof tool === 'object' && (tool.link || (tool as any).link) && (
-                      <a 
-                        href={(tool as any).link} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="inline-flex items-center space-x-2 text-neutral-700 hover:text-neutral-900 text-xs md:text-sm font-medium transition-colors"
-                      >
-                        <span>Learn More</span>
-                        <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
-                      </a>
+                      <div className="mt-auto pt-2">
+                        <a 
+                          href={(tool as any).link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 text-xs md:text-sm font-medium transition-colors"
+                        >
+                          <span>Learn More</span>
+                          <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
+                        </a>
+                      </div>
                     )}
                   </div>
                 ))}

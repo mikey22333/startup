@@ -56,7 +56,7 @@ class CompetitorLocationsAPI {
       const url = `${this.NOMINATIM_BASE}/search?format=json&q=${encodeURIComponent(location)}&limit=1`
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Idea2Action Business Planner'
+          'User-Agent': 'PlanSpark Business Planner'
         }
       })
 

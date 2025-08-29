@@ -8030,7 +8030,7 @@ async function callOpenRouterAPI(systemPrompt: string, userPrompt: string): Prom
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'Business Plan Generator'
+          'X-Title': 'PlanSpark Business Plan Generator'
         },
         body: JSON.stringify({
           model: OPENROUTER_MODEL,

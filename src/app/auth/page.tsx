@@ -108,7 +108,7 @@ export default function AuthPage() {
           {/* Logo */}
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900 mb-2">
-              Idea2Action
+              PlanSpark
             </div>
           </div>
 
@@ -269,14 +269,14 @@ export default function AuthPage() {
           {/* Simple Logo */}
           <div className="mb-12">
             <div className="w-16 h-16 mx-auto bg-white/10 rounded-xl flex items-center justify-center mb-6">
-              <span className="text-xl font-bold">I2A</span>
+              <span className="text-xl font-bold">PS</span>
             </div>
-            <h3 className="text-lg font-medium text-white/90">Idea2Action</h3>
+            <h3 className="text-lg font-medium text-white/90">PlanSpark</h3>
           </div>
 
           {/* Simple Message */}
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold">Transform Ideas Into Action</h2>
+            <h2 className="text-2xl font-semibold">Ignite Your Business Ideas</h2>
             <p className="text-white/70 text-sm leading-relaxed">
               Create professional business plans with AI assistance and real market data.
             </p>

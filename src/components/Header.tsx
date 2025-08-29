@@ -16,9 +16,9 @@ export const Header = ({ showUserMenu = true }: HeaderProps) => {
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">I2A</span>
+                <span className="text-white font-bold text-sm">PS</span>
               </div>
-              <span className="text-white font-bold text-xl">Idea2Action</span>
+              <span className="text-white font-bold text-xl">PlanSpark</span>
             </Link>
             
             <nav className="hidden md:flex items-center gap-6">

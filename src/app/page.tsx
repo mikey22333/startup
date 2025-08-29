@@ -247,7 +247,7 @@ export default memo(function HomePage() {
 
           {/* Logo/Brand */}
           <div className="mb-8 mt-4">
-            <h2 className="text-xl font-bold text-white">Idea2Action</h2>
+            <h2 className="text-xl font-bold text-white">PlanSpark</h2>
             <p className="text-white/60 text-sm mt-1">Business Planning</p>
           </div>
 
@@ -512,8 +512,8 @@ export default memo(function HomePage() {
           </div>
           
           <h1 className="text-3xl md:text-6xl font-light text-white mb-6 md:mb-8 leading-tight drop-shadow-2xl">
-            Turn Your Business Idea Into
-            <span className="block font-normal text-white/90 drop-shadow-xl">Actionable Plans</span>
+            Ignite Your Business Ideas
+            <span className="block font-normal text-white/90 drop-shadow-xl">Into Actionable Plans</span>
           </h1>
           <p className="text-base md:text-lg text-white mb-8 md:mb-12 max-w-3xl mx-auto font-light leading-relaxed drop-shadow-xl bg-black/20 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/20">
             Get a detailed, step-by-step action plan tailored to your specific business idea. 
