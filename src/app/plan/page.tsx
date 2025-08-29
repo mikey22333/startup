@@ -267,8 +267,8 @@ const PlanPageContent = memo(() => {
               if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
                 try {
                   return JSON.parse(trimmed)
-                } catch (e) {
-                  console.warn(`Failed to parse ${fieldName}:`, e)
+                } catch (parseError) {
+                  console.warn(`Failed to parse ${fieldName}:`, parseError)
                   return value // Return original string if parsing fails
                 }
               }

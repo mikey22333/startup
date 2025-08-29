@@ -6,6 +6,30 @@ import html2canvas from 'html2canvas'
 // Register Chart.js components
 Chart.register(...registerables)
 
+// Define competitive analysis interface
+interface CompetitiveAnalysis {
+  marketGaps?: string | string[]
+  competitors?: Array<{
+    name: string
+    description?: string
+    marketShare?: string
+    funding?: string
+    strengths?: string[]
+    weaknesses?: string[]
+    pricing?: string | { model?: string; range?: string }
+    features?: string[]
+  }> | string
+  yourBusiness?: {
+    name?: string
+    pricing?: string
+    keyStrength?: string
+    marketShare?: string
+    mainWeakness?: string
+  } | string
+  positioningMap?: string
+  competitiveAdvantages?: string | string[]
+}
+
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
   interface jsPDF {
@@ -23,7 +47,7 @@ export interface BusinessPlan {
   }
   executiveSummary: string
   marketAnalysis: string
-  competitiveAnalysis?: any
+  competitiveAnalysis?: CompetitiveAnalysis | string | unknown
   businessModel: string
   financialProjections: string
   marketingStrategy: string

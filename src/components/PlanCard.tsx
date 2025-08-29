@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react'
-import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield, FileText, File, Code, ChevronDown, Lock, Crown, Zap } from 'lucide-react'
-import { exportToAdvancedPDF, exportToWord, exportToHTML, exportToJSON, type BusinessPlan } from '@/lib/exportService'
+import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield, FileText, File, ChevronDown, Lock, Crown, Zap } from 'lucide-react'
+import { exportToAdvancedPDF, exportToWord, type BusinessPlan } from '@/lib/exportService'
 import { useAuth } from '@/components/AuthProvider'
 import { useSubscription } from '@/hooks/useSubscription'
 import { useRouter } from 'next/navigation'
@@ -806,14 +806,6 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
           await exportToWord(exportData)
           setExportStatus({ type: 'success', message: 'Word document exported successfully!' })
           break
-        case 'html':
-          await exportToHTML(exportData)
-          setExportStatus({ type: 'success', message: 'HTML file exported successfully!' })
-          break
-        case 'json':
-          await exportToJSON(exportData)
-          setExportStatus({ type: 'success', message: 'JSON data exported successfully!' })
-          break
       }
     } catch (error) {
       console.error('Export failed:', error)
@@ -945,34 +937,15 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
                       <div className="text-xs text-neutral-500">Editable format</div>
                     </div>
                   </button>
-                  
-                  <button
-                    onClick={() => handleExport('html')}
-                    className="flex items-center space-x-3 w-full px-4 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
-                  >
-                    <Code className="w-4 h-4 text-orange-500" />
-                    <div>
-                      <div className="font-medium">Web Page</div>
-                      <div className="text-xs text-neutral-500">HTML format</div>
-                    </div>
-                  </button>
-                  
-                  <button
-                    onClick={() => handleExport('json')}
-                    className="flex items-center space-x-3 w-full px-4 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
-                  >
-                    <Code className="w-4 h-4 text-green-500" />
-                    <div>
-                      <div className="font-medium">JSON Data</div>
-                      <div className="text-xs text-neutral-500">Raw data format</div>
-                    </div>
-                  </button>
                 </div>
               </div>
             )}
           </div>
             
-            <button className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-full hover:bg-neutral-50 transition-all text-sm font-medium">
+            <button 
+              onClick={() => router.push('/')}
+              className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-full hover:bg-neutral-50 transition-all text-sm font-medium"
+            >
               <span>New Plan</span>
             </button>
           </div>

@@ -411,11 +411,13 @@ function formatBusinessSection(sectionName: string, content: any): string {
       
       // If content is a string that looks like JSON, try to parse it
       if (typeof content === 'string') {
-        if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+        const trimmedContent = content.trim()
+        if (trimmedContent.startsWith('{') || trimmedContent.startsWith('[')) {
           try {
-            competitiveData = JSON.parse(content)
-          } catch (e) {
+            competitiveData = JSON.parse(trimmedContent)
+          } catch (parseError) {
             // If parsing fails, treat as regular string
+            console.warn('Failed to parse competitive analysis JSON:', parseError)
             return content
           }
         } else {
@@ -463,7 +465,7 @@ function formatBusinessSection(sectionName: string, content: any): string {
                   formatted += `     Weaknesses: ${competitor.weaknesses.join(', ')}\n`
                 }
                 if (competitor.pricing) {
-                  if (typeof competitor.pricing === 'object') {
+                  if (typeof competitor.pricing === 'object' && competitor.pricing !== null) {
                     formatted += `     Pricing: ${competitor.pricing.model || 'N/A'} - ${competitor.pricing.range || 'N/A'}\n`
                   } else {
                     formatted += `     Pricing: ${competitor.pricing}\n`
@@ -485,7 +487,7 @@ function formatBusinessSection(sectionName: string, content: any): string {
         // Handle your business positioning
         if (competitiveData.yourBusiness) {
           formatted += `• Your Business:\n`
-          if (typeof competitiveData.yourBusiness === 'object') {
+          if (typeof competitiveData.yourBusiness === 'object' && competitiveData.yourBusiness !== null) {
             Object.entries(competitiveData.yourBusiness).forEach(([key, value]) => {
               const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
               formatted += `  ${formattedKey}: ${value}\n`
@@ -1291,28 +1293,8 @@ export async function exportToWord(plan: BusinessPlan): Promise<void> {
         })
       )
 
-      // Content formatting with proper JSON handling
-      let formattedContent = ''
-      
-      if (typeof content === 'string') {
-        formattedContent = content
-      } else if (typeof content === 'object' && content !== null) {
-        // Handle JSON objects by formatting them nicely
-        if (Array.isArray(content)) {
-          // Handle arrays
-          formattedContent = content.map((item, index) => {
-            if (typeof item === 'object') {
-              return formatJsonObject(item, `${index + 1}. `)
-            }
-            return `${index + 1}. ${item}`
-          }).join('\n\n')
-        } else {
-          // Handle objects
-          formattedContent = formatJsonObject(content)
-        }
-      } else {
-        formattedContent = String(content || '')
-      }
+      // Content formatting using the same logic as PDF export
+      const formattedContent = formatBusinessSection(title, content)
 
       if (formattedContent && formattedContent.trim()) {
         const lines = formattedContent.split('\n')
@@ -1377,42 +1359,6 @@ export async function exportToWord(plan: BusinessPlan): Promise<void> {
           }
         })
       }
-    }
-
-    // Helper function to format JSON objects into readable text
-    const formatJsonObject = (obj: any, prefix: string = '') => {
-      const lines: string[] = []
-      
-      for (const [key, value] of Object.entries(obj)) {
-        if (value === null || value === undefined) continue
-        
-        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-        
-        if (typeof value === 'object' && !Array.isArray(value)) {
-          // Nested object
-          lines.push(`${prefix}${formattedKey}:`)
-          const nestedLines = formatJsonObject(value, '  ')
-          lines.push(nestedLines)
-        } else if (Array.isArray(value)) {
-          // Array
-          lines.push(`${prefix}${formattedKey}:`)
-          value.forEach((item, index) => {
-            if (typeof item === 'object') {
-              lines.push(`  ${index + 1}. ${formatJsonObject(item)}`)
-            } else {
-              lines.push(`  • ${item}`)
-            }
-          })
-        } else {
-          // Simple value
-          const cleanValue = String(value).replace(/[{}"\[\]]/g, '').trim()
-          if (cleanValue) {
-            lines.push(`${prefix}${formattedKey}: ${cleanValue}`)
-          }
-        }
-      }
-      
-      return lines.join('\n')
     }
 
     // Helper function to create tables in Word
@@ -1812,96 +1758,5 @@ Cash Flow Projection: Cash flow projection based on $6,034/month burn rate and r
   } catch (error) {
     console.error('Error generating Word document:', error)
     throw new Error('Failed to generate Word document')
-  }
-}
-
-// HTML Export Function
-export async function exportToHTML(plan: BusinessPlan): Promise<void> {
-  try {
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${plan.feasibility.marketType} Business Plan</title>
-      <style>
-        body { 
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-          line-height: 1.6; 
-          color: #333; 
-          max-width: 1000px; 
-          margin: 0 auto; 
-          padding: 20px;
-          background-color: #f8f9fa;
-        }
-        .container {
-          background: white;
-          padding: 40px;
-          border-radius: 10px;
-          box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-        h1 { 
-          color: #2980b9; 
-          border-bottom: 3px solid #3498db; 
-          padding-bottom: 15px; 
-          font-size: 2.5em;
-          text-align: center;
-        }
-        h2 { 
-          color: #34495e; 
-          border-bottom: 2px solid #bdc3c7; 
-          padding-bottom: 10px; 
-          margin-top: 40px;
-          font-size: 1.8em;
-        }
-        .section {
-          margin: 30px 0;
-          padding: 25px;
-          background: #f8f9fa;
-          border-radius: 10px;
-          border-left: 5px solid #3498db;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>${plan.feasibility.marketType} Business Plan</h1>
-        
-        <h2>Executive Summary</h2>
-        <div class="section">${parseContent(plan.executiveSummary).replace(/\n/g, '<br><br>')}</div>
-
-        <h2>Market Analysis</h2>
-        <div class="section">${parseContent(plan.marketAnalysis).replace(/\n/g, '<br><br>')}</div>
-
-        <h2>Business Model</h2>
-        <div class="section">${parseContent(plan.businessModel).replace(/\n/g, '<br><br>')}</div>
-      </div>
-    </body>
-    </html>
-    `
-    
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
-    const fileName = `${plan.feasibility.marketType.replace(/\s+/g, '_')}_Business_Plan.html`
-    saveAs(blob, fileName)
-    
-  } catch (error) {
-    console.error('Error generating HTML:', error)
-    throw new Error('Failed to generate HTML')
-  }
-}
-
-// JSON Export Function
-export async function exportToJSON(plan: BusinessPlan): Promise<void> {
-  try {
-    const jsonContent = JSON.stringify(plan, null, 2)
-    
-    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' })
-    const fileName = `${plan.feasibility.marketType.replace(/\s+/g, '_')}_Business_Plan.json`
-    saveAs(blob, fileName)
-    
-  } catch (error) {
-    console.error('Error generating JSON:', error)
-    throw new Error('Failed to generate JSON')
   }
 }

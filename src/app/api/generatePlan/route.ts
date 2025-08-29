@@ -7998,6 +7998,10 @@ function extractBalancedJson(raw: string): string | null {
 
 // Clean JSON string by fixing common formatting issues
 function cleanJsonString(jsonStr: string): string {
+  if (!jsonStr || typeof jsonStr !== 'string') {
+    return jsonStr
+  }
+  
   try {
     // First attempt: just remove trailing commas which is the most common issue
     let cleaned = jsonStr.replace(/,(\s*[}\]])/g, '$1')
@@ -8005,13 +8009,22 @@ function cleanJsonString(jsonStr: string): string {
     // Test if this basic fix works
     JSON.parse(cleaned)
     return cleaned
-  } catch {
+  } catch (basicError) {
     // If basic fix didn't work, try more aggressive cleaning
-    return jsonStr
-      .replace(/,(\s*[}\]])/g, '$1')  // Remove trailing commas
-      .replace(/[\r\n]+/g, ' ')       // Replace newlines with spaces
-      .replace(/\s+/g, ' ')           // Normalize whitespace
-      .trim()                         // Remove leading/trailing whitespace
+    try {
+      const aggressivelyCleaned = jsonStr
+        .replace(/,(\s*[}\]])/g, '$1')  // Remove trailing commas
+        .replace(/[\r\n]+/g, ' ')       // Replace newlines with spaces
+        .replace(/\s+/g, ' ')           // Normalize whitespace
+        .trim()                         // Remove leading/trailing whitespace
+      
+      // Validate the aggressively cleaned version
+      JSON.parse(aggressivelyCleaned)
+      return aggressivelyCleaned
+    } catch (aggressiveError) {
+      console.warn('Failed to clean JSON string:', aggressiveError)
+      return jsonStr // Return original if all cleaning attempts fail
+    }
   }
 }
 
