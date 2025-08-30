@@ -73,6 +73,12 @@ label {
 }
 
 /* Floating animation for decorative elements */
+@layer utilities {
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
@@ -80,8 +86,4 @@ label {
   50% {
     transform: translateY(-10px);
   }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
 }

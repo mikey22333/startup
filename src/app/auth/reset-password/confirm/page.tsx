@@ -46,11 +46,19 @@ export default function ConfirmResetPassword() {
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character')
       return
     }
 
+    // Enhanced password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/
+    if (!passwordRegex.test(password)) {
+      setError('Password must contain at least one uppercase letter, lowercase letter, number, and special character')
+      return
+    }
+
+    setLoading(true)
     try {
       const { error } = await supabase.auth.updateUser({
         password: password
@@ -66,6 +74,8 @@ export default function ConfirmResetPassword() {
       }
     } catch (err) {
       setError('An unexpected error occurred')
+    } finally {
+      setLoading(false)
     }
   }
 

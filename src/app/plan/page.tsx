@@ -262,7 +262,7 @@ const PlanPageContent = memo(() => {
           
           // Helper function to safely parse JSON strings
           const safeParseJSON = (value: any, fieldName: string): any => {
-            if (typeof value === 'string') {
+            if (typeof value === 'string' && value.trim()) {
               const trimmed = value.trim()
               if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
                 try {
@@ -296,7 +296,9 @@ const PlanPageContent = memo(() => {
           console.log('Parsed plan data - competitive analysis type:', typeof parsedPlanData.competitiveAnalysis)
           console.log('Parsed plan data - competitive analysis structure:', parsedPlanData.competitiveAnalysis)
           
-          setPlan(parsedPlanData)
+          if (parsedPlanData) {
+            setPlan(parsedPlanData)
+          }
         } catch (error: any) {
           setError(error.message || 'Failed to load business plan')
         } finally {

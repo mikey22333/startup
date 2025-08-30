@@ -292,7 +292,24 @@ function analyzeCompetitiveLandscape(
 }
 
 function identifyMarketGaps(competitors: CompetitorData[], plan: BusinessPlan): string[] {
-  const commonWeaknesses = competitors.flatMap(c => c.weaknesses)
+  if (!competitors || competitors.length === 0) {
+    return [
+      'First-mover advantage in underexplored market',
+      'Opportunity to establish market standards',
+      'Potential for innovative approach without direct competition'
+    ]
+  }
+
+  const validCompetitors = competitors.filter(c => c.weaknesses && Array.isArray(c.weaknesses))
+  if (validCompetitors.length === 0) {
+    return [
+      'Opportunity for more user-friendly solutions',
+      'Potential for cost-effective alternatives',
+      'Room for specialized niche offerings'
+    ]
+  }
+
+  const commonWeaknesses = validCompetitors.flatMap(c => c.weaknesses)
   const weaknessFrequency = commonWeaknesses.reduce((acc, weakness) => {
     acc[weakness] = (acc[weakness] || 0) + 1
     return acc

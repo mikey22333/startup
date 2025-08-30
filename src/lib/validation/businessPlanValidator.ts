@@ -1,6 +1,6 @@
 import { BusinessPlan } from '@/lib/exportService'
 
-interface ValidationResult {
+export interface ValidationResult {
   isValid: boolean
   errors: string[]
   warnings: string[]
@@ -249,24 +249,28 @@ function validateMarketAnalysis(plan: BusinessPlan): { errors: string[], warning
   const warnings: string[] = []
   
   // Check market size mentions
-  const marketText = plan.marketAnalysis.toLowerCase()
-  if (!marketText.includes('market size') && !marketText.includes('market value') && !marketText.includes('billion') && !marketText.includes('million')) {
-    warnings.push('Market analysis should include market size estimates')
-  }
-  
-  // Check for competitor analysis
-  if (!marketText.includes('competitor') && !marketText.includes('competition')) {
-    warnings.push('Market analysis should include competitive landscape')
-  }
-  
-  // Check for target market definition
-  if (!marketText.includes('target') && !marketText.includes('customer') && !marketText.includes('audience')) {
-    warnings.push('Target market definition could be clearer')
-  }
-  
-  // Check for growth trends
-  if (!marketText.includes('growth') && !marketText.includes('trend') && !marketText.includes('opportunity')) {
-    warnings.push('Market growth trends and opportunities should be discussed')
+  if (plan.marketAnalysis && typeof plan.marketAnalysis === 'string') {
+    const marketText = plan.marketAnalysis.toLowerCase()
+    if (!marketText.includes('market size') && !marketText.includes('market value') && !marketText.includes('billion') && !marketText.includes('million')) {
+      warnings.push('Market analysis should include market size estimates')
+    }
+    
+    // Check for competitor analysis
+    if (!marketText.includes('competitor') && !marketText.includes('competition')) {
+      warnings.push('Market analysis should include competitive landscape')
+    }
+    
+    // Check for target market definition
+    if (!marketText.includes('target') && !marketText.includes('customer') && !marketText.includes('audience')) {
+      warnings.push('Target market definition could be clearer')
+    }
+    
+    // Check for growth trends
+    if (!marketText.includes('growth') && !marketText.includes('trend') && !marketText.includes('opportunity')) {
+      warnings.push('Market growth trends and opportunities should be discussed')
+    }
+  } else {
+    warnings.push('Market analysis should be provided as text content')
   }
   
   return { errors, warnings }
@@ -278,7 +282,7 @@ function validateDataConsistency(plan: BusinessPlan): { errors: string[], warnin
   
   // Check consistency between executive summary and detailed sections
   const execSummary = plan.executiveSummary.toLowerCase()
-  const marketAnalysis = plan.marketAnalysis.toLowerCase()
+  const marketAnalysis = typeof plan.marketAnalysis === 'string' ? plan.marketAnalysis.toLowerCase() : ''
   
   // Look for contradictions in market positioning
   if (execSummary.includes('b2b') && marketAnalysis.includes('consumer')) {
@@ -291,7 +295,8 @@ function validateDataConsistency(plan: BusinessPlan): { errors: string[], warnin
   
   // Check timeline consistency
   const timelineInSummary = extractTimeline(execSummary)
-  const timelineInImplementation = extractTimeline(plan.implementation || '')
+  const implementationText = typeof plan.implementation === 'string' ? plan.implementation : ''
+  const timelineInImplementation = extractTimeline(implementationText)
   
   if (timelineInSummary && timelineInImplementation && Math.abs(timelineInSummary - timelineInImplementation) > 6) {
     warnings.push('Timeline inconsistency between executive summary and implementation plan')
@@ -341,7 +346,8 @@ function generateImprovementSuggestions(plan: BusinessPlan): string[] {
     suggestions.push('Add detailed cash flow projections to financial section')
   }
   
-  if (!plan.marketingStrategy.includes('customer acquisition cost') && !plan.marketingStrategy.includes('cac')) {
+  const marketingText = typeof plan.marketingStrategy === 'string' ? plan.marketingStrategy.toLowerCase() : ''
+  if (marketingText && !marketingText.includes('customer acquisition cost') && !marketingText.includes('cac')) {
     suggestions.push('Include customer acquisition cost analysis in marketing strategy')
   }
   
@@ -366,11 +372,16 @@ function calculateQualityScore(plan: BusinessPlan, errorCount: number, warningCo
     plan.implementation
   ]
   
-  const completedSections = sections.filter(section => section && section.length > 100).length
+  const completedSections = sections.filter(section => 
+    section && typeof section === 'string' && section.length > 100
+  ).length
   score += completedSections * 2
   
   // Add points for detailed content
-  const totalLength = sections.join('').length
+  const stringifiedSections = sections.map(section => 
+    typeof section === 'string' ? section : JSON.stringify(section) || ''
+  )
+  const totalLength = stringifiedSections.join('').length
   if (totalLength > 5000) score += 10
   if (totalLength > 10000) score += 10
   
@@ -397,8 +408,9 @@ export function autoCorrectBusinessPlan(plan: BusinessPlan, validationResult: Va
       }
       
       if (error.includes('Market analysis is insufficient')) {
-        if (!correctedPlan.marketAnalysis || correctedPlan.marketAnalysis.length < 200) {
-          correctedPlan.marketAnalysis = enhanceMarketAnalysis(correctedPlan.marketAnalysis || '', correctedPlan)
+        const marketAnalysisText = typeof correctedPlan.marketAnalysis === 'string' ? correctedPlan.marketAnalysis : ''
+        if (!marketAnalysisText || marketAnalysisText.length < 200) {
+          correctedPlan.marketAnalysis = enhanceMarketAnalysis(marketAnalysisText, correctedPlan)
         }
       }
     })
@@ -411,10 +423,13 @@ export function autoCorrectBusinessPlan(plan: BusinessPlan, validationResult: Va
 }
 
 function generateExecutiveSummaryFromOtherSections(plan: BusinessPlan): string {
-  const businessModel = plan.businessModel || ''
-  const marketAnalysis = plan.marketAnalysis || ''
+  const businessModel = typeof plan.businessModel === 'string' ? plan.businessModel : JSON.stringify(plan.businessModel) || ''
+  const marketAnalysis = typeof plan.marketAnalysis === 'string' ? plan.marketAnalysis : JSON.stringify(plan.marketAnalysis) || ''
   
-  return `Executive Summary: ${businessModel.substring(0, 200)}... ${marketAnalysis.substring(0, 200)}... This business plan outlines a comprehensive strategy for market entry and growth.`
+  const businessModelPreview = businessModel.substring(0, 200)
+  const marketAnalysisPreview = marketAnalysis.substring(0, 200)
+  
+  return `Executive Summary: ${businessModelPreview}... ${marketAnalysisPreview}... This business plan outlines a comprehensive strategy for market entry and growth.`
 }
 
 function enhanceMarketAnalysis(currentAnalysis: string, plan: BusinessPlan): string {

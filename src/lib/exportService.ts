@@ -124,14 +124,14 @@ export interface BusinessPlan {
     marketingBudget: string
   }
   executiveSummary: string
-  marketAnalysis: string | any
-  businessModel: string | any
+  marketAnalysis: string | Record<string, unknown>
+  businessModel: string | Record<string, unknown>
   financialProjections: string
-  marketingStrategy: string | any
+  marketingStrategy: string | Record<string, unknown>
   operationsOverview: string
-  riskAssessment: any
-  implementation: string | any
-  legal: string | any
+  riskAssessment: Record<string, unknown>
+  implementation: string | Record<string, unknown>
+  legal: string | Record<string, unknown>
   tools: Array<{
     name: string
     purpose: string
@@ -187,21 +187,28 @@ export interface BusinessPlan {
 }
 
 // Helper function to parse and format content consistently
-function parseContent(data: any): string {
+function parseContent(data: unknown): string {
   if (!data) return 'Not available'
   
   if (typeof data === 'string') {
-    // Check if it's a JSON string that should be parsed
-    if (data.trim().startsWith('{') || data.trim().startsWith('[')) {
+    // Enhanced JSON detection
+    const trimmed = data.trim()
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+        (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
       try {
-        data = JSON.parse(data)
-        // Continue processing as object/array
+        const parsed = JSON.parse(trimmed)
+        if (parsed && typeof parsed === 'object') {
+          data = parsed
+          // Continue processing as object/array
+        } else {
+          return trimmed.replace(/<[^>]*>/g, '').trim()
+        }
       } catch (e) {
         // If parsing fails, just clean HTML and return
-        return data.replace(/<[^>]*>/g, '').trim()
+        return trimmed.replace(/<[^>]*>/g, '').trim()
       }
     } else {
-      return data.replace(/<[^>]*>/g, '').trim()
+      return trimmed.replace(/<[^>]*>/g, '').trim()
     }
   }
   
@@ -464,12 +471,17 @@ function formatBusinessSection(sectionName: string, content: any): string {
                 if (competitor.weaknesses && Array.isArray(competitor.weaknesses)) {
                   formatted += `     Weaknesses: ${competitor.weaknesses.join(', ')}\n`
                 }
-                if (competitor.pricing) {
-                  if (typeof competitor.pricing === 'object' && competitor.pricing !== null) {
-                    formatted += `     Pricing: ${competitor.pricing.model || 'N/A'} - ${competitor.pricing.range || 'N/A'}\n`
+                if (competitor.pricing && typeof competitor.pricing === 'object' && competitor.pricing !== null) {
+                  const pricingObj = competitor.pricing as Record<string, unknown>
+                  if (pricingObj.basic || pricingObj.premium || pricingObj.enterprise) {
+                    const model = pricingObj.model ? String(pricingObj.model) : 'N/A'
+                    const range = pricingObj.range ? String(pricingObj.range) : 'N/A'
+                    formatted += `     Pricing: ${model} - ${range}\n`
                   } else {
-                    formatted += `     Pricing: ${competitor.pricing}\n`
+                    formatted += `     Pricing: ${String(competitor.pricing)}\n`
                   }
+                } else if (competitor.pricing) {
+                  formatted += `     Pricing: ${String(competitor.pricing)}\n`
                 }
                 if (competitor.features && Array.isArray(competitor.features)) {
                   formatted += `     Features: ${competitor.features.join(', ')}\n`
@@ -1820,13 +1832,29 @@ Cash Flow Projection: Cash flow projection based on $6,034/month burn rate and r
 // HTML Export Function
 export async function exportToHTML(plan: BusinessPlan): Promise<void> {
   try {
+    // Sanitize content to prevent XSS
+    const sanitizeHtml = (content: string): string => {
+      return content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;')
+    }
+
+    const sanitizedMarketType = sanitizeHtml(plan.feasibility.marketType)
+    const sanitizedExecutiveSummary = sanitizeHtml(parseContent(plan.executiveSummary)).replace(/\n/g, '<br><br>')
+    const sanitizedMarketAnalysis = sanitizeHtml(parseContent(plan.marketAnalysis)).replace(/\n/g, '<br><br>')
+    const sanitizedBusinessModel = sanitizeHtml(parseContent(plan.businessModel)).replace(/\n/g, '<br><br>')
+
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${plan.feasibility.marketType} Business Plan</title>
+      <title>${sanitizedMarketType} Business Plan</title>
       <style>
         body { 
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -1868,16 +1896,16 @@ export async function exportToHTML(plan: BusinessPlan): Promise<void> {
     </head>
     <body>
       <div class="container">
-        <h1>${plan.feasibility.marketType} Business Plan</h1>
+        <h1>${sanitizedMarketType} Business Plan</h1>
         
         <h2>Executive Summary</h2>
-        <div class="section">${parseContent(plan.executiveSummary).replace(/\n/g, '<br><br>')}</div>
+        <div class="section">${sanitizedExecutiveSummary}</div>
 
         <h2>Market Analysis</h2>
-        <div class="section">${parseContent(plan.marketAnalysis).replace(/\n/g, '<br><br>')}</div>
+        <div class="section">${sanitizedMarketAnalysis}</div>
 
         <h2>Business Model</h2>
-        <div class="section">${parseContent(plan.businessModel).replace(/\n/g, '<br><br>')}</div>
+        <div class="section">${sanitizedBusinessModel}</div>
       </div>
     </body>
     </html>

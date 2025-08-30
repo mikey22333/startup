@@ -75,6 +75,10 @@ const industryBenchmarks: Record<string, IndustryBenchmarks> = {
 
 export function enhanceFinancialModel(plan: BusinessPlan): EnhancedFinancialData {
   try {
+    if (!plan.executiveSummary) {
+      throw new Error('Executive summary is required for financial modeling')
+    }
+    
     const businessType = detectBusinessType(plan.executiveSummary)
     const benchmarks = industryBenchmarks[businessType] || industryBenchmarks.default
     
@@ -172,9 +176,22 @@ function buildRevenueProjections(plan: BusinessPlan, benchmarks: IndustryBenchma
 
 function extractInitialRevenue(plan: BusinessPlan): number {
   // Try to extract revenue figures from the plan text
-  const revenueMatch = plan.financialProjections?.match(/\$?([\d,]+)/) 
-  if (revenueMatch) {
-    return parseInt(revenueMatch[1].replace(/,/g, ''))
+  const revenueMatch = plan.financialProjections?.match(/\$?([\d,]+(?:\.\d{1,2})?)/)
+  if (revenueMatch && revenueMatch[1]) {
+    const cleanNumber = revenueMatch[1].replace(/,/g, '')
+    const parsed = parseFloat(cleanNumber)
+    
+    // Handle K/M/B suffixes
+    const text = plan.financialProjections || ''
+    if (text.includes('K') || text.includes('k')) {
+      return parsed * 1000
+    } else if (text.includes('M') || text.includes('million')) {
+      return parsed * 1000000
+    } else if (text.includes('B') || text.includes('billion')) {
+      return parsed * 1000000000
+    }
+    
+    return parsed > 0 ? parsed : 250000
   }
   
   // Default based on business complexity
