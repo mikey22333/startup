@@ -288,7 +288,8 @@ class FinancialModelEnhancer {
       }
     }
     
-    const runwayMonths = Math.max(0, Math.ceil(initialInvestment / (costsMonthly[0] || 1000)))
+    const avgMonthlyCosts = costsMonthly[0] || 1000
+    const runwayMonths = avgMonthlyCosts > 0 ? Math.max(0, Math.ceil(initialInvestment / avgMonthlyCosts)) : 12
     
     return {
       monthly,
@@ -305,11 +306,13 @@ class FinancialModelEnhancer {
     const minCashFlow = Math.min(...cashFlow.cumulativeCashFlow)
     const workingCapital = costs.monthly[0] * 2 // 2 months of expenses
     const growthCapital = projections.initialInvestment || 15000
+    const runwayMonths = costs.monthly[0] > 0 ? Math.ceil(growthCapital / costs.monthly[0]) : 12
     
     return {
       initialInvestment: Math.abs(minCashFlow),
       workingCapital,
       growthCapital,
+      runwayMonths,
       totalRequired: Math.abs(minCashFlow) + workingCapital + growthCapital
     }
   }
@@ -384,13 +387,14 @@ class FinancialModelEnhancer {
     const improved = { ...model }
     
     // Fix LTV:CAC ratio if needed
-    if (improved.metrics.ltvCacRatio < 2) {
+    if (improved.metrics.ltvCacRatio < 2 && improved.metrics.ltv > 0) {
       improved.metrics.cac = improved.metrics.ltv / 3 // Target 3:1 ratio
     }
     
     // Adjust break-even if unrealistic
     if (improved.cashFlow.breakEvenMonth < 1) {
-      improved.cashFlow.breakEvenMonth = Math.max(3, Math.ceil(improved.fundingRequirement.initialInvestment / improved.revenue.monthly[0]))
+      const monthlyRevenue = improved.revenue.monthly[0] || 1000
+      improved.cashFlow.breakEvenMonth = Math.max(3, Math.ceil(improved.fundingRequirement.initialInvestment / monthlyRevenue))
     }
     
     // Improve gross margin if too low

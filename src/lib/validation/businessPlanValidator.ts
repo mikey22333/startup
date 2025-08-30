@@ -104,13 +104,17 @@ export class BusinessPlanValidator {
       warnings.push('Break-even period over 4 years indicates high risk - consider reducing costs or improving revenue model')
     }
 
-    // Validate LTV:CAC ratio
-    const ltvCacRatio = metrics.ltv / metrics.cac
-    if (ltvCacRatio < 2) {
-      errors.push(`LTV:CAC ratio of ${ltvCacRatio.toFixed(1)} is below healthy threshold of 3:1`)
-      suggestions.push('Improve customer lifetime value or reduce acquisition costs')
-    } else if (ltvCacRatio > 10) {
-      warnings.push(`LTV:CAC ratio of ${ltvCacRatio.toFixed(1)} seems optimistic - validate assumptions`)
+    // Validate LTV:CAC ratio with division by zero protection
+    if (metrics.cac > 0) {
+      const ltvCacRatio = metrics.ltv / metrics.cac
+      if (ltvCacRatio < 2) {
+        errors.push(`LTV:CAC ratio of ${ltvCacRatio.toFixed(1)} is below healthy threshold of 3:1`)
+        suggestions.push('Improve customer lifetime value or reduce acquisition costs')
+      } else if (ltvCacRatio > 10) {
+        warnings.push(`LTV:CAC ratio of ${ltvCacRatio.toFixed(1)} seems optimistic - validate assumptions`)
+      }
+    } else {
+      warnings.push('Customer acquisition cost is zero or invalid - validate marketing budget')
     }
 
     // Check churn rate reasonableness
@@ -129,7 +133,8 @@ export class BusinessPlanValidator {
     }
 
     // Check pricing consistency
-    const avgRevenuePerCustomer = metrics.monthlyRevenue / (projections.customers?.[0] || 1)
+    const customerCount = projections.customers?.[0] || 1
+    const avgRevenuePerCustomer = customerCount > 0 ? metrics.monthlyRevenue / customerCount : 0
     if (avgRevenuePerCustomer < 10) {
       warnings.push('Average revenue per customer seems very low - validate pricing strategy')
     }
@@ -160,14 +165,18 @@ export class BusinessPlanValidator {
         suggestions.push('SOM should be 1-10% of SAM for realistic market capture')
       }
 
-      // Check reasonableness of SOM
-      const somPercent = (som / sam) * 100
-      if (somPercent > 15) {
-        warnings.push(`SOM represents ${somPercent.toFixed(1)}% of SAM - very ambitious for most businesses`)
-      }
+      // Check reasonableness of SOM with division by zero protection
+      if (sam > 0) {
+        const somPercent = (som / sam) * 100
+        if (somPercent > 15) {
+          warnings.push(`SOM represents ${somPercent.toFixed(1)}% of SAM - very ambitious for most businesses`)
+        }
 
-      if (somPercent < 0.5) {
-        warnings.push(`SOM represents only ${somPercent.toFixed(2)}% of SAM - may be too conservative`)
+        if (somPercent < 0.5) {
+          warnings.push(`SOM represents only ${somPercent.toFixed(2)}% of SAM - may be too conservative`)
+        }
+      } else {
+        warnings.push('SAM value is zero or invalid - cannot validate SOM percentage')
       }
 
     } catch (error) {
@@ -241,7 +250,7 @@ export class BusinessPlanValidator {
     const investmentAmount = this.parseInvestmentAmount(data.executiveSummary.investmentNeeded)
     const initialCosts = data.metrics.initialInvestment
 
-    if (Math.abs(investmentAmount - initialCosts) / investmentAmount > 0.3) {
+    if (investmentAmount > 0 && Math.abs(investmentAmount - initialCosts) / investmentAmount > 0.3) {
       warnings.push('Investment needed in summary differs significantly from detailed cost breakdown')
       suggestions.push('Ensure investment amounts are consistent across all sections')
     }
@@ -252,14 +261,19 @@ export class BusinessPlanValidator {
       warnings.push('1-2 month launch timeline seems aggressive for high-investment business')
     }
 
-    // Check marketing budget vs CAC
+    // Check marketing budget vs CAC with proper validation
     const marketingBudget = this.parseMarketingBudget(data.executiveSummary.marketingBudget)
     const expectedCustomers = data.financialProjections.customers?.[11] || 0 // Month 12
-    const impliedCAC = (marketingBudget * 12) / expectedCustomers
-
-    if (Math.abs(impliedCAC - data.metrics.cac) / data.metrics.cac > 0.5) {
-      warnings.push('Marketing budget and CAC projections are inconsistent')
-      suggestions.push('Align marketing spend with customer acquisition cost assumptions')
+    
+    if (marketingBudget > 0 && expectedCustomers > 0) {
+      const impliedCAC = (marketingBudget * 12) / expectedCustomers
+      
+      if (data.metrics.cac > 0 && Math.abs(impliedCAC - data.metrics.cac) / data.metrics.cac > 0.5) {
+        warnings.push('Marketing budget and CAC projections are inconsistent')
+        suggestions.push('Align marketing spend with customer acquisition cost assumptions')
+      }
+    } else {
+      warnings.push('Unable to validate marketing budget consistency due to missing data')
     }
 
     return { isValid: errors.length === 0, warnings, errors, suggestions }

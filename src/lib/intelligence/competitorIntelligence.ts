@@ -270,6 +270,8 @@ class EnhancedCompetitorIntelligence {
     // For now, create enhanced profiles with realistic data
     // In production, this would integrate with Crunchbase API, LinkedIn API, etc.
     
+    const funding = competitor.funding || { stage: 'Unknown', confidence: 'LOW' }
+    
     return {
       name: competitor.name || 'Unknown Competitor',
       description: competitor.description || 'Competitive solution in the market',
@@ -278,10 +280,7 @@ class EnhancedCompetitorIntelligence {
         description: 'Market share data not available',
         confidence: 'LOW'
       },
-      funding: competitor.funding || {
-        stage: 'Unknown',
-        confidence: 'LOW'
-      },
+      funding,
       pricing: competitor.pricing || {
         model: 'Unknown pricing model',
         range: 'Pricing not publicly available',
@@ -326,12 +325,12 @@ class EnhancedCompetitorIntelligence {
     
     // Categorize competitors
     const marketLeaders = competitors.filter(c => 
-      c.funding.stage === 'Public' || 
-      (c.funding.totalRaised && c.funding.totalRaised > 100000000)
+      c.funding?.stage === 'Public' || 
+      (c.funding?.totalRaised && c.funding.totalRaised > 100000000)
     )
     
     const emergingPlayers = competitors.filter(c => 
-      c.funding.stage === 'Series A' || c.funding.stage === 'Series B'
+      c.funding?.stage === 'Series A' || c.funding?.stage === 'Series B'
     )
     
     const directCompetitors = competitors.filter(c => 
@@ -342,7 +341,7 @@ class EnhancedCompetitorIntelligence {
     const indirectCompetitors = competitors.filter(c => !directCompetitors.includes(c))
     
     // Analyze pricing
-    const pricingData = competitors.filter(c => c.pricing.confidence !== 'LOW')
+    const pricingData = competitors.filter(c => c.pricing?.confidence !== 'LOW')
     const avgPrice = this.calculateAveragePricing(pricingData)
     
     return {
@@ -399,13 +398,15 @@ class EnhancedCompetitorIntelligence {
   private calculateAveragePricing(competitors: CompetitorProfile[]): number {
     // Extract pricing numbers and calculate average
     const prices = competitors.map(c => {
-      const match = c.pricing.range.match(/\$?(\d+(?:\.\d+)?)/g)
+      const range = c.pricing?.range || ''
+      const match = range.match(/\$?(\d+(?:\.\d+)?)/g)
       if (match) {
         return parseFloat(match[0].replace('$', ''))
       }
       return 50 // Default fallback
     })
     
+    if (prices.length === 0) return 50
     return prices.reduce((sum, price) => sum + price, 0) / prices.length
   }
 
@@ -429,7 +430,7 @@ class EnhancedCompetitorIntelligence {
 
   private assessThreatLevel(competitors: CompetitorProfile[]): 'HIGH' | 'MEDIUM' | 'LOW' {
     const strongCompetitors = competitors.filter(c => 
-      c.funding.stage === 'Public' || c.dataQuality === 'HIGH'
+      c.funding?.stage === 'Public' || c.dataQuality === 'HIGH'
     ).length
     
     if (strongCompetitors >= 3) return 'HIGH'
@@ -438,13 +439,14 @@ class EnhancedCompetitorIntelligence {
   }
 
   private getDominantPricingModel(competitors: CompetitorProfile[]): string {
-    const models = competitors.map(c => c.pricing.model.toLowerCase())
+    const models = competitors.map(c => c.pricing?.model?.toLowerCase() || 'unknown')
     const modelCounts = models.reduce((acc, model) => {
       acc[model] = (acc[model] || 0) + 1
       return acc
     }, {} as Record<string, number>)
     
-    return Object.entries(modelCounts).sort(([,a], [,b]) => b - a)[0]?.[0] || 'Subscription'
+    const dominantEntry = Object.entries(modelCounts).sort(([,a], [,b]) => b - a)[0]
+    return dominantEntry?.[0] || 'Subscription'
   }
 }
 
