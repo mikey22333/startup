@@ -124,14 +124,14 @@ export interface BusinessPlan {
     marketingBudget: string
   }
   executiveSummary: string
-  marketAnalysis: string | Record<string, unknown>
-  businessModel: string | Record<string, unknown>
+  marketAnalysis: string | Record<string, unknown> | unknown
+  businessModel: string | Record<string, unknown> | unknown
   financialProjections: string
-  marketingStrategy: string | Record<string, unknown>
+  marketingStrategy: string | Record<string, unknown> | unknown
   operationsOverview: string
-  riskAssessment: Record<string, unknown>
-  implementation: string | Record<string, unknown>
-  legal: string | Record<string, unknown>
+  riskAssessment: Record<string, unknown> | unknown
+  implementation: string | Record<string, unknown> | unknown
+  legal: string | Record<string, unknown> | unknown
   tools: Array<{
     name: string
     purpose: string

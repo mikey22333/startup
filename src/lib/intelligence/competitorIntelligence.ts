@@ -33,7 +33,8 @@ interface MarketIntelligence {
 export async function enhanceCompetitorIntelligence(plan: BusinessPlan): Promise<CompetitiveAnalysis> {
   try {
     const businessType = extractBusinessType(plan.executiveSummary)
-    const targetMarket = extractTargetMarket(plan.marketAnalysis || plan.executiveSummary)
+    const marketAnalysisText = typeof plan.marketAnalysis === 'string' ? plan.marketAnalysis : JSON.stringify(plan.marketAnalysis) || ''
+    const targetMarket = extractTargetMarket(marketAnalysisText || plan.executiveSummary)
     
     // Discover competitors using multiple methods
     const discoveredCompetitors = await discoverCompetitors(businessType, targetMarket, plan.executiveSummary)

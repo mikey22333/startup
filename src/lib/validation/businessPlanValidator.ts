@@ -83,11 +83,13 @@ function validateCoreSections(plan: BusinessPlan): { errors: string[], warnings:
     errors.push('Executive summary is missing or too short (minimum 100 characters)')
   }
   
-  if (!plan.marketAnalysis || plan.marketAnalysis.length < 200) {
+  const marketAnalysisText = typeof plan.marketAnalysis === 'string' ? plan.marketAnalysis : JSON.stringify(plan.marketAnalysis) || ''
+  if (!marketAnalysisText || marketAnalysisText.length < 200) {
     errors.push('Market analysis is insufficient (minimum 200 characters)')
   }
   
-  if (!plan.businessModel || plan.businessModel.length < 150) {
+  const businessModelText = typeof plan.businessModel === 'string' ? plan.businessModel : JSON.stringify(plan.businessModel) || ''
+  if (!businessModelText || businessModelText.length < 150) {
     errors.push('Business model description is incomplete (minimum 150 characters)')
   }
   
@@ -96,12 +98,16 @@ function validateCoreSections(plan: BusinessPlan): { errors: string[], warnings:
   }
   
   // Check section quality
-  if (plan.marketingStrategy && plan.marketingStrategy.length < 200) {
+  const marketingStrategyText = typeof plan.marketingStrategy === 'string' ? plan.marketingStrategy : JSON.stringify(plan.marketingStrategy) || ''
+  if (marketingStrategyText && marketingStrategyText.length < 200) {
     warnings.push('Marketing strategy could be more detailed')
   }
   
-  if (plan.riskAssessment && (!plan.riskAssessment.risks || plan.riskAssessment.risks.length < 3)) {
-    warnings.push('Risk assessment should identify more potential risks')
+  if (plan.riskAssessment && typeof plan.riskAssessment === 'object') {
+    const riskAssessment = plan.riskAssessment as Record<string, unknown>
+    if (!riskAssessment.risks || (Array.isArray(riskAssessment.risks) && riskAssessment.risks.length < 3)) {
+      warnings.push('Risk assessment should identify more potential risks')
+    }
   }
   
   return { errors, warnings }
