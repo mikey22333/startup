@@ -1,347 +1,436 @@
-// Business Plan Data Validation and Consistency Checking
-// Ensures data integrity and realistic projections across all plan sections
+import { BusinessPlan } from '@/lib/exportService'
 
-export interface ValidationResult {
+interface ValidationResult {
   isValid: boolean
-  warnings: string[]
   errors: string[]
+  warnings: string[]
   suggestions: string[]
+  score: number // 0-100 quality score
 }
 
-export interface FinancialMetrics {
-  monthlyRevenue: number
-  monthlyCosts: number
-  cac: number
-  ltv: number
-  churnRate: number
-  breakEvenMonths: number
-  initialInvestment: number
-  monthlyBurnRate: number
+interface FinancialValidation {
+  revenueConsistency: boolean
+  expenseRealism: boolean
+  profitabilityLogic: boolean
+  marketSizeAlignment: boolean
 }
 
-export interface BusinessPlanData {
-  executiveSummary: {
-    investmentNeeded: string
-    timeToLaunch: string
-    marketingBudget: string
-  }
-  financialProjections: {
-    revenue: number[]
-    costs: number[]
-    customers: number[]
-  }
-  metrics: FinancialMetrics
-  marketData: {
-    tam: string
-    sam: string
-    som: string
-    growthRate: string
-  }
-  competitors: Array<{
-    name: string
-    marketShare: string
-    pricing: string
-    revenue?: string
-  }>
+interface MarketValidation {
+  targetMarketClarity: boolean
+  competitiveAnalysisDepth: boolean
+  marketSizeRealistic: boolean
+  growthAssumptions: boolean
 }
 
-export class BusinessPlanValidator {
+export function validateBusinessPlan(plan: BusinessPlan): ValidationResult {
+  const errors: string[] = []
+  const warnings: string[] = []
+  const suggestions: string[] = []
   
-  /**
-   * Comprehensive validation of business plan data consistency
-   */
-  validateBusinessPlan(data: BusinessPlanData): ValidationResult {
-    const warnings: string[] = []
-    const errors: string[] = []
-    const suggestions: string[] = []
-
-    // 1. Financial Model Validation
-    const financialValidation = this.validateFinancialModel(data.metrics, data.financialProjections)
-    warnings.push(...financialValidation.warnings)
+  try {
+    // Validate core sections
+    const coreValidation = validateCoreSections(plan)
+    errors.push(...coreValidation.errors)
+    warnings.push(...coreValidation.warnings)
+    
+    // Validate financial model
+    const financialValidation = validateFinancialModel(plan)
     errors.push(...financialValidation.errors)
-    suggestions.push(...financialValidation.suggestions)
-
-    // 2. Market Size Consistency
-    const marketValidation = this.validateMarketSizes(data.marketData)
-    warnings.push(...marketValidation.warnings)
+    warnings.push(...financialValidation.warnings)
+    
+    // Validate market analysis
+    const marketValidation = validateMarketAnalysis(plan)
     errors.push(...marketValidation.errors)
-    suggestions.push(...marketValidation.suggestions)
-
-    // 3. Competitive Analysis Validation
-    const competitorValidation = this.validateCompetitorData(data.competitors)
-    warnings.push(...competitorValidation.warnings)
-    suggestions.push(...competitorValidation.suggestions)
-
-    // 4. Cross-Section Consistency
-    const consistencyValidation = this.validateCrossSectionConsistency(data)
-    warnings.push(...consistencyValidation.warnings)
+    warnings.push(...marketValidation.warnings)
+    
+    // Check data consistency
+    const consistencyValidation = validateDataConsistency(plan)
     errors.push(...consistencyValidation.errors)
-    suggestions.push(...consistencyValidation.suggestions)
-
+    warnings.push(...consistencyValidation.warnings)
+    
+    // Generate improvement suggestions
+    const improvementSuggestions = generateImprovementSuggestions(plan)
+    suggestions.push(...improvementSuggestions)
+    
+    // Calculate overall quality score
+    const score = calculateQualityScore(plan, errors.length, warnings.length)
+    
     return {
       isValid: errors.length === 0,
-      warnings,
       errors,
-      suggestions
+      warnings,
+      suggestions,
+      score
     }
-  }
-
-  /**
-   * Validate financial model for realistic projections and consistency
-   */
-  private validateFinancialModel(metrics: FinancialMetrics, projections: any): ValidationResult {
-    const warnings: string[] = []
-    const errors: string[] = []
-    const suggestions: string[] = []
-
-    // Check break-even analysis
-    if (metrics.breakEvenMonths < 1) {
-      errors.push('Break-even period less than 1 month is unrealistic for most businesses')
-      suggestions.push('Recalculate break-even based on realistic revenue ramp-up and cost structure')
+  } catch (error) {
+    console.error('Error validating business plan:', error)
+    return {
+      isValid: false,
+      errors: ['Validation process encountered an unexpected error'],
+      warnings: [],
+      suggestions: ['Please review the business plan format and try again'],
+      score: 0
     }
-
-    if (metrics.breakEvenMonths > 48) {
-      warnings.push('Break-even period over 4 years indicates high risk - consider reducing costs or improving revenue model')
-    }
-
-    // Validate LTV:CAC ratio with division by zero protection
-    if (metrics.cac > 0) {
-      const ltvCacRatio = metrics.ltv / metrics.cac
-      if (ltvCacRatio < 2) {
-        errors.push(`LTV:CAC ratio of ${ltvCacRatio.toFixed(1)} is below healthy threshold of 3:1`)
-        suggestions.push('Improve customer lifetime value or reduce acquisition costs')
-      } else if (ltvCacRatio > 10) {
-        warnings.push(`LTV:CAC ratio of ${ltvCacRatio.toFixed(1)} seems optimistic - validate assumptions`)
-      }
-    } else {
-      warnings.push('Customer acquisition cost is zero or invalid - validate marketing budget')
-    }
-
-    // Check churn rate reasonableness
-    if (metrics.churnRate > 20) {
-      warnings.push('Monthly churn rate above 20% indicates poor product-market fit')
-      suggestions.push('Focus on customer retention and product improvement')
-    }
-
-    if (metrics.churnRate < 1) {
-      warnings.push('Churn rate below 1% monthly is extremely optimistic')
-    }
-
-    // Validate burn rate vs revenue
-    if (metrics.monthlyBurnRate > metrics.monthlyRevenue * 3) {
-      warnings.push('Monthly burn rate is more than 3x monthly revenue - unsustainable long-term')
-    }
-
-    // Check pricing consistency
-    const customerCount = projections.customers?.[0] || 1
-    const avgRevenuePerCustomer = customerCount > 0 ? metrics.monthlyRevenue / customerCount : 0
-    if (avgRevenuePerCustomer < 10) {
-      warnings.push('Average revenue per customer seems very low - validate pricing strategy')
-    }
-
-    return { isValid: errors.length === 0, warnings, errors, suggestions }
-  }
-
-  /**
-   * Validate market size hierarchy (TAM > SAM > SOM)
-   */
-  private validateMarketSizes(marketData: any): ValidationResult {
-    const warnings: string[] = []
-    const errors: string[] = []
-    const suggestions: string[] = []
-
-    try {
-      const tam = this.parseMarketSize(marketData.tam)
-      const sam = this.parseMarketSize(marketData.sam)
-      const som = this.parseMarketSize(marketData.som)
-
-      if (sam >= tam) {
-        errors.push('SAM cannot be equal to or larger than TAM')
-        suggestions.push('SAM should be 5-20% of TAM for most markets')
-      }
-
-      if (som >= sam) {
-        errors.push('SOM cannot be equal to or larger than SAM')
-        suggestions.push('SOM should be 1-10% of SAM for realistic market capture')
-      }
-
-      // Check reasonableness of SOM with division by zero protection
-      if (sam > 0) {
-        const somPercent = (som / sam) * 100
-        if (somPercent > 15) {
-          warnings.push(`SOM represents ${somPercent.toFixed(1)}% of SAM - very ambitious for most businesses`)
-        }
-
-        if (somPercent < 0.5) {
-          warnings.push(`SOM represents only ${somPercent.toFixed(2)}% of SAM - may be too conservative`)
-        }
-      } else {
-        warnings.push('SAM value is zero or invalid - cannot validate SOM percentage')
-      }
-
-    } catch (error) {
-      warnings.push('Unable to parse market size values for validation')
-    }
-
-    return { isValid: errors.length === 0, warnings, errors, suggestions }
-  }
-
-  /**
-   * Validate competitor data for completeness and realism
-   */
-  private validateCompetitorData(competitors: any[]): ValidationResult {
-    const warnings: string[] = []
-    const suggestions: string[] = []
-
-    if (competitors.length === 0) {
-      warnings.push('No competitors identified - most markets have competition')
-      suggestions.push('Research direct and indirect competitors more thoroughly')
-    }
-
-    if (competitors.length > 10) {
-      warnings.push('Too many competitors listed - focus on top 3-5 most relevant ones')
-    }
-
-    let hasMarketShareData = false
-    let hasFundingData = false
-    let hasPricingData = false
-
-    competitors.forEach((competitor, index) => {
-      if (competitor.marketShare && !competitor.marketShare.includes('Difficult')) {
-        hasMarketShareData = true
-      }
-      if (competitor.funding && competitor.funding !== 'Unknown') {
-        hasFundingData = true
-      }
-      if (competitor.pricing && competitor.pricing !== 'Unknown') {
-        hasPricingData = true
-      }
-
-      // Check for generic descriptions
-      if (competitor.name.includes('Competitor') || competitor.name.includes('Unknown')) {
-        warnings.push(`Generic competitor name detected: ${competitor.name}`)
-      }
-    })
-
-    if (!hasMarketShareData) {
-      suggestions.push('Try to find more specific market share data for key competitors')
-    }
-
-    if (!hasFundingData) {
-      suggestions.push('Research competitor funding rounds for better competitive intelligence')
-    }
-
-    if (!hasPricingData) {
-      suggestions.push('Gather more specific pricing information from competitor websites')
-    }
-
-    return { isValid: true, warnings, errors: [], suggestions }
-  }
-
-  /**
-   * Validate consistency across different sections of the business plan
-   */
-  private validateCrossSectionConsistency(data: BusinessPlanData): ValidationResult {
-    const warnings: string[] = []
-    const errors: string[] = []
-    const suggestions: string[] = []
-
-    // Check investment vs costs consistency
-    const investmentAmount = this.parseInvestmentAmount(data.executiveSummary.investmentNeeded)
-    const initialCosts = data.metrics.initialInvestment
-
-    if (investmentAmount > 0 && Math.abs(investmentAmount - initialCosts) / investmentAmount > 0.3) {
-      warnings.push('Investment needed in summary differs significantly from detailed cost breakdown')
-      suggestions.push('Ensure investment amounts are consistent across all sections')
-    }
-
-    // Check time to launch vs business complexity
-    const timeToLaunch = data.executiveSummary.timeToLaunch
-    if (timeToLaunch.includes('1-2') && data.metrics.initialInvestment > 50000) {
-      warnings.push('1-2 month launch timeline seems aggressive for high-investment business')
-    }
-
-    // Check marketing budget vs CAC with proper validation
-    const marketingBudget = this.parseMarketingBudget(data.executiveSummary.marketingBudget)
-    const expectedCustomers = data.financialProjections.customers?.[11] || 0 // Month 12
-    
-    if (marketingBudget > 0 && expectedCustomers > 0) {
-      const impliedCAC = (marketingBudget * 12) / expectedCustomers
-      
-      if (data.metrics.cac > 0 && Math.abs(impliedCAC - data.metrics.cac) / data.metrics.cac > 0.5) {
-        warnings.push('Marketing budget and CAC projections are inconsistent')
-        suggestions.push('Align marketing spend with customer acquisition cost assumptions')
-      }
-    } else {
-      warnings.push('Unable to validate marketing budget consistency due to missing data')
-    }
-
-    return { isValid: errors.length === 0, warnings, errors, suggestions }
-  }
-
-  /**
-   * Helper function to parse market size strings
-   */
-  private parseMarketSize(sizeString: string): number {
-    const cleanString = sizeString.replace(/[^0-9.]/g, '')
-    const number = parseFloat(cleanString)
-    
-    if (sizeString.toLowerCase().includes('billion')) {
-      return number * 1000 // Convert to millions
-    }
-    return number // Already in millions
-  }
-
-  /**
-   * Helper function to parse investment amount
-   */
-  private parseInvestmentAmount(investmentString: string): number {
-    const match = investmentString.match(/\$?([\d,]+)/)
-    if (match) {
-      return parseInt(match[1].replace(/,/g, ''))
-    }
-    return 0
-  }
-
-  /**
-   * Helper function to parse marketing budget
-   */
-  private parseMarketingBudget(budgetString: string): number {
-    const match = budgetString.match(/\$?([\d,]+)/)
-    if (match) {
-      return parseInt(match[1].replace(/,/g, ''))
-    }
-    return 0
-  }
-
-  /**
-   * Auto-correct common validation issues
-   */
-  correctValidationIssues(data: BusinessPlanData, validationResult: ValidationResult): BusinessPlanData {
-    const correctedData = { ...data }
-
-    // Fix unrealistic break-even if detected
-    if (correctedData.metrics.breakEvenMonths < 1) {
-      const monthlyProfit = correctedData.metrics.monthlyRevenue - correctedData.metrics.monthlyCosts
-      if (monthlyProfit > 0) {
-        correctedData.metrics.breakEvenMonths = Math.ceil(correctedData.metrics.initialInvestment / monthlyProfit)
-      } else {
-        correctedData.metrics.breakEvenMonths = 12 // Default to 12 months if no positive cash flow
-      }
-    }
-
-    // Adjust SOM if it's too high relative to SAM
-    const som = this.parseMarketSize(correctedData.marketData.som)
-    const sam = this.parseMarketSize(correctedData.marketData.sam)
-    if (som >= sam) {
-      const adjustedSOM = sam * 0.05 // Set to 5% of SAM
-      correctedData.marketData.som = adjustedSOM < 1 
-        ? `$${adjustedSOM.toFixed(1)} million` 
-        : `$${Math.round(adjustedSOM)} million`
-    }
-
-    return correctedData
   }
 }
 
-export const businessPlanValidator = new BusinessPlanValidator()
+function validateCoreSections(plan: BusinessPlan): { errors: string[], warnings: string[] } {
+  const errors: string[] = []
+  const warnings: string[] = []
+  
+  // Check required sections
+  if (!plan.executiveSummary || plan.executiveSummary.length < 100) {
+    errors.push('Executive summary is missing or too short (minimum 100 characters)')
+  }
+  
+  if (!plan.marketAnalysis || plan.marketAnalysis.length < 200) {
+    errors.push('Market analysis is insufficient (minimum 200 characters)')
+  }
+  
+  if (!plan.businessModel || plan.businessModel.length < 150) {
+    errors.push('Business model description is incomplete (minimum 150 characters)')
+  }
+  
+  if (!plan.financialProjections || plan.financialProjections.length < 100) {
+    errors.push('Financial projections are missing or incomplete')
+  }
+  
+  // Check section quality
+  if (plan.marketingStrategy && plan.marketingStrategy.length < 200) {
+    warnings.push('Marketing strategy could be more detailed')
+  }
+  
+  if (plan.riskAssessment && (!plan.riskAssessment.risks || plan.riskAssessment.risks.length < 3)) {
+    warnings.push('Risk assessment should identify more potential risks')
+  }
+  
+  return { errors, warnings }
+}
+
+function validateFinancialModel(plan: BusinessPlan): { errors: string[], warnings: string[] } {
+  const errors: string[] = []
+  const warnings: string[] = []
+  
+  try {
+    // Extract financial data from projections text
+    const financialData = extractFinancialData(plan.financialProjections)
+    
+    // Validate revenue projections
+    if (financialData.revenues.length === 0) {
+      errors.push('No revenue projections found in financial section')
+    } else {
+      const revenueValidation = validateRevenueProjections(financialData.revenues)
+      errors.push(...revenueValidation.errors)
+      warnings.push(...revenueValidation.warnings)
+    }
+    
+    // Validate expense projections
+    if (financialData.expenses.length === 0) {
+      warnings.push('Expense projections not clearly defined')
+    } else {
+      const expenseValidation = validateExpenseProjections(financialData.expenses, financialData.revenues)
+      warnings.push(...expenseValidation.warnings)
+    }
+    
+    // Check investment requirements
+    if (plan.feasibility && plan.feasibility.investmentNeeded) {
+      const investmentValidation = validateInvestmentRequirements(plan.feasibility.investmentNeeded, financialData)
+      warnings.push(...investmentValidation.warnings)
+    }
+    
+  } catch (error) {
+    warnings.push('Financial data format could not be fully validated')
+  }
+  
+  return { errors, warnings }
+}
+
+function extractFinancialData(financialProjections: string): {
+  revenues: number[]
+  expenses: number[]
+  profits: number[]
+} {
+  const revenues: number[] = []
+  const expenses: number[] = []
+  const profits: number[] = []
+  
+  // Extract numbers that look like financial figures
+  const numberPattern = /\$?[\d,]+(?:\.\d{2})?/g
+  const matches = financialProjections.match(numberPattern) || []
+  
+  // Simple heuristic: first numbers are likely revenues
+  matches.forEach((match, index) => {
+    const value = parseInt(match.replace(/[\$,]/g, ''))
+    if (value > 1000) { // Filter out small numbers that might not be financial
+      if (index < matches.length / 3) {
+        revenues.push(value)
+      } else if (index < 2 * matches.length / 3) {
+        expenses.push(value)
+      } else {
+        profits.push(value)
+      }
+    }
+  })
+  
+  return { revenues, expenses, profits }
+}
+
+function validateRevenueProjections(revenues: number[]): { errors: string[], warnings: string[] } {
+  const errors: string[] = []
+  const warnings: string[] = []
+  
+  if (revenues.length < 3) {
+    warnings.push('Revenue projections should cover at least 3 years')
+  }
+  
+  // Check for unrealistic growth
+  for (let i = 1; i < revenues.length; i++) {
+    const growthRate = (revenues[i] - revenues[i-1]) / revenues[i-1]
+    if (growthRate > 5) { // 500% growth
+      warnings.push(`Year ${i+1} shows unrealistic revenue growth (${Math.round(growthRate * 100)}%)`)
+    }
+    if (growthRate < -0.5) { // 50% decline
+      warnings.push(`Year ${i+1} shows concerning revenue decline`)
+    }
+  }
+  
+  // Check for zero or negative revenues
+  revenues.forEach((revenue, index) => {
+    if (revenue <= 0) {
+      errors.push(`Year ${index + 1} shows zero or negative revenue`)
+    }
+  })
+  
+  return { errors, warnings }
+}
+
+function validateExpenseProjections(expenses: number[], revenues: number[]): { warnings: string[] } {
+  const warnings: string[] = []
+  
+  // Check expense-to-revenue ratios
+  expenses.forEach((expense, index) => {
+    if (revenues[index]) {
+      const ratio = expense / revenues[index]
+      if (ratio > 0.9) {
+        warnings.push(`Year ${index + 1}: Expenses are ${Math.round(ratio * 100)}% of revenue - profitability concern`)
+      }
+      if (ratio < 0.3) {
+        warnings.push(`Year ${index + 1}: Expenses seem too low at ${Math.round(ratio * 100)}% of revenue`)
+      }
+    }
+  })
+  
+  return { warnings }
+}
+
+function validateInvestmentRequirements(investmentNeeded: string, financialData: any): { warnings: string[] } {
+  const warnings: string[] = []
+  
+  // Extract investment amount
+  const investmentMatch = investmentNeeded.match(/\$?[\d,]+/)
+  if (investmentMatch) {
+    const investment = parseInt(investmentMatch[0].replace(/[\$,]/g, ''))
+    const firstYearRevenue = financialData.revenues[0] || 0
+    
+    if (investment > firstYearRevenue * 2) {
+      warnings.push('Investment requirement seems high relative to projected first-year revenue')
+    }
+    
+    if (investment < firstYearRevenue * 0.1) {
+      warnings.push('Investment requirement might be underestimated')
+    }
+  }
+  
+  return { warnings }
+}
+
+function validateMarketAnalysis(plan: BusinessPlan): { errors: string[], warnings: string[] } {
+  const errors: string[] = []
+  const warnings: string[] = []
+  
+  // Check market size mentions
+  const marketText = plan.marketAnalysis.toLowerCase()
+  if (!marketText.includes('market size') && !marketText.includes('market value') && !marketText.includes('billion') && !marketText.includes('million')) {
+    warnings.push('Market analysis should include market size estimates')
+  }
+  
+  // Check for competitor analysis
+  if (!marketText.includes('competitor') && !marketText.includes('competition')) {
+    warnings.push('Market analysis should include competitive landscape')
+  }
+  
+  // Check for target market definition
+  if (!marketText.includes('target') && !marketText.includes('customer') && !marketText.includes('audience')) {
+    warnings.push('Target market definition could be clearer')
+  }
+  
+  // Check for growth trends
+  if (!marketText.includes('growth') && !marketText.includes('trend') && !marketText.includes('opportunity')) {
+    warnings.push('Market growth trends and opportunities should be discussed')
+  }
+  
+  return { errors, warnings }
+}
+
+function validateDataConsistency(plan: BusinessPlan): { errors: string[], warnings: string[] } {
+  const errors: string[] = []
+  const warnings: string[] = []
+  
+  // Check consistency between executive summary and detailed sections
+  const execSummary = plan.executiveSummary.toLowerCase()
+  const marketAnalysis = plan.marketAnalysis.toLowerCase()
+  
+  // Look for contradictions in market positioning
+  if (execSummary.includes('b2b') && marketAnalysis.includes('consumer')) {
+    warnings.push('Potential inconsistency between B2B focus in summary and consumer market in analysis')
+  }
+  
+  if (execSummary.includes('enterprise') && marketAnalysis.includes('small business')) {
+    warnings.push('Target market inconsistency between enterprise and small business focus')
+  }
+  
+  // Check timeline consistency
+  const timelineInSummary = extractTimeline(execSummary)
+  const timelineInImplementation = extractTimeline(plan.implementation || '')
+  
+  if (timelineInSummary && timelineInImplementation && Math.abs(timelineInSummary - timelineInImplementation) > 6) {
+    warnings.push('Timeline inconsistency between executive summary and implementation plan')
+  }
+  
+  return { errors, warnings }
+}
+
+function extractTimeline(text: string): number | null {
+  const monthsMatch = text.match(/(\d+)\s*months?/)
+  if (monthsMatch) return parseInt(monthsMatch[1])
+  
+  const yearsMatch = text.match(/(\d+)\s*years?/)
+  if (yearsMatch) return parseInt(yearsMatch[1]) * 12
+  
+  return null
+}
+
+function generateImprovementSuggestions(plan: BusinessPlan): string[] {
+  const suggestions: string[] = []
+  
+  // Suggest improvements based on content analysis
+  const allText = `${plan.executiveSummary} ${plan.marketAnalysis} ${plan.businessModel}`.toLowerCase()
+  
+  if (!allText.includes('unique') && !allText.includes('differentiat')) {
+    suggestions.push('Consider highlighting unique selling propositions and competitive differentiators')
+  }
+  
+  if (!allText.includes('scalab') && !allText.includes('growth')) {
+    suggestions.push('Include discussion of scalability and growth strategies')
+  }
+  
+  if (!allText.includes('risk') && !allText.includes('challenge')) {
+    suggestions.push('Add comprehensive risk assessment and mitigation strategies')
+  }
+  
+  if (!allText.includes('team') && !allText.includes('founder')) {
+    suggestions.push('Include information about the founding team and key personnel')
+  }
+  
+  if (!allText.includes('technology') && !allText.includes('innovation')) {
+    suggestions.push('Consider discussing technology stack and innovation aspects')
+  }
+  
+  // Financial suggestions
+  if (!plan.financialProjections.includes('cash flow')) {
+    suggestions.push('Add detailed cash flow projections to financial section')
+  }
+  
+  if (!plan.marketingStrategy.includes('customer acquisition cost') && !plan.marketingStrategy.includes('cac')) {
+    suggestions.push('Include customer acquisition cost analysis in marketing strategy')
+  }
+  
+  return suggestions
+}
+
+function calculateQualityScore(plan: BusinessPlan, errorCount: number, warningCount: number): number {
+  let score = 100
+  
+  // Deduct points for errors and warnings
+  score -= errorCount * 15 // Errors are more serious
+  score -= warningCount * 5
+  
+  // Add points for comprehensiveness
+  const sections = [
+    plan.executiveSummary,
+    plan.marketAnalysis,
+    plan.businessModel,
+    plan.financialProjections,
+    plan.marketingStrategy,
+    plan.operationsOverview,
+    plan.implementation
+  ]
+  
+  const completedSections = sections.filter(section => section && section.length > 100).length
+  score += completedSections * 2
+  
+  // Add points for detailed content
+  const totalLength = sections.join('').length
+  if (totalLength > 5000) score += 10
+  if (totalLength > 10000) score += 10
+  
+  // Check for specific quality indicators
+  const allText = sections.join(' ').toLowerCase()
+  if (allText.includes('market research')) score += 5
+  if (allText.includes('competitive analysis')) score += 5
+  if (allText.includes('financial model')) score += 5
+  if (allText.includes('go-to-market')) score += 5
+  
+  return Math.max(0, Math.min(100, score))
+}
+
+export function autoCorrectBusinessPlan(plan: BusinessPlan, validationResult: ValidationResult): BusinessPlan {
+  const correctedPlan = { ...plan }
+  
+  try {
+    // Auto-fix common issues
+    validationResult.errors.forEach(error => {
+      if (error.includes('Executive summary is missing or too short')) {
+        if (!correctedPlan.executiveSummary || correctedPlan.executiveSummary.length < 100) {
+          correctedPlan.executiveSummary = generateExecutiveSummaryFromOtherSections(correctedPlan)
+        }
+      }
+      
+      if (error.includes('Market analysis is insufficient')) {
+        if (!correctedPlan.marketAnalysis || correctedPlan.marketAnalysis.length < 200) {
+          correctedPlan.marketAnalysis = enhanceMarketAnalysis(correctedPlan.marketAnalysis || '', correctedPlan)
+        }
+      }
+    })
+    
+    return correctedPlan
+  } catch (error) {
+    console.error('Error auto-correcting business plan:', error)
+    return plan // Return original if correction fails
+  }
+}
+
+function generateExecutiveSummaryFromOtherSections(plan: BusinessPlan): string {
+  const businessModel = plan.businessModel || ''
+  const marketAnalysis = plan.marketAnalysis || ''
+  
+  return `Executive Summary: ${businessModel.substring(0, 200)}... ${marketAnalysis.substring(0, 200)}... This business plan outlines a comprehensive strategy for market entry and growth.`
+}
+
+function enhanceMarketAnalysis(currentAnalysis: string, plan: BusinessPlan): string {
+  const enhancement = `
+Market Analysis Enhancement:
+
+Target Market: Our primary target market consists of customers seeking innovative solutions in this space.
+
+Market Size: The addressable market represents a significant opportunity with substantial growth potential.
+
+Competitive Landscape: While competition exists, our unique approach provides clear differentiation opportunities.
+
+Market Trends: Current market trends indicate strong demand for solutions that address key customer pain points.
+
+${currentAnalysis}
+  `
+  
+  return enhancement.trim()
+}

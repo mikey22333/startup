@@ -1,439 +1,242 @@
-// Financial Model Enhancement and Cross-Validation System
-// Ensures realistic and consistent financial projections
+import { BusinessPlan } from '@/lib/exportService'
 
-export interface FinancialModel {
-  revenue: {
-    monthly: number[]
-    annual: number
-    growthRate: number
-    revenueStreams: string[]
-  }
-  costs: {
-    monthly: number[]
-    annual: number
-    fixedCosts: number
-    variableCosts: number
-    breakdown: Record<string, number>
-  }
-  metrics: {
-    cac: number
-    ltv: number
-    ltvCacRatio: number
+interface EnhancedFinancialData {
+  revenueProjections: number[]
+  expenses: number[]
+  profitMargins: number[]
+  cashFlow: number[]
+  breakEvenMonth: number
+  fundingRequirement: number
+  keyMetrics: {
+    customerAcquisitionCost: number
+    lifetimeValue: number
     churnRate: number
-    arpu: number
     grossMargin: number
-    contributionMargin: number
-  }
-  cashFlow: {
-    monthly: number[]
-    cumulativeCashFlow: number[]
-    breakEvenMonth: number
-    runwayMonths: number
-  }
-  fundingRequirement: {
-    initialInvestment: number
-    workingCapital: number
-    growthCapital: number
-    totalRequired: number
   }
 }
 
-export interface ModelValidation {
-  isRealistic: boolean
-  consistencyScore: number
-  issues: Array<{
-    type: 'ERROR' | 'WARNING' | 'SUGGESTION'
-    category: 'REVENUE' | 'COSTS' | 'METRICS' | 'CASHFLOW' | 'FUNDING'
-    message: string
-    impact: 'HIGH' | 'MEDIUM' | 'LOW'
-    recommendation: string
-  }>
-  improvements: FinancialModel
+interface IndustryBenchmarks {
+  averageGrossMargin: number
+  typicalGrowthRate: number
+  averageCustomerAcquisitionCost: number
+  industryMultiples: {
+    revenueMultiple: number
+    ebitdaMultiple: number
+  }
 }
 
-class FinancialModelEnhancer {
-
-  /**
-   * Enhance and validate financial model for realism and consistency
-   */
-  enhanceFinancialModel(
-    businessType: string,
-    businessIdea: string,
-    initialProjections: any,
-    marketData: any
-  ): { model: FinancialModel, validation: ModelValidation } {
-    
-    console.log('🔧 Enhancing financial model for', businessType)
-    
-    // Create enhanced model
-    const enhancedModel = this.buildEnhancedModel(businessType, businessIdea, initialProjections, marketData)
-    
-    // Validate the model
-    const validation = this.validateModel(enhancedModel, businessType, businessIdea)
-    
-    // Apply improvements
-    const improvedModel = this.applyImprovements(enhancedModel, validation)
-    
-    return {
-      model: improvedModel,
-      validation: {
-        ...validation,
-        improvements: improvedModel
-      }
+const industryBenchmarks: Record<string, IndustryBenchmarks> = {
+  'technology': {
+    averageGrossMargin: 0.75,
+    typicalGrowthRate: 0.25,
+    averageCustomerAcquisitionCost: 500,
+    industryMultiples: {
+      revenueMultiple: 8,
+      ebitdaMultiple: 15
+    }
+  },
+  'retail': {
+    averageGrossMargin: 0.45,
+    typicalGrowthRate: 0.15,
+    averageCustomerAcquisitionCost: 150,
+    industryMultiples: {
+      revenueMultiple: 2,
+      ebitdaMultiple: 8
+    }
+  },
+  'healthcare': {
+    averageGrossMargin: 0.65,
+    typicalGrowthRate: 0.20,
+    averageCustomerAcquisitionCost: 800,
+    industryMultiples: {
+      revenueMultiple: 4,
+      ebitdaMultiple: 12
+    }
+  },
+  'education': {
+    averageGrossMargin: 0.60,
+    typicalGrowthRate: 0.18,
+    averageCustomerAcquisitionCost: 300,
+    industryMultiples: {
+      revenueMultiple: 3,
+      ebitdaMultiple: 10
+    }
+  },
+  'default': {
+    averageGrossMargin: 0.55,
+    typicalGrowthRate: 0.20,
+    averageCustomerAcquisitionCost: 400,
+    industryMultiples: {
+      revenueMultiple: 4,
+      ebitdaMultiple: 10
     }
   }
+}
 
-  /**
-   * Build enhanced financial model with industry benchmarks
-   */
-  private buildEnhancedModel(
-    businessType: string,
-    businessIdea: string,
-    projections: any,
-    marketData: any
-  ): FinancialModel {
+export function enhanceFinancialModel(plan: BusinessPlan): EnhancedFinancialData {
+  try {
+    const businessType = detectBusinessType(plan.executiveSummary)
+    const benchmarks = industryBenchmarks[businessType] || industryBenchmarks.default
     
-    // Get industry benchmarks
-    const benchmarks = this.getIndustryBenchmarks(businessType, businessIdea)
+    // Enhanced revenue projections with realistic growth patterns
+    const revenueProjections = buildRevenueProjections(plan, benchmarks)
     
-    // Build revenue model
-    const revenue = this.buildRevenueModel(projections, benchmarks, marketData)
+    // Detailed expense modeling
+    const expenses = buildExpenseModel(revenueProjections, benchmarks)
     
-    // Build cost model
-    const costs = this.buildCostModel(projections, benchmarks, revenue.monthly)
+    // Calculate profit margins
+    const profitMargins = revenueProjections.map((revenue, index) => {
+      const expense = expenses[index] || 0
+      return revenue > 0 ? ((revenue - expense) / revenue) : 0
+    })
     
-    // Calculate metrics
-    const metrics = this.calculateMetrics(revenue, costs, projections)
+    // Build cash flow model
+    const cashFlow = buildCashFlowModel(revenueProjections, expenses)
     
-    // Build cash flow
-    const cashFlow = this.buildCashFlowModel(revenue.monthly, costs.monthly, projections.initialInvestment)
+    // Calculate break-even point
+    const breakEvenMonth = findBreakEvenPoint(cashFlow)
     
-    // Calculate funding requirement
-    const fundingRequirement = this.calculateFundingRequirement(cashFlow, costs, projections)
+    // Determine funding requirement
+    const fundingRequirement = calculateFundingRequirement(cashFlow, expenses)
+    
+    // Calculate key business metrics
+    const keyMetrics = calculateKeyMetrics(plan, benchmarks, revenueProjections)
     
     return {
-      revenue,
-      costs,
-      metrics,
+      revenueProjections,
+      expenses,
+      profitMargins,
       cashFlow,
-      fundingRequirement
-    }
-  }
-
-  /**
-   * Get industry-specific benchmarks
-   */
-  private getIndustryBenchmarks(businessType: string, businessIdea: string) {
-    const lowerType = businessType.toLowerCase()
-    const lowerIdea = businessIdea.toLowerCase()
-    
-    // SaaS/Software benchmarks
-    if (lowerType.includes('digital') || lowerIdea.includes('saas') || lowerIdea.includes('app')) {
-      return {
-        grossMargin: 0.75,
-        churnRate: 0.05,
-        ltvCacRatio: 4,
-        paybackPeriod: 12,
-        growthRate: 0.15,
-        operatingMargin: 0.20
-      }
-    }
-    
-    // E-commerce benchmarks
-    if (lowerType.includes('retail') || lowerIdea.includes('ecommerce') || lowerIdea.includes('online store')) {
-      return {
-        grossMargin: 0.45,
-        churnRate: 0.10,
-        ltvCacRatio: 3,
-        paybackPeriod: 6,
-        growthRate: 0.12,
-        operatingMargin: 0.15
-      }
-    }
-    
-    // Service business benchmarks
-    if (lowerType.includes('service') || lowerIdea.includes('consulting') || lowerIdea.includes('coaching')) {
-      return {
-        grossMargin: 0.60,
-        churnRate: 0.08,
-        ltvCacRatio: 5,
-        paybackPeriod: 3,
-        growthRate: 0.10,
-        operatingMargin: 0.25
-      }
-    }
-    
-    // Food & Beverage benchmarks
-    if (lowerIdea.includes('food') || lowerIdea.includes('restaurant') || lowerIdea.includes('delivery')) {
-      return {
-        grossMargin: 0.35,
-        churnRate: 0.15,
-        ltvCacRatio: 2.5,
-        paybackPeriod: 9,
-        growthRate: 0.08,
-        operatingMargin: 0.10
-      }
-    }
-    
-    // Default benchmarks
-    return {
-      grossMargin: 0.50,
-      churnRate: 0.10,
-      ltvCacRatio: 3,
-      paybackPeriod: 8,
-      growthRate: 0.10,
-      operatingMargin: 0.15
-    }
-  }
-
-  /**
-   * Build realistic revenue model
-   */
-  private buildRevenueModel(projections: any, benchmarks: any, marketData: any) {
-    const monthly: number[] = []
-    let currentRevenue = projections.monthlyRevenue || 1000
-    
-    // Apply realistic growth curve
-    for (let month = 0; month < 12; month++) {
-      if (month === 0) {
-        monthly.push(currentRevenue * 0.3) // Start slow
-      } else if (month < 3) {
-        monthly.push(monthly[month - 1] * 1.15) // Rapid early growth
-      } else if (month < 6) {
-        monthly.push(monthly[month - 1] * 1.10) // Moderate growth
-      } else {
-        monthly.push(monthly[month - 1] * (1 + benchmarks.growthRate)) // Steady growth
-      }
-    }
-    
-    const annual = monthly.reduce((sum, rev) => sum + rev, 0)
-    
-    return {
-      monthly,
-      annual,
-      growthRate: benchmarks.growthRate,
-      revenueStreams: this.identifyRevenueStreams(projections.businessIdea || '')
-    }
-  }
-
-  /**
-   * Build realistic cost model
-   */
-  private buildCostModel(projections: any, benchmarks: any, revenueMonthly: number[]) {
-    const monthly: number[] = []
-    const baseCosts = projections.monthlyCosts || 2000
-    
-    // Calculate costs based on revenue (variable) + fixed costs
-    for (let month = 0; month < 12; month++) {
-      const variableCosts = revenueMonthly[month] * (1 - benchmarks.grossMargin)
-      const fixedCosts = baseCosts * 0.7 // 70% fixed costs
-      monthly.push(variableCosts + fixedCosts)
-    }
-    
-    const annual = monthly.reduce((sum, cost) => sum + cost, 0)
-    
-    return {
-      monthly,
-      annual,
-      fixedCosts: baseCosts * 0.7,
-      variableCosts: annual * (1 - benchmarks.grossMargin),
-      breakdown: {
-        personnel: baseCosts * 0.4,
-        marketing: baseCosts * 0.2,
-        operations: baseCosts * 0.15,
-        overhead: baseCosts * 0.15,
-        technology: baseCosts * 0.1
-      }
-    }
-  }
-
-  /**
-   * Calculate key financial metrics
-   */
-  private calculateMetrics(revenue: any, costs: any, projections: any) {
-    const grossMargin = (revenue.annual - costs.variableCosts) / revenue.annual
-    const arpu = revenue.monthly[11] / (projections.customers || 100)
-    const cac = projections.cac || arpu * 0.3 // CAC should be ~30% of ARPU
-    const ltv = arpu * 24 * (1 - 0.05) // 24 months * retention rate
-    const churnRate = 0.05 // 5% monthly churn
-    
-    return {
-      cac,
-      ltv,
-      ltvCacRatio: ltv / cac,
-      churnRate,
-      arpu,
-      grossMargin,
-      contributionMargin: grossMargin
-    }
-  }
-
-  /**
-   * Build cash flow model
-   */
-  private buildCashFlowModel(revenueMonthly: number[], costsMonthly: number[], initialInvestment: number) {
-    const monthly: number[] = []
-    const cumulativeCashFlow: number[] = []
-    let cumulative = -initialInvestment
-    let breakEvenMonth = 12
-    
-    for (let month = 0; month < 12; month++) {
-      const monthlyFlow = revenueMonthly[month] - costsMonthly[month]
-      monthly.push(monthlyFlow)
-      cumulative += monthlyFlow
-      cumulativeCashFlow.push(cumulative)
-      
-      if (cumulative > 0 && breakEvenMonth === 12) {
-        breakEvenMonth = month + 1
-      }
-    }
-    
-    const avgMonthlyCosts = costsMonthly[0] || 1000
-    const runwayMonths = avgMonthlyCosts > 0 ? Math.max(0, Math.ceil(initialInvestment / avgMonthlyCosts)) : 12
-    
-    return {
-      monthly,
-      cumulativeCashFlow,
       breakEvenMonth,
-      runwayMonths
+      fundingRequirement,
+      keyMetrics
     }
-  }
-
-  /**
-   * Calculate funding requirement
-   */
-  private calculateFundingRequirement(cashFlow: any, costs: any, projections: any) {
-    const minCashFlow = Math.min(...cashFlow.cumulativeCashFlow)
-    const workingCapital = costs.monthly[0] * 2 // 2 months of expenses
-    const growthCapital = projections.initialInvestment || 15000
-    const runwayMonths = costs.monthly[0] > 0 ? Math.ceil(growthCapital / costs.monthly[0]) : 12
-    
+  } catch (error) {
+    console.error('Error enhancing financial model:', error)
+    // Return safe defaults if enhancement fails
     return {
-      initialInvestment: Math.abs(minCashFlow),
-      workingCapital,
-      growthCapital,
-      runwayMonths,
-      totalRequired: Math.abs(minCashFlow) + workingCapital + growthCapital
+      revenueProjections: [0, 0, 0, 0, 0],
+      expenses: [0, 0, 0, 0, 0],
+      profitMargins: [0, 0, 0, 0, 0],
+      cashFlow: [0, 0, 0, 0, 0],
+      breakEvenMonth: 12,
+      fundingRequirement: 100000,
+      keyMetrics: {
+        customerAcquisitionCost: 0,
+        lifetimeValue: 0,
+        churnRate: 0.05,
+        grossMargin: 0.5
+      }
     }
-  }
-
-  /**
-   * Validate the financial model
-   */
-  private validateModel(model: FinancialModel, businessType: string, businessIdea: string): ModelValidation {
-    const issues: any[] = []
-    let consistencyScore = 100
-    
-    // Check LTV:CAC ratio
-    if (model.metrics.ltvCacRatio < 2) {
-      issues.push({
-        type: 'ERROR',
-        category: 'METRICS',
-        message: `LTV:CAC ratio of ${model.metrics.ltvCacRatio.toFixed(1)} is below healthy threshold`,
-        impact: 'HIGH',
-        recommendation: 'Increase customer lifetime value or reduce acquisition costs'
-      })
-      consistencyScore -= 20
-    }
-    
-    // Check break-even period
-    if (model.cashFlow.breakEvenMonth > 24) {
-      issues.push({
-        type: 'WARNING',
-        category: 'CASHFLOW',
-        message: 'Break-even period exceeds 24 months',
-        impact: 'HIGH',
-        recommendation: 'Consider reducing costs or improving revenue model'
-      })
-      consistencyScore -= 15
-    }
-    
-    // Check gross margin
-    if (model.metrics.grossMargin < 0.2) {
-      issues.push({
-        type: 'WARNING',
-        category: 'METRICS',
-        message: 'Gross margin below 20% may indicate unsustainable pricing',
-        impact: 'MEDIUM',
-        recommendation: 'Review pricing strategy and cost structure'
-      })
-      consistencyScore -= 10
-    }
-    
-    // Check runway
-    if (model.cashFlow.runwayMonths < 6) {
-      issues.push({
-        type: 'ERROR',
-        category: 'FUNDING',
-        message: 'Cash runway less than 6 months is risky',
-        impact: 'HIGH',
-        recommendation: 'Increase initial funding or reduce burn rate'
-      })
-      consistencyScore -= 25
-    }
-    
-    return {
-      isRealistic: consistencyScore >= 70,
-      consistencyScore,
-      issues,
-      improvements: model
-    }
-  }
-
-  /**
-   * Apply improvements based on validation issues
-   */
-  private applyImprovements(model: FinancialModel, validation: ModelValidation): FinancialModel {
-    const improved = { ...model }
-    
-    // Fix LTV:CAC ratio if needed
-    if (improved.metrics.ltvCacRatio < 2 && improved.metrics.ltv > 0) {
-      improved.metrics.cac = improved.metrics.ltv / 3 // Target 3:1 ratio
-    }
-    
-    // Adjust break-even if unrealistic
-    if (improved.cashFlow.breakEvenMonth < 1) {
-      const monthlyRevenue = improved.revenue.monthly[0] || 1000
-      improved.cashFlow.breakEvenMonth = Math.max(3, Math.ceil(improved.fundingRequirement.initialInvestment / monthlyRevenue))
-    }
-    
-    // Improve gross margin if too low
-    if (improved.metrics.grossMargin < 0.2) {
-      improved.metrics.grossMargin = 0.25 // Set minimum viable margin
-    }
-    
-    return improved
-  }
-
-  /**
-   * Identify revenue streams based on business idea
-   */
-  private identifyRevenueStreams(businessIdea: string): string[] {
-    const lowerIdea = businessIdea.toLowerCase()
-    const streams: string[] = []
-    
-    if (lowerIdea.includes('subscription') || lowerIdea.includes('saas')) {
-      streams.push('Monthly subscriptions', 'Annual subscriptions', 'Premium tiers')
-    }
-    
-    if (lowerIdea.includes('marketplace') || lowerIdea.includes('platform')) {
-      streams.push('Transaction fees', 'Listing fees', 'Premium features')
-    }
-    
-    if (lowerIdea.includes('delivery') || lowerIdea.includes('service')) {
-      streams.push('Service fees', 'Delivery charges', 'Premium services')
-    }
-    
-    if (lowerIdea.includes('product') || lowerIdea.includes('retail')) {
-      streams.push('Product sales', 'Shipping fees', 'Accessories')
-    }
-    
-    if (streams.length === 0) {
-      streams.push('Primary service', 'Add-on services', 'Premium features')
-    }
-    
-    return streams
   }
 }
 
-export const financialModelEnhancer = new FinancialModelEnhancer()
+function detectBusinessType(businessIdea: string): string {
+  const idea = businessIdea.toLowerCase()
+  
+  if (idea.includes('tech') || idea.includes('software') || idea.includes('app') || idea.includes('platform') || idea.includes('saas')) {
+    return 'technology'
+  }
+  if (idea.includes('retail') || idea.includes('store') || idea.includes('shop') || idea.includes('marketplace')) {
+    return 'retail'
+  }
+  if (idea.includes('health') || idea.includes('medical') || idea.includes('wellness') || idea.includes('fitness')) {
+    return 'healthcare'
+  }
+  if (idea.includes('education') || idea.includes('learning') || idea.includes('school') || idea.includes('course')) {
+    return 'education'
+  }
+  
+  return 'default'
+}
+
+function buildRevenueProjections(plan: BusinessPlan, benchmarks: IndustryBenchmarks): number[] {
+  const projections: number[] = []
+  
+  // Extract initial revenue estimate from plan
+  const initialRevenue = extractInitialRevenue(plan)
+  const growthRate = benchmarks.typicalGrowthRate / 12 // Monthly growth rate
+  
+  for (let year = 0; year < 5; year++) {
+    let yearlyRevenue = initialRevenue * Math.pow(1 + benchmarks.typicalGrowthRate, year)
+    
+    // Add some market-realistic constraints
+    if (year === 0) yearlyRevenue *= 0.5 // First year is typically slower
+    if (year === 1) yearlyRevenue *= 0.8 // Second year builds momentum
+    
+    projections.push(Math.round(yearlyRevenue))
+  }
+  
+  return projections
+}
+
+function extractInitialRevenue(plan: BusinessPlan): number {
+  // Try to extract revenue figures from the plan text
+  const revenueMatch = plan.financialProjections?.match(/\$?([\d,]+)/) 
+  if (revenueMatch) {
+    return parseInt(revenueMatch[1].replace(/,/g, ''))
+  }
+  
+  // Default based on business complexity
+  return 250000 // Conservative default
+}
+
+function buildExpenseModel(revenueProjections: number[], benchmarks: IndustryBenchmarks): number[] {
+  return revenueProjections.map((revenue, year) => {
+    let totalExpenses = 0
+    
+    // Cost of Goods Sold (variable with revenue)
+    const cogs = revenue * (1 - benchmarks.averageGrossMargin)
+    
+    // Fixed operating expenses
+    const baseOperatingCosts = 150000 + (year * 25000) // Growing fixed costs
+    
+    // Sales and marketing (percentage of revenue)
+    const salesMarketing = revenue * 0.25
+    
+    // R&D (for tech companies, lower for others)
+    const rdCosts = revenue * 0.15
+    
+    totalExpenses = cogs + baseOperatingCosts + salesMarketing + rdCosts
+    
+    return Math.round(totalExpenses)
+  })
+}
+
+function buildCashFlowModel(revenueProjections: number[], expenses: number[]): number[] {
+  const cashFlow: number[] = []
+  let cumulativeCash = -200000 // Initial investment/startup costs
+  
+  for (let i = 0; i < revenueProjections.length; i++) {
+    const netIncome = (revenueProjections[i] || 0) - (expenses[i] || 0)
+    cumulativeCash += netIncome
+    cashFlow.push(Math.round(cumulativeCash))
+  }
+  
+  return cashFlow
+}
+
+function findBreakEvenPoint(cashFlow: number[]): number {
+  for (let i = 0; i < cashFlow.length; i++) {
+    if (cashFlow[i] >= 0) {
+      return (i + 1) * 12 // Convert to months
+    }
+  }
+  return 60 // Default to 5 years if not found
+}
+
+function calculateFundingRequirement(cashFlow: number[], expenses: number[]): number {
+  const minCashFlow = Math.min(...cashFlow)
+  const operatingBuffer = Math.max(...expenses) * 0.5 // 6 months operating expenses
+  
+  return Math.max(Math.abs(minCashFlow) + operatingBuffer, 100000)
+}
+
+function calculateKeyMetrics(plan: BusinessPlan, benchmarks: IndustryBenchmarks, revenueProjections: number[]) {
+  return {
+    customerAcquisitionCost: benchmarks.averageCustomerAcquisitionCost,
+    lifetimeValue: benchmarks.averageCustomerAcquisitionCost * 3, // Conservative 3x CAC
+    churnRate: 0.05, // 5% monthly churn
+    grossMargin: benchmarks.averageGrossMargin
+  }
+}

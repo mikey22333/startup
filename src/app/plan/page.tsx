@@ -473,19 +473,59 @@ const PlanPageContent = memo(() => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-20 md:py-32">
-        <div className="text-center">
-          <div className="text-red-500 text-4xl md:text-6xl mb-4">⚠</div>
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4">
-            Oops! Something went wrong
-          </h2>
-          <p className="text-gray-600 mb-6 md:mb-8">{error}</p>
-          <button
-            onClick={() => window.history.back()}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Go Back
-          </button>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4">
+        <div className="max-w-md w-full">
+          {/* Animated Error Icon */}
+          <div className="text-center mb-8">
+            <div className="relative inline-block">
+              <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full animate-bounce"></div>
+            </div>
+          </div>
+
+          {/* Error Content */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Oops! Something went wrong
+            </h2>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              {error || "We encountered an unexpected error while loading your business plan. Please try again."}
+            </p>
+            
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => window.history.back()}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-all duration-200 border border-gray-200 hover:border-gray-300"
+              >
+                Go Back
+              </button>
+            </div>
+
+            {/* Help Text */}
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <p className="text-sm text-gray-500">
+                If the problem persists, please{' '}
+                <a href="/contact" className="text-blue-600 hover:text-blue-700 underline">
+                  contact support
+                </a>
+              </p>
+            </div>
+          </div>
+
+          {/* Decorative Elements */}
+          <div className="absolute top-20 left-10 w-20 h-20 bg-blue-200 rounded-full opacity-20 animate-float"></div>
+          <div className="absolute bottom-20 right-10 w-16 h-16 bg-purple-200 rounded-full opacity-20 animate-float" style={{animationDelay: '1s'}}></div>
         </div>
       </div>
     )

@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react'
-import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield, FileText, File, ChevronDown, Lock, Crown, Zap } from 'lucide-react'
-import { exportToAdvancedPDF, exportToWord, type BusinessPlan } from '@/lib/exportService'
+import { Download, CheckCircle2, Target, TrendingUp, Users, Calendar, DollarSign, Lightbulb, ArrowRight, ExternalLink, Clock, Building2, Shield, FileText, File, Code, ChevronDown, Lock, Crown, Zap } from 'lucide-react'
+import { exportToAdvancedPDF, exportToWord, exportToHTML, exportToJSON, type BusinessPlan } from '@/lib/exportService'
 import { useAuth } from '@/components/AuthProvider'
 import { useSubscription } from '@/hooks/useSubscription'
 import { useRouter } from 'next/navigation'
-import ImprovementSummary from '@/components/ImprovementSummary'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -475,12 +474,6 @@ interface PlanData {
     type: 'VERIFIED' | 'SUGGESTED'
   }>
   thirtyDayPlan?: Record<string, SimplifiedPhase>
-  dataValidation?: {
-    validated: boolean
-    warnings: string[]
-    suggestions: string[]
-    correctionsMade: boolean
-  }
 }
 
 interface PlanCardProps {
@@ -500,6 +493,10 @@ interface DerivedStep {
 export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
   const [activeSection, setActiveSection] = useState<string>('overview')
   const [showAllMilestones, setShowAllMilestones] = useState<boolean>(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' })
+  const exportMenuRef = useRef<HTMLDivElement>(null)
   
   // Subscription and auth hooks
   const { user } = useAuth()
@@ -508,6 +505,28 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
   
   // Check if user is on free tier - only lock for confirmed free users
   const isFreeUser = user && usageStatus && usageStatus.subscriptionTier === 'free'
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Clear export status after 5 seconds
+  useEffect(() => {
+    if (exportStatus.type) {
+      const timer = setTimeout(() => {
+        setExportStatus({ type: null, message: '' })
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [exportStatus.type])
 
   // Memoize section change handler
   const handleSectionChange = useCallback((section: string) => {
@@ -625,34 +644,7 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
     }
   }
 
-  const [showExportMenu, setShowExportMenu] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
-  const [exportStatus, setExportStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' })
-  const exportMenuRef = useRef<HTMLDivElement>(null)
-
-  // Close export menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-        setShowExportMenu(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  // Clear export status after 3 seconds
-  useEffect(() => {
-    if (exportStatus.type) {
-      const timer = setTimeout(() => {
-        setExportStatus({ type: null, message: '' })
-      }, 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [exportStatus])
-
-  const handleExport = async (format: 'pdf' | 'pdf-advanced' | 'word' | 'html' | 'json') => {
+  const handleExport = async (format: 'pdf' | 'pdf-advanced' | 'word') => {
     if (!plan) return
     
     // Check if user is on free tier and show upgrade prompt
@@ -706,11 +698,8 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
         valueProposition: plan.valueProposition || undefined,
         operations: plan.operations || undefined,
         
-        marketAnalysis: typeof plan.marketAnalysis === 'string' ? plan.marketAnalysis : 
-          (plan.marketAnalysis ? JSON.stringify(plan.marketAnalysis) : ''),
-        businessModel: typeof plan.valueProposition === 'string' ? plan.valueProposition :
-          (plan.valueProposition ? JSON.stringify(plan.valueProposition) : 
-          plan.businessScope?.targetCustomers || ''),
+        marketAnalysis: plan.marketAnalysis || '',
+        businessModel: plan.valueProposition || plan.businessScope?.targetCustomers || '',
         financialProjections: (() => {
           // Generate HTML table directly (same as website display)
           let htmlTable = '<table style="border-collapse: collapse; width: 100%; margin: 10px 0; border: 1px solid #ddd;">'
@@ -747,20 +736,17 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
         // Enhanced Financial Analysis
         financialAnalysis: plan.financialAnalysis || undefined,
         
-        marketingStrategy: typeof plan.marketingStrategy === 'string' ? plan.marketingStrategy :
-          (plan.marketingStrategy ? JSON.stringify(plan.marketingStrategy) : ''),
+        marketingStrategy: plan.marketingStrategy || '',
         operationsOverview: plan.operations?.deliveryProcess || 
           (Array.isArray(plan.operations?.suppliers) ? plan.operations.suppliers.join(', ') : plan.operations?.suppliers) || '',
-        riskAssessment: typeof plan.riskAssessment === 'string' ? plan.riskAssessment :
-          (plan.riskAssessment ? JSON.stringify(plan.riskAssessment) : ''),
+        riskAssessment: plan.riskAssessment || '',
         
         // Implementation and Action Plans
-        implementation: plan.actionPlan ? JSON.stringify(plan.actionPlan) : '',
+        implementation: plan.actionPlan || '',
         actionPlan: plan.actionPlan || [],
         thirtyDayPlan: plan.thirtyDayPlan || undefined,
         
-        legal: typeof plan.legal === 'string' ? plan.legal :
-          (plan.legal ? JSON.stringify(plan.legal) : ''),
+        legal: plan.legal || '',
         tools: [
           // Get tools from recommendedTools field (legacy)
           ...(plan.recommendedTools || []).map((tool: any) => ({
@@ -949,10 +935,7 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
             )}
           </div>
             
-            <button 
-              onClick={() => router.push('/')}
-              className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-full hover:bg-neutral-50 transition-all text-sm font-medium"
-            >
+            <button className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-full hover:bg-neutral-50 transition-all text-sm font-medium">
               <span>New Plan</span>
             </button>
           </div>

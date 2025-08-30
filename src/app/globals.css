@@ -71,3 +71,17 @@ label {
   padding: 0.5rem; /* p-2 */
   border-radius: 0.25rem; /* rounded */
 }
+
+/* Floating animation for decorative elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}

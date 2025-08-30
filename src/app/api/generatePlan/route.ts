@@ -4,8 +4,6 @@ import { createClient } from '@/lib/supabase-server'
 import { createAdaptiveSystemPrompt, detectBusinessType } from '@/utils/prompt'
 import { marketDataIntegration, type ComprehensiveMarketData } from '@/lib/api-integrations'
 import { createWorkspaceIdea, saveBusinessPlan, extractIdeaData } from '@/lib/workspace'
-import { businessPlanValidator, type BusinessPlanData } from '@/lib/validation/businessPlanValidator'
-import { enhancedCompetitorIntelligence } from '@/lib/intelligence/competitorIntelligence'
 
 // Retry function for Gemini API with exponential backoff
 async function retryGeminiAPI(
@@ -7502,87 +7500,6 @@ export async function POST(request: NextRequest) {
     }
 
     const planData = await requestCache.get(requestKey)!
-    
-    // Apply data validation and improvements
-    try {
-      console.log('🔍 Validating business plan data quality...')
-      
-      // Extract data for validation
-      const validationData: BusinessPlanData = {
-        executiveSummary: {
-          investmentNeeded: planData.investmentNeeded || '$0',
-          timeToLaunch: planData.timeToLaunch || '3-6 months',
-          marketingBudget: planData.marketingBudget || '$500/month'
-        },
-        financialProjections: {
-          revenue: planData.monthlyProjections?.map((p: any) => p.revenue) || [],
-          costs: planData.monthlyProjections?.map((p: any) => p.costs) || [],
-          customers: planData.monthlyProjections?.map((p: any) => p.customers) || []
-        },
-        metrics: {
-          monthlyRevenue: planData.avgRevenuePerUser || 50,
-          monthlyCosts: planData.monthlyCosts || 1500,
-          cac: planData.cac || 100,
-          ltv: planData.ltv || 500,
-          churnRate: planData.churnRate || 5,
-          breakEvenMonths: planData.breakEvenMonths || 12,
-          initialInvestment: parseInt(planData.investmentNeeded?.replace(/[^0-9]/g, '') || '15000'),
-          monthlyBurnRate: planData.monthlyCosts || 1500
-        },
-        marketData: {
-          tam: planData.marketSize?.tam || '$5 billion',
-          sam: planData.marketSize?.sam || '$500 million',
-          som: planData.marketSize?.som || '$50 million',
-          growthRate: planData.marketGrowthRate || '5%'
-        },
-        competitors: planData.competitors || []
-      }
-      
-      // Run validation
-      const validationResult = businessPlanValidator.validateBusinessPlan(validationData)
-      
-      // Apply auto-corrections if needed
-      if (!validationResult.isValid || validationResult.warnings.length > 0) {
-        console.log('⚠️ Validation issues found, applying corrections...')
-        console.log('Warnings:', validationResult.warnings)
-        console.log('Errors:', validationResult.errors)
-        
-        const correctedData = businessPlanValidator.correctValidationIssues(validationData, validationResult)
-        
-        // Update plan data with corrections
-        if (correctedData.metrics.breakEvenMonths !== validationData.metrics.breakEvenMonths) {
-          planData.breakEvenMonths = correctedData.metrics.breakEvenMonths
-          console.log(`✅ Corrected break-even period to ${correctedData.metrics.breakEvenMonths} months`)
-        }
-        
-        if (correctedData.marketData.som !== validationData.marketData.som) {
-          if (planData.marketSize) {
-            planData.marketSize.som = correctedData.marketData.som
-          }
-          console.log(`✅ Adjusted SOM to ${correctedData.marketData.som}`)
-        }
-        
-        // Add validation insights to the plan
-        planData.dataValidation = {
-          validated: true,
-          warnings: validationResult.warnings.slice(0, 3), // Top 3 warnings
-          suggestions: validationResult.suggestions.slice(0, 3), // Top 3 suggestions
-          correctionsMade: validationResult.errors.length > 0
-        }
-      } else {
-        console.log('✅ Business plan passed validation checks')
-        planData.dataValidation = {
-          validated: true,
-          warnings: [],
-          suggestions: [],
-          correctionsMade: false
-        }
-      }
-      
-    } catch (validationError) {
-      console.warn('Validation system error:', validationError)
-      // Continue without validation if it fails
-    }
     
     // Return response with cache prevention headers
     return NextResponse.json(planData, {
