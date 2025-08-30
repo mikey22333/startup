@@ -6,6 +6,7 @@ import { exportToAdvancedPDF, exportToWord, type BusinessPlan } from '@/lib/expo
 import { useAuth } from '@/components/AuthProvider'
 import { useSubscription } from '@/hooks/useSubscription'
 import { useRouter } from 'next/navigation'
+import ImprovementSummary from '@/components/ImprovementSummary'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -474,6 +475,12 @@ interface PlanData {
     type: 'VERIFIED' | 'SUGGESTED'
   }>
   thirtyDayPlan?: Record<string, SimplifiedPhase>
+  dataValidation?: {
+    validated: boolean
+    warnings: string[]
+    suggestions: string[]
+    correctionsMade: boolean
+  }
 }
 
 interface PlanCardProps {

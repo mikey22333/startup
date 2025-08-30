@@ -26,10 +26,7 @@ const PRICING_PLANS = [
       "Essential business tools"
     ],
     limitations: [
-      "No competitor analysis",
-      "No market positioning",
-      "No growth strategies",
-      "Limited market data"
+      "No competitor analysis"
     ],
     buttonText: "Get Started",
     isPopular: false
@@ -40,11 +37,9 @@ const PRICING_PLANS = [
     price: "$19",
     period: "per month",
     features: [
+      "Everything in Basic",
       "5 business plans per day",
       "Advanced competitor analysis",
-      "Market positioning strategies",
-      "Growth & scaling roadmaps",
-      "Live market data integration",
       "Priority customer support"
     ],
     buttonText: "Get Started",
