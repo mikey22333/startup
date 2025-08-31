@@ -142,6 +142,7 @@ const PlanPageContent = memo(() => {
   const [error, setError] = useState<string | null>(null)
   const [isAdvisorOpen, setIsAdvisorOpen] = useState(false)
   const [isAdvisorMinimized, setIsAdvisorMinimized] = useState(false)
+  const [isLoadingExistingPlan, setIsLoadingExistingPlan] = useState(false)
   const hasCalledAPI = useRef(false)
 
   // Redirect unauthenticated users to login - only after auth loading is complete
@@ -163,6 +164,29 @@ const PlanPageContent = memo(() => {
   }), [searchParams])
 
   const { id, idea, location, budget, timeline, businessType, currency } = searchParamsData
+
+  // Reset API call flag when key parameters change (for new plan generation)
+  // Only reset if we're NOT loading an existing plan by ID
+  const parameterKey = useMemo(() => `${idea}-${location}-${budget}-${timeline}-${businessType}`, [idea, location, budget, timeline, businessType])
+  const prevParameterKey = useRef<string>('')
+  
+  useEffect(() => {
+    console.log('Parameter key effect:', { id, parameterKey, prevKey: prevParameterKey.current, hasCalledAPI: hasCalledAPI.current, isLoadingExistingPlan })
+    
+    // If we have an ID or are loading an existing plan, set hasCalledAPI to true immediately
+    if (id || isLoadingExistingPlan) {
+      console.log('Have ID or loading existing plan, setting hasCalledAPI to true to prevent generation')
+      hasCalledAPI.current = true
+      return
+    }
+    
+    // Only reset for new plan generation when no ID and parameters changed
+    if (!id && !isLoadingExistingPlan && prevParameterKey.current !== parameterKey && parameterKey !== '----') {
+      console.log('Resetting hasCalledAPI flag for new parameters')
+      hasCalledAPI.current = false
+      prevParameterKey.current = parameterKey
+    }
+  }, [parameterKey, id, isLoadingExistingPlan])
 
   const generatePlan = useCallback(async () => {
     // This function is now mainly for manual retries
@@ -210,6 +234,20 @@ const PlanPageContent = memo(() => {
 
       const planData = await response.json()
       setPlan(planData)
+      
+      // Update URL with plan ID to enable proper reloading
+      if (planData?.id) {
+        const newUrl = new URL(window.location.href)
+        newUrl.searchParams.set('id', planData.id)
+        // Remove generation parameters since we now have an ID
+        newUrl.searchParams.delete('idea')
+        newUrl.searchParams.delete('location')
+        newUrl.searchParams.delete('budget')
+        newUrl.searchParams.delete('timeline')
+        newUrl.searchParams.delete('businessType')
+        window.history.replaceState({}, '', newUrl.toString())
+        console.log('Updated URL with plan ID:', planData.id)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate plan')
       hasCalledAPI.current = false // Reset on error so user can retry
@@ -218,102 +256,112 @@ const PlanPageContent = memo(() => {
     }
   }, [idea, location, budget, timeline, businessType, currency])
 
-  // Stable hash for current parameter set
-  const paramHash = JSON.stringify({ id, idea, location, budget, timeline, businessType, currency })
-  const previousParamHash = useRef<string>('')
-
+  // Load existing plan by ID
   useEffect(() => {
-    // Reset API call flag if parameters actually changed
-    if (previousParamHash.current !== paramHash) {
-      hasCalledAPI.current = false
-      previousParamHash.current = paramHash
-    }
-
-    // If we have an ID, load existing plan
-    if (id) {
-      const loadPlan = async () => {
-        try {
-          setLoading(true)
-          setError(null)
-
-          if (!user) {
-            setError('Please sign in to view your business plans')
-            return
-          }
-
-          const { data, error } = await supabase
-            .from('business_plans')
-            .select('*')
-            .eq('id', id)
-            .eq('user_id', user.id)
-            .single()
-
-          if (error) {
-            throw error
-          }
-
-          if (!data) {
-            throw new Error('Business plan not found')
-          }
-
-          // Set the plan data from the database
-          // Parse any JSON strings that might have been serialized
-          const parsedPlanData = { ...data.plan_data }
-          
-          // Helper function to safely parse JSON strings
-          const safeParseJSON = (value: any, fieldName: string): any => {
-            if (typeof value === 'string' && value.trim()) {
-              const trimmed = value.trim()
-              if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-                try {
-                  return JSON.parse(trimmed)
-                } catch (parseError) {
-                  console.warn(`Failed to parse ${fieldName}:`, parseError)
-                  return value // Return original string if parsing fails
-                }
-              }
-            }
-            return value
-          }
-          
-          // Parse competitive analysis if it's a string
-          parsedPlanData.competitiveAnalysis = safeParseJSON(parsedPlanData.competitiveAnalysis, 'competitiveAnalysis')
-          
-          // Parse other potentially serialized objects
-          const fieldsToParseIfString = [
-            'businessScope', 'demandValidation', 'valueProposition', 'financialAnalysis',
-            'riskAssessment', 'growthStrategy', 'competitiveIntelligence', 'marketIntelligence',
-            'gotoMarketStrategy', 'strategicMilestones', 'actionRoadmap', 'resources',
-            'marketAnalysis', 'businessModel', 'implementation', 'legal'
-          ]
-          
-          fieldsToParseIfString.forEach(field => {
-            if (parsedPlanData[field]) {
-              parsedPlanData[field] = safeParseJSON(parsedPlanData[field], field)
-            }
-          })
-          
-          console.log('Parsed plan data - competitive analysis type:', typeof parsedPlanData.competitiveAnalysis)
-          console.log('Parsed plan data - competitive analysis structure:', parsedPlanData.competitiveAnalysis)
-          
-          if (parsedPlanData) {
-            setPlan(parsedPlanData)
-          }
-        } catch (error: any) {
-          setError(error.message || 'Failed to load business plan')
-        } finally {
-          setLoading(false)
-        }
-      }
-      
-      loadPlan()
+    console.log('Load plan effect:', { id, user: !!user, hasCalledAPI: hasCalledAPI.current })
+    
+    if (!id || !user) {
+      setIsLoadingExistingPlan(false)
       return
     }
 
-    // Otherwise, generate new plan
-    if (!idea) {
-      setError('No business idea provided')
-      setLoading(false)
+    // Mark that we're loading an existing plan
+    setIsLoadingExistingPlan(true)
+    // Mark API as called to prevent generation when loading existing plan
+    console.log('Setting hasCalledAPI to true for existing plan loading')
+    hasCalledAPI.current = true
+    
+    const loadPlan = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const { data, error } = await supabase
+          .from('business_plans')
+          .select('*')
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .single()
+
+        if (error) {
+          throw error
+        }
+
+        if (!data) {
+          throw new Error('Business plan not found')
+        }
+
+        // Set the plan data from the database
+        // Parse any JSON strings that might have been serialized
+        const parsedPlanData = { ...data.plan_data }
+        
+        // Helper function to safely parse JSON strings
+        const safeParseJSON = (value: any, fieldName: string): any => {
+          if (typeof value === 'string' && value.trim()) {
+            const trimmed = value.trim()
+            if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+              try {
+                return JSON.parse(trimmed)
+              } catch (parseError) {
+                console.warn(`Failed to parse ${fieldName}:`, parseError)
+                return value // Return original string if parsing fails
+              }
+            }
+          }
+          return value
+        }
+        
+        // Parse competitive analysis if it's a string
+        parsedPlanData.competitiveAnalysis = safeParseJSON(parsedPlanData.competitiveAnalysis, 'competitiveAnalysis')
+        
+        // Parse other potentially serialized objects
+        const fieldsToParseIfString = [
+          'businessScope', 'demandValidation', 'valueProposition', 'financialAnalysis',
+          'riskAssessment', 'growthStrategy', 'competitiveIntelligence', 'marketIntelligence',
+          'gotoMarketStrategy', 'strategicMilestones', 'actionRoadmap', 'resources',
+          'marketAnalysis', 'businessModel', 'implementation', 'legal'
+        ]
+        
+        fieldsToParseIfString.forEach(field => {
+          if (parsedPlanData[field]) {
+            parsedPlanData[field] = safeParseJSON(parsedPlanData[field], field)
+          }
+        })
+        
+        console.log('Loaded existing plan from database for ID:', id)
+        
+        if (parsedPlanData) {
+          setPlan(parsedPlanData)
+        }
+      } catch (error: any) {
+        setError(error.message || 'Failed to load business plan')
+      } finally {
+        setLoading(false)
+        setIsLoadingExistingPlan(false)
+      }
+    }
+    
+    loadPlan()
+  }, [id, user]) // Only depend on id and user, not other params
+
+  // Generate new plan (only when there's no ID)
+  useEffect(() => {
+    console.log('Generate plan effect:', { id, idea: !!idea, hasCalledAPI: hasCalledAPI.current, user: !!user, isLoadingExistingPlan })
+    
+    // Skip if we have an ID (loading existing plan) or no idea or no user or currently loading existing plan
+    if (id || !idea || !user || isLoadingExistingPlan) {
+      console.log('Skipping plan generation:', { hasId: !!id, hasIdea: !!idea, hasUser: !!user, isLoadingExistingPlan })
+      if (!id && !idea && user && !isLoadingExistingPlan) {
+        setError('No business idea provided')
+        setLoading(false)
+      }
+      return
+    }
+
+    // Double-check: if URL has id parameter, absolutely don't generate
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.has('id')) {
+      console.log('URL has ID parameter, aborting plan generation')
       return
     }
 
@@ -322,16 +370,57 @@ const PlanPageContent = memo(() => {
       console.log('API call already in progress or completed')
       return
     }
-    
+
+    // Before generating, check if a plan already exists for these parameters
+    const checkExistingPlan = async () => {
+      try {
+        const { data: existingPlans, error } = await supabase
+          .from('business_plans')
+          .select('id, plan_data')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        if (!error && existingPlans) {
+          // Check if any existing plan matches the current idea (simple comparison)
+          const ideaLower = idea.toLowerCase().trim()
+          for (const existingPlan of existingPlans) {
+            const planData = existingPlan.plan_data
+            if (planData?.businessIdeaReview?.originalIdea) {
+              const existingIdeaLower = planData.businessIdeaReview.originalIdea.toLowerCase().trim()
+              if (existingIdeaLower === ideaLower) {
+                console.log('Found existing plan for this idea, redirecting to:', existingPlan.id)
+                // Redirect to the existing plan
+                const newUrl = new URL(window.location.origin + window.location.pathname)
+                newUrl.searchParams.set('id', existingPlan.id)
+                // Keep currency if it was specified
+                if (currency) {
+                  newUrl.searchParams.set('currency', currency)
+                }
+                console.log('Redirecting to existing plan URL:', newUrl.toString())
+                window.location.href = newUrl.toString()
+                return
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Error checking existing plans:', error)
+        // Continue with generation if check fails
+      }
+
+      // No existing plan found, proceed with generation
+      doGeneratePlan()
+    }
+
     const doGeneratePlan = async () => {
-      if (hasCalledAPI.current) return
       hasCalledAPI.current = true
       
       try {
         setLoading(true)
         setError(null)
 
-        console.log('Making API call with:', { idea: idea?.substring(0, 50), location, budget, timeline, businessType, currency })
+        console.log('Generating new plan with:', { idea: idea?.substring(0, 50), location, budget, timeline, businessType, currency })
 
         // Get the session token to send with the request
         const { data: { session } } = await supabase.auth.getSession()
@@ -365,6 +454,22 @@ const PlanPageContent = memo(() => {
 
         const planData = await response.json()
         setPlan(planData)
+        
+        // Update URL with plan ID to enable proper reloading
+        const planId = planData?.id || planData?.databaseId
+        if (planId) {
+          console.log('Plan generated with ID:', planId)
+          const newUrl = new URL(window.location.origin + window.location.pathname)
+          newUrl.searchParams.set('id', planId)
+          // Keep currency if it was specified
+          if (currency) {
+            newUrl.searchParams.set('currency', currency)
+          }
+          console.log('Updating URL to:', newUrl.toString())
+          window.history.replaceState({}, '', newUrl.toString())
+        } else {
+          console.warn('Plan generated but no ID returned:', planData)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to generate plan')
         hasCalledAPI.current = false // Reset on error so user can retry
@@ -373,8 +478,8 @@ const PlanPageContent = memo(() => {
       }
     }
     
-    doGeneratePlan()
-  }, [paramHash, user, id, idea, location, budget, timeline, businessType, currency])
+    checkExistingPlan()
+  }, [id, idea, location, budget, timeline, businessType, currency, user, isLoadingExistingPlan]) // Include all relevant dependencies
 
   const exportToPDF = async () => {
     if (!plan) return

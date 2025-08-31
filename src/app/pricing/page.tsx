@@ -22,11 +22,11 @@ const PRICING_PLANS = [
       "Basic financial projections",
       "Market size analysis",
       "Risk assessment",
-      "PDF export",
       "Essential business tools"
     ],
     limitations: [
-      "No competitor analysis"
+      "No competitor analysis",
+      "No PDF export"
     ],
     buttonText: "Get Started",
     isPopular: false
@@ -39,6 +39,7 @@ const PRICING_PLANS = [
     features: [
       "Everything in Basic",
       "5 business plans per day",
+      "PDF export",
       "Advanced competitor analysis",
       "Priority customer support"
     ],

@@ -7918,6 +7918,7 @@ Currency: ${currency || 'USD'}`
         }
 
         // Add database info to response
+        planData.id = savedPlan.id;
         planData.databaseId = savedPlan.id;
         
         console.log('Successfully saved business plan to database:', savedPlan.id);
