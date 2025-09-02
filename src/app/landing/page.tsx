@@ -38,36 +38,32 @@ export default function LandingPage() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center mr-3">
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              </div>
-              <span className="text-lg font-medium text-gray-900">PlanSpark</span>
+              <span className="text-xl font-bold text-gray-900">PlanSpark</span>
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                Features
-              </Link>
-              <Link href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                Pricing
-              </Link>
-              <div className="flex items-center space-x-3">
-                <a 
-                  href="/" 
-                  className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Sign in
-                </a>
-                <a 
-                  href="/" 
-                  className="bg-gray-900 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-800 transition-colors font-medium"
-                >
-                  Try for free
-                </a>
+            <div className="hidden md:flex items-center justify-center flex-1">
+              <div className="flex items-center space-x-8">
+                <Link href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Features
+                </Link>
+                <Link href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Pricing
+                </Link>
+                <Link href="/about" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  About
+                </Link>
               </div>
+            </div>
+            
+            {/* Try for free button */}
+            <div className="hidden md:block">
+              <a 
+                href="/" 
+                className="bg-gray-900 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-800 transition-colors font-medium"
+              >
+                Try for free
+              </a>
             </div>
 
             {/* Mobile menu button */}
@@ -86,11 +82,11 @@ export default function LandingPage() {
         {isMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100">
             <div className="px-4 py-3 space-y-3">
-              <Link href="#features" className="block py-2 text-sm text-gray-600">Features</Link>
-              <Link href="#pricing" className="block py-2 text-sm text-gray-600">Pricing</Link>
-              <div className="pt-3 border-t border-gray-100 space-y-2">
-                <a href="/" className="block py-2 text-sm text-gray-600">Sign in</a>
-                <a href="/" className="block py-2 px-4 bg-gray-900 text-white text-sm rounded-md font-medium">Try for free</a>
+              <Link href="#features" className="block py-2 text-sm text-gray-600 text-center">Features</Link>
+              <Link href="#pricing" className="block py-2 text-sm text-gray-600 text-center">Pricing</Link>
+              <Link href="/about" className="block py-2 text-sm text-gray-600 text-center">About</Link>
+              <div className="pt-3 border-t border-gray-100">
+                <a href="/" className="block py-2 px-4 bg-gray-900 text-white text-sm rounded-md font-medium text-center">Try for free</a>
               </div>
             </div>
           </div>
@@ -417,59 +413,40 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-50 border-t border-gray-200 py-12">
+      <footer className="bg-white border-t border-gray-200 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Company Info */}
             <div>
-              <div className="flex items-center mb-4">
-                <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center mr-2">
-                  <div className="w-3 h-3 bg-white rounded-full"></div>
-                </div>
-                <span className="text-gray-900 font-medium">PlanSpark</span>
-              </div>
-              <p className="text-gray-600 mb-4">
+              <span className="text-xl font-bold text-gray-900">PlanSpark</span>
+              <p className="text-gray-600 mt-4">
                 Turn ideas into reality with AI-powered business planning.
               </p>
             </div>
             
+            {/* Quick Links */}
             <div>
-              <h3 className="font-semibold text-gray-900 mb-4">Features</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">Quick Links</h3>
               <ul className="space-y-2">
-                <li><Link href="#features" className="text-gray-600 hover:text-gray-900">Overview</Link></li>
-                <li><Link href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link></li>
-                <li><a href="/" className="text-gray-600 hover:text-gray-900">Dashboard</a></li>
-                <li><a href="/" className="text-gray-600 hover:text-gray-900">Download</a></li>
+                <li><Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link></li>
+                <li><Link href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</Link></li>
+                <li><Link href="/about" className="text-gray-600 hover:text-gray-900 transition-colors">About</Link></li>
               </ul>
             </div>
             
+            {/* Legal */}
             <div>
-              <h3 className="font-semibold text-gray-900 mb-4">Resources</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">Legal</h3>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Support</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Privacy policy</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Terms and Conditions</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Branding</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-4">Company</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Story</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Updates</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Open startup</a></li>
-                <li><a href="/" className="text-gray-600 hover:text-gray-900">Sign In</a></li>
+                <li><Link href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-gray-600 hover:text-gray-900 transition-colors">Terms of Service</Link></li>
+                <li><Link href="/support" className="text-gray-600 hover:text-gray-900 transition-colors">Support</Link></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-gray-200 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center">
+          <div className="border-t border-gray-200 mt-8 pt-8 text-center">
             <p className="text-gray-500 text-sm">&copy; 2025 PlanSpark. All rights reserved.</p>
-            <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-              <a href="#" className="text-gray-600 hover:text-gray-900">Twitter</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Github</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Discord</a>
-            </div>
           </div>
         </div>
       </footer>
