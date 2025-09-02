@@ -116,10 +116,10 @@ export default function SupportPage() {
             </div>
 
             <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Can I edit my business plan after it's generated?</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Can I regenerate my business plan with different inputs?</h3>
               <p className="text-gray-600 leading-relaxed">
-                Yes! You can edit, modify, and update your business plan at any time. PlanSpark provides intuitive editing 
-                tools to help you refine your plan as your business evolves.
+                Yes! If you want to adjust your business plan, you can create a new plan with updated information about 
+                your business idea, target market, or goals. Each generation takes your latest inputs into account.
               </p>
             </div>
 

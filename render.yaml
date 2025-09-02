@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: planspark
+    env: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://planspark.onrender.com
+      # Configure these in Render dashboard for security
+      # - key: NEXT_PUBLIC_SUPABASE_URL
+      #   sync: false
+      # - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+      #   sync: false
+      # - key: TOGETHER_API_KEY
+      #   sync: false
+    healthCheckPath: /api/health
+    autoDeploy: true

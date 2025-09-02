@@ -286,77 +286,85 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Free Plan */}
+            {/* Basic Plan */}
             <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-2">Free</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-2">$0</div>
-                <p className="text-gray-600">Perfect for getting started</p>
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">Basic</h3>
+                <div className="text-4xl font-bold text-gray-900 mb-2">Free</div>
+                <p className="text-gray-600">Best for personal use</p>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span className="text-gray-700">3 business plans per day</span>
+                  <span className="text-gray-700">1 business plan per day</span>
                 </li>
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span className="text-gray-700">Basic market research</span>
+                  <span className="text-gray-700">Basic financial projections</span>
                 </li>
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span className="text-gray-700">PDF export</span>
+                  <span className="text-gray-700">Market size analysis</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Risk assessment</span>
                 </li>
               </ul>
               <a 
                 href="/"
                 className="w-full bg-gray-100 text-gray-900 py-3 rounded-lg text-center font-medium hover:bg-gray-200 transition-colors block"
               >
-                Get Started Free
+                Get Started
               </a>
             </div>
 
-            {/* Premium Plan */}
+            {/* Pro Plan */}
             <div className="bg-white text-black p-8 rounded-2xl relative border-2 border-gray-900 shadow-lg">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-gray-900 text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
               </div>
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-semibold mb-2">Premium</h3>
-                <div className="text-4xl font-bold mb-2">$9<span className="text-lg font-normal">/month</span></div>
-                <p className="text-gray-600">For growing businesses</p>
+                <h3 className="text-2xl font-semibold mb-2">Pro</h3>
+                <div className="text-4xl font-bold mb-2">$19<span className="text-lg font-normal">/month</span></div>
+                <p className="text-gray-600">For entrepreneurs & startups</p>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span>25 business plans per day</span>
+                  <span>Everything in Basic</span>
                 </li>
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span>Advanced market research</span>
+                  <span>5 business plans per day</span>
                 </li>
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span>Financial projections</span>
+                  <span>PDF export</span>
                 </li>
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span>AI business advisor</span>
+                  <span>Advanced competitor analysis</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>Priority customer support</span>
                 </li>
               </ul>
               <a 
                 href="/"
                 className="w-full bg-gray-900 text-white py-3 rounded-lg text-center font-medium hover:bg-gray-800 transition-colors block"
               >
-                Try Premium Free
+                Get Started
               </a>
             </div>
 
-            {/* Pro Plan */}
+            {/* Pro+ Plan */}
             <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-2">Pro</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-2">$19<span className="text-lg font-normal">/month</span></div>
-                <p className="text-gray-600">For serious entrepreneurs</p>
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">Pro+</h3>
+                <div className="text-4xl font-bold text-gray-900 mb-2">$39<span className="text-lg font-normal">/month</span></div>
+                <p className="text-gray-600">For agencies & consultants</p>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center space-x-3">
@@ -365,22 +373,22 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Everything in Pro</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
                   <span className="text-gray-700">Premium market research</span>
                 </li>
                 <li className="flex items-center space-x-3">
                   <Check className="w-5 h-5 text-green-600" />
-                  <span className="text-gray-700">Priority support</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <Check className="w-5 h-5 text-green-600" />
-                  <span className="text-gray-700">Custom branding</span>
+                  <span className="text-gray-700">Custom branding options</span>
                 </li>
               </ul>
               <a 
                 href="/"
                 className="w-full bg-gray-100 text-gray-900 py-3 rounded-lg text-center font-medium hover:bg-gray-200 transition-colors block"
               >
-                Upgrade to Pro
+                Get Started
               </a>
             </div>
           </div>

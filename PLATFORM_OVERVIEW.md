@@ -147,7 +147,7 @@ PlanSpark is a comprehensive AI-powered business intelligence and advisory platf
 #### **User Dashboard**
 - **Plan Library**: Access to all generated business plans
 - **Usage Tracking**: Daily plan generation limits and subscription status
-- **Plan Management**: Edit, delete, and organize business plans
+- **Plan Management**: View, delete, and organize business plans
 - **Export History**: Track of downloaded documents and reports
 
 ### **7. 💳 Subscription & Pricing System**
