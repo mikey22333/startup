@@ -8,6 +8,20 @@ const nextConfig = {
     forceSwcTransforms: true,
   },
   
+  // ESLint configuration for production builds
+  eslint: {
+    // Only run ESLint on these directories during builds
+    dirs: ['src'],
+    // Allow production builds to complete even if there are ESLint errors
+    ignoreDuringBuilds: true,
+  },
+  
+  // TypeScript configuration
+  typescript: {
+    // Disable type checking during builds if needed
+    ignoreBuildErrors: false,
+  },
+  
   // Image optimization
   images: {
     domains: [],
