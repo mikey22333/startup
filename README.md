@@ -216,7 +216,7 @@ MIT License - see LICENSE file for details
 
 ## 🆘 Support
 
-For support, email support@planspark.com or create an issue in this repository.
+For support, email info@planspark.app or create an issue in this repository.
 
 ---
 

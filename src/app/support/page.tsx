@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Mail, MessageSquare, Clock, Phone } from 'lucide-react'
+import { Mail, MessageSquare, Clock } from 'lucide-react'
 
 export default function SupportPage() {
   return (
@@ -63,8 +63,8 @@ export default function SupportPage() {
               <Mail className="w-12 h-12 text-gray-900 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Email Support</h3>
               <p className="text-gray-600 mb-4">Get help via email within 24 hours</p>
-              <a href="mailto:support@planspark.com" className="text-gray-900 font-medium hover:underline">
-                support@planspark.com
+              <a href="mailto:info@planspark.app" className="text-gray-900 font-medium hover:underline">
+                info@planspark.app
               </a>
             </div>
 
@@ -83,15 +83,6 @@ export default function SupportPage() {
               <p className="text-gray-600 mb-4">Browse our knowledge base</p>
               <a href="#" className="text-gray-900 font-medium hover:underline">
                 Visit Help Center
-              </a>
-            </div>
-
-            <div className="text-center p-6 border border-gray-200 rounded-xl hover:shadow-lg transition-shadow">
-              <Phone className="w-12 h-12 text-gray-900 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Phone Support</h3>
-              <p className="text-gray-600 mb-4">Call us during business hours</p>
-              <a href="tel:+1234567890" className="text-gray-900 font-medium hover:underline">
-                (123) 456-7890
               </a>
             </div>
           </div>

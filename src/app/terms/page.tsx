@@ -134,7 +134,12 @@ export default function TermsPage() {
               If you have any questions about these Terms of Service, please contact us at:
             </p>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-gray-700">Email: legal@planspark.com</p>
+              <p className="text-gray-700">
+                If you have questions about these Terms, please contact us at:{' '}
+                <a href="mailto:info@planspark.app" className="text-blue-600 hover:underline">
+                  info@planspark.app
+                </a>
+              </p>
               <p className="text-gray-700">Address: 123 Business St, Suite 100, City, State 12345</p>
             </div>
           </section>

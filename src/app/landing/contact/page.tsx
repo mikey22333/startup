@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { X, Menu, Mail, Phone, MapPin, Send } from 'lucide-react';
+import { X, Menu, Mail, MapPin, Send } from 'lucide-react';
 
 export default function ContactPage() {
   const router = useRouter();
@@ -232,23 +232,8 @@ export default function ContactPage() {
                       <p className="text-gray-600 text-sm mb-2">
                         Send us an email and we'll respond within 24 hours
                       </p>
-                      <a href="mailto:hello@planspark.com" className="text-black hover:text-gray-600 transition-colors">
-                        hello@planspark.com
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Phone size={20} className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-black mb-1">Call us</h3>
-                      <p className="text-gray-600 text-sm mb-2">
-                        Speak with our team during business hours
-                      </p>
-                      <a href="tel:+1-555-123-4567" className="text-black hover:text-gray-600 transition-colors">
-                        +1 (555) 123-4567
+                      <a href="mailto:info@planspark.app" className="text-black hover:text-gray-600 transition-colors">
+                        info@planspark.app
                       </a>
                     </div>
                   </div>
@@ -263,9 +248,7 @@ export default function ContactPage() {
                         Come say hello at our office
                       </p>
                       <address className="text-black not-italic">
-                        123 Innovation Drive<br />
-                        San Francisco, CA 94105<br />
-                        United States
+                        Kerala, India
                       </address>
                     </div>
                   </div>
@@ -276,11 +259,11 @@ export default function ContactPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Monday - Friday</span>
-                      <span className="text-black">9:00 AM - 6:00 PM PST</span>
+                      <span className="text-black">9:00 AM - 6:00 PM IST</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Saturday</span>
-                      <span className="text-black">10:00 AM - 4:00 PM PST</span>
+                      <span className="text-black">10:00 AM - 4:00 PM IST</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Sunday</span>

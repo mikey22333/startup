@@ -116,7 +116,7 @@ export default function Workspace() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/generate')}
                 className="text-gray-400 hover:text-gray-600 transition-colors p-1 flex-shrink-0"
               >
                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />

@@ -213,21 +213,71 @@ export default function PricingPage() {
       const newTier = tierMap[planName]
       if (!newTier) return
 
+      // If selecting free plan, handle differently
+      if (newTier === 'free') {
+        // Redirect to customer portal for downgrades
+        const response = await fetch('/api/stripe/customer-portal', {
+          method: 'POST',
+        })
+        
+        if (response.ok) {
+          const { url } = await response.json()
+          window.location.href = url
+        } else {
+          alert('You are already on the free plan!')
+        }
+        return
+      }
+
       // If user is already on this tier or higher, no need to upgrade
       if (usageStatus?.subscriptionTier === newTier) {
         alert(`You're already on the ${planName} plan!`)
         return
       }
 
-      // For now, just simulate the upgrade (in a real app, you'd integrate with Stripe/payment processor)
-      const result = await upgradeSubscription(newTier)
-      alert(`Successfully upgraded to ${planName} plan! Your daily usage has been reset.`)
+      // Map plan names to Stripe price IDs
+      const priceMapping: { [key: string]: string } = {
+        'Pro': isAnnual 
+          ? process.env.NEXT_PUBLIC_STRIPE_PRO_YEARLY_PRICE_ID || 'price_yearly_pro'
+          : process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID || 'price_1234567890',
+        'Pro+': isAnnual 
+          ? process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_YEARLY_PRICE_ID || 'price_yearly_pro_plus'
+          : process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_MONTHLY_PRICE_ID || 'price_0987654321'
+      }
+
+      const priceId = priceMapping[planName]
+      if (!priceId) {
+        alert('Invalid plan selected')
+        return
+      }
+
+      // Create Stripe checkout session
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          billingPeriod: isAnnual ? 'yearly' : 'monthly'
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create checkout session')
+      }
+
+      const { url } = await response.json()
+      
+      // Redirect to Stripe Checkout
+      window.location.href = url
       
     } catch (err) {
       console.error('Upgrade failed:', err)
       alert(err instanceof Error ? err.message : 'Upgrade failed')
     }
-  }, [user, router, usageStatus, upgradeSubscription])
+  }, [user, router, usageStatus, isAnnual])
 
   // Memoized Beams props
   const beamsProps = useMemo(() => ({
