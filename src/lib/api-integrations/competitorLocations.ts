@@ -314,7 +314,7 @@ class CompetitorLocationsAPI {
 
     return mockNames.slice(0, 2).map((name, index) => ({
       name,
-      address: `${100 + index * 50} Main Street`,
+      address: `Local Area ${index + 1}`,
       distance: 500 + index * 300,
       coordinates: {
         lat: coords.lat + (Math.random() - 0.5) * 0.01,

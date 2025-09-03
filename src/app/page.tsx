@@ -44,6 +44,9 @@ export default function LandingPage() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center justify-center flex-1">
               <div className="flex items-center space-x-8">
+                <Link href="/" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Home
+                </Link>
                 <Link href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
                   Features
                 </Link>
@@ -82,6 +85,7 @@ export default function LandingPage() {
         {isMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100">
             <div className="px-4 py-3 space-y-3">
+              <Link href="/" className="block py-2 text-sm text-gray-600 text-center">Home</Link>
               <Link href="#features" className="block py-2 text-sm text-gray-600 text-center">Features</Link>
               <Link href="#pricing" className="block py-2 text-sm text-gray-600 text-center">Pricing</Link>
               <Link href="/about" className="block py-2 text-sm text-gray-600 text-center">About</Link>

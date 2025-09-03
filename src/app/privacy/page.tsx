@@ -124,7 +124,7 @@ export default function PrivacyPage() {
                   info@planspark.app
                 </a>
               </p>
-              <p className="text-gray-700">Address: 123 Business St, Suite 100, City, State 12345</p>
+              <p className="text-gray-700">Address: Kerala, India</p>
             </div>
           </section>
         </div>
