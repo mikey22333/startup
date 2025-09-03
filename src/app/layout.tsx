@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { AuthProvider } from '@/components/AuthProvider'
+import { PostHogProvider } from '@/components/PostHogProvider'
 
 export const metadata: Metadata = {
   title: 'PlanSpark - Ignite Your Business Ideas',
@@ -30,11 +31,13 @@ export default function RootLayout({
         <meta name="google-site-verification" content="Fr9_HEnZtTppqv_yTBpPnT_F7Ph1wLmbQ_jVs_WNLTo" />
       </head>
       <body className="bg-black">
-        <AuthProvider>
-          <div className="min-h-screen">
-            {children}
-          </div>
-        </AuthProvider>
+        <PostHogProvider>
+          <AuthProvider>
+            <div className="min-h-screen">
+              {children}
+            </div>
+          </AuthProvider>
+        </PostHogProvider>
       </body>
     </html>
   )

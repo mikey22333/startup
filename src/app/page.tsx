@@ -3,9 +3,25 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Menu, X, ArrowRight, Check, Brain, BarChart3, FileText, Users, ChevronRight } from 'lucide-react'
+import { trackEvent } from '@/components/PostHogProvider'
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  const handleCTAClick = (location: string) => {
+    trackEvent('cta_clicked', {
+      location,
+      page: 'landing',
+      timestamp: new Date().toISOString(),
+    })
+  }
+
+  const handleWatchDemo = () => {
+    trackEvent('watch_demo_clicked', {
+      page: 'landing',
+      timestamp: new Date().toISOString(),
+    })
+  }
 
   const features = [
     {
@@ -63,6 +79,7 @@ export default function LandingPage() {
             <div className="hidden md:block">
               <a 
                 href="/generate" 
+                onClick={() => handleCTAClick('header')}
                 className="bg-gray-900 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-800 transition-colors font-medium"
               >
                 Try for free
@@ -90,7 +107,13 @@ export default function LandingPage() {
               <Link href="#pricing" className="block py-2 text-sm text-gray-600 text-center">Pricing</Link>
               <Link href="/about" className="block py-2 text-sm text-gray-600 text-center">About</Link>
               <div className="pt-3 border-t border-gray-100">
-                <a href="/generate" className="block py-2 px-4 bg-gray-900 text-white text-sm rounded-md font-medium text-center">Try for free</a>
+                <a 
+                  href="/generate" 
+                  onClick={() => handleCTAClick('mobile_menu')}
+                  className="block py-2 px-4 bg-gray-900 text-white text-sm rounded-md font-medium text-center"
+                >
+                  Try for free
+                </a>
               </div>
             </div>
           </div>
@@ -122,11 +145,15 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <a
               href="/generate"
+              onClick={() => handleCTAClick('hero_primary')}
               className="bg-orange-500 text-white px-8 py-4 rounded-lg hover:bg-orange-600 transition-colors font-semibold text-lg"
             >
               Create your plan
             </a>
-            <button className="flex items-center text-gray-700 hover:text-gray-900 transition-colors font-medium text-lg">
+            <button 
+              onClick={handleWatchDemo}
+              className="flex items-center text-gray-700 hover:text-gray-900 transition-colors font-medium text-lg"
+            >
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
               </svg>

@@ -29,6 +29,7 @@
     "lucide-react": "^0.539.0",
     "next": "14.2.15",
     "pdf-lib": "^1.17.1",
+    "posthog-js": "^1.261.6",
     "puppeteer": "^24.16.2",
     "puppeteer-core": "^24.16.2",
     "react": "^18",
