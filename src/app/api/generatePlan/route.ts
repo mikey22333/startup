@@ -47,10 +47,120 @@ async function retryGeminiAPI(
   throw new Error('Max retries exceeded')
 }
 
+// Track concurrent generations to prevent memory exhaustion on Render
+let activeGenerations = 0
+const MAX_CONCURRENT_GENERATIONS = process.env.NODE_ENV === 'production' ? 2 : 5 // Render limitation
+
 // In-memory cache maps request key -> Promise resolving to raw plan data (not a Response)
 // Storing raw data lets us create a fresh Response per caller; avoids ReadableStream lock errors
 const requestCache = new Map<string, Promise<any>>()
-const REQUEST_TIMEOUT = 30000 // 30 seconds for fresher data
+
+// Track concurrent requests per user to implement fair usage
+const userRequestCounts = new Map<string, number>()
+const MAX_CONCURRENT_REQUESTS_PER_USER = 2
+
+// Queue for managing request processing order when at capacity
+interface QueuedRequest {
+  userId: string
+  requestKey: string
+  requestData: any
+  resolve: (value: any) => void
+  reject: (error: any) => void
+  timestamp: number
+}
+
+const requestQueue: QueuedRequest[] = []
+let processingQueue = false
+
+// Force garbage collection if available (helps with Render memory limits)
+const forceGC = () => {
+  if (global.gc && process.env.NODE_ENV === 'production') {
+    try {
+      global.gc()
+    } catch (e) {
+      // GC not available, ignore
+    }
+  }
+}
+
+// Clean up old entries periodically
+setInterval(() => {
+  const now = Date.now()
+  const maxAge = 10 * 60 * 1000 // 10 minutes
+  
+  // Clean up old cache entries
+  for (const [key, promise] of requestCache.entries()) {
+    promise.catch(() => {}).then(() => {
+      // Check if this is old enough to clean up
+      requestCache.delete(key)
+    })
+  }
+  
+  // Clean up old queue entries
+  const cutoff = now - maxAge
+  for (let i = requestQueue.length - 1; i >= 0; i--) {
+    if (requestQueue[i].timestamp < cutoff) {
+      requestQueue[i].reject(new Error('Request timeout'))
+      requestQueue.splice(i, 1)
+    }
+  }
+  
+  // Force garbage collection
+  forceGC()
+}, 5 * 60 * 1000) // Clean every 5 minutes
+
+// Process request queue to handle load balancing
+async function processRequestQueue() {
+  if (processingQueue || requestQueue.length === 0) return
+  
+  processingQueue = true
+  
+  try {
+    // Process only what we can handle concurrently (Render memory limit)
+    const maxBatch = Math.min(requestQueue.length, MAX_CONCURRENT_GENERATIONS - activeGenerations)
+    const batch = requestQueue.splice(0, maxBatch)
+    
+    await Promise.allSettled(
+      batch.map(async (queuedRequest) => {
+        try {
+          activeGenerations++
+          const result = await processQueuedRequest(queuedRequest)
+          queuedRequest.resolve(result)
+        } catch (error) {
+          queuedRequest.reject(error)
+        } finally {
+          activeGenerations--
+          forceGC() // Clean up memory after each generation
+        }
+      })
+    )
+  } finally {
+    processingQueue = false
+    
+    // Continue processing if there are more requests and capacity
+    if (requestQueue.length > 0 && activeGenerations < MAX_CONCURRENT_GENERATIONS) {
+      setTimeout(() => processRequestQueue(), 100)
+    }
+  }
+}
+
+async function processQueuedRequest(queuedRequest: QueuedRequest) {
+  const { requestData } = queuedRequest
+  return await processRequest(
+    requestData.idea,
+    requestData.location,
+    requestData.budget,
+    requestData.timeline,
+    requestData.providedBusinessType,
+    requestData.currency,
+    requestData.personalization,
+    requestData.user,
+    requestData.userProfile,
+    requestData.authenticatedClient
+  )
+}
+
+const REQUEST_TIMEOUT = process.env.NODE_ENV === 'production' ? 25000 : 30000 // Render timeout buffer
 
 // Simple rate limiting to prevent API abuse
 const requestTimestamps = new Map<string, number>()
@@ -7467,6 +7577,28 @@ export async function POST(request: NextRequest) {
       console.log(`API mode active - failure count: ${consecutiveGroqFailures}/${MAX_FAILURES_BEFORE_OFFLINE}`)
     }
 
+    // Check server capacity (important for Render's memory limits)
+    if (activeGenerations >= MAX_CONCURRENT_GENERATIONS) {
+      console.log(`Server at capacity: ${activeGenerations}/${MAX_CONCURRENT_GENERATIONS} active generations`)
+      
+      // For Render's limited resources, queue instead of rejecting
+      const queuePosition = requestQueue.length + 1
+      const estimatedWait = queuePosition * 20 // Estimate 20 seconds per generation
+      
+      return NextResponse.json({
+        message: "Server is processing other requests. Your plan generation has been queued.",
+        queued: true,
+        position: queuePosition,
+        estimatedWaitSeconds: estimatedWait,
+        tip: "Refresh this page in about " + Math.ceil(estimatedWait / 60) + " minute(s) to check status."
+      }, { 
+        status: 202, // Accepted but not yet processed
+        headers: {
+          'Retry-After': estimatedWait.toString()
+        }
+      })
+    }
+
     // Add timestamp for more frequent cache invalidation and fresher data
     const hourTimestamp = Math.floor(Date.now() / (1000 * 60 * 5)) // 5-minute intervals for testing
     
@@ -7479,24 +7611,64 @@ export async function POST(request: NextRequest) {
       currency,
       personalization,
       timestamp: hourTimestamp,
-      codeVersion: '2025-08-19-revenue-fix' // Force cache invalidation
+      codeVersion: '2025-08-19-revenue-fix', // Force cache invalidation
+      userId: user?.id || clientIp // Include user/IP in cache key for isolation
     })
+
+    // Concurrent user handling
+    const userId = user?.id || clientIp
+    const currentUserRequests = userRequestCounts.get(userId) || 0
+    
+    // Check if user has too many concurrent requests
+    if (currentUserRequests >= MAX_CONCURRENT_REQUESTS_PER_USER) {
+      console.log(`User ${userId} has too many concurrent requests: ${currentUserRequests}`)
+      return NextResponse.json({ 
+        error: 'Too many concurrent requests. Please wait for your current plan generation to complete.' 
+      }, { status: 429 })
+    }
+    
+    // Increment user request count
+    userRequestCounts.set(userId, currentUserRequests + 1)
+    
+    // Cleanup function to decrement counter
+    const cleanupUserCount = () => {
+      const current = userRequestCounts.get(userId) || 0
+      if (current <= 1) {
+        userRequestCounts.delete(userId)
+      } else {
+        userRequestCounts.set(userId, current - 1)
+      }
+    }
 
     if (!requestCache.has(requestKey)) {
       const promise = (async () => {
         try {
-          return await processRequest(idea, location, budget, timeline, providedBusinessType, currency, personalization, user, userProfile, authenticatedClient)
+          activeGenerations++ // Track active generation
+          console.log(`Starting plan generation (${activeGenerations}/${MAX_CONCURRENT_GENERATIONS} active)`)
+          
+          const result = await processRequest(idea, location, budget, timeline, providedBusinessType, currency, personalization, user, userProfile, authenticatedClient)
+          cleanupUserCount()
+          return result
         } catch (e) {
           // Remove from cache on failure so user can retry
           requestCache.delete(requestKey)
+          cleanupUserCount()
           throw e
+        } finally {
+          activeGenerations-- // Always decrement counter
+          forceGC() // Force garbage collection on Render
+          console.log(`Plan generation completed (${activeGenerations}/${MAX_CONCURRENT_GENERATIONS} active)`)
         }
       })()
       requestCache.set(requestKey, promise)
       // Expire after timeout
-      setTimeout(() => requestCache.delete(requestKey), REQUEST_TIMEOUT)
+      setTimeout(() => {
+        requestCache.delete(requestKey)
+        forceGC()
+      }, REQUEST_TIMEOUT)
     } else {
       console.log('Duplicate request detected, sharing in-flight result')
+      cleanupUserCount() // Still need to cleanup since we counted this user
     }
 
     const planData = await requestCache.get(requestKey)!

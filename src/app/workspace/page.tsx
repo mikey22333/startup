@@ -94,12 +94,12 @@ export default function Workspace() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           <div className="animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-48 mb-8"></div>
-            <div className="space-y-4">
+            <div className="h-4 sm:h-6 bg-gray-200 rounded w-32 sm:w-48 mb-6 sm:mb-8"></div>
+            <div className="space-y-3 sm:space-y-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-16 bg-gray-100 rounded-lg"></div>
+                <div key={i} className="h-12 sm:h-16 bg-gray-100 rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -112,32 +112,33 @@ export default function Workspace() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <button
                 onClick={() => router.push('/')}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 flex-shrink-0"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-              <h1 className="text-2xl font-semibold text-gray-900">My Business Plans</h1>
+              <h1 className="text-lg sm:text-2xl font-semibold text-gray-900 truncate">My Business Plans</h1>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center text-white text-sm font-medium">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-900 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-medium">
                   {getUserInitial()}
                 </div>
-                <span className="text-sm text-gray-600 hidden sm:block">{user.email}</span>
+                <span className="text-xs sm:text-sm text-gray-600 hidden md:block max-w-32 truncate">{user.email}</span>
               </div>
               
               <button
                 onClick={() => router.push('/generate')}
-                className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
+                className="bg-gray-900 hover:bg-gray-800 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm flex items-center gap-1 sm:gap-2 transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                New Plan
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">New Plan</span>
+                <span className="sm:hidden">New</span>
               </button>
             </div>
           </div>
@@ -145,20 +146,20 @@ export default function Workspace() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {error && (
-          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className="mb-4 sm:mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-xs sm:text-sm">{error}</p>
           </div>
         )}
 
         {businessPlans.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-gray-400" />
+          <div className="text-center py-12 sm:py-16 px-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No business plans yet</h3>
-            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No business plans yet</h3>
+            <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm sm:text-base">
               Create your first business plan to get started with your entrepreneurial journey.
             </p>
             <button
@@ -170,27 +171,27 @@ export default function Workspace() {
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 sm:space-y-3">
             {businessPlans.map((plan) => (
               <div
                 key={plan.id}
-                className="group border border-gray-100 rounded-lg p-4 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer relative"
+                className="group border border-gray-100 rounded-lg p-3 sm:p-4 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer relative"
                 onClick={() => router.push(`/plan?id=${plan.id}`)}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 flex-1">
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-gray-600" />
+                  <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 truncate">
+                      <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate pr-2">
                         {plan.title || plan.business_idea || 'Untitled Plan'}
                       </h3>
-                      <div className="flex items-center space-x-3 mt-1">
-                        <span className="text-sm text-gray-500">{getTimeAgo(plan.created_at)}</span>
+                      <div className="flex items-center space-x-2 sm:space-x-3 mt-1">
+                        <span className="text-xs sm:text-sm text-gray-500">{getTimeAgo(plan.created_at)}</span>
                         {plan.business_type && (
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full uppercase tracking-wide">
+                          <span className="text-xs px-2 py-0.5 sm:py-1 bg-gray-100 text-gray-600 rounded-full uppercase tracking-wide">
                             {plan.business_type}
                           </span>
                         )}
@@ -198,16 +199,16 @@ export default function Workspace() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         deletePlan(plan.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50"
                       title="Delete plan"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 </div>

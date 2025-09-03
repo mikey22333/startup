@@ -58,55 +58,99 @@ export async function createWorkspaceIdea(ideaData: WorkspaceIdeaInput) {
   }
 }
 
-// Save generated business plan
+// Save generated business plan with better concurrent handling
 export async function saveBusinessPlan(planData: BusinessPlanData) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error('User not authenticated');
+  const maxRetries = 3
+  let lastError: any
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Use a transaction-like approach to prevent race conditions
+      // First, check if this exact plan already exists to prevent duplicates
+      const { data: existingPlan } = await supabase
+        .from('business_plans')
+        .select('id')
+        .eq('workspace_idea_id', planData.workspace_idea_id)
+        .eq('user_id', user.id)
+        .eq('is_current', true)
+        .limit(1)
+        .single();
+
+      if (existingPlan) {
+        console.log('Plan already exists for this workspace idea, skipping save');
+        return existingPlan;
+      }
+
+      // Set previous plans as not current (with user verification)
+      await supabase
+        .from('business_plans')
+        .update({ is_current: false })
+        .eq('workspace_idea_id', planData.workspace_idea_id)
+        .eq('user_id', user.id); // Ensure user can only modify their own plans
+
+      const { data, error } = await supabase
+        .from('business_plans')
+        .insert({
+          ...planData,
+          user_id: user.id, // Explicitly set user_id
+          is_current: true,
+          version: planData.version || 1,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        // Check if it's a unique constraint violation (concurrent insert)
+        if (error.code === '23505') {
+          console.log(`Concurrent insert detected (attempt ${attempt}), retrying...`);
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Exponential backoff
+            continue;
+          }
+        }
+        throw error;
+      }
+
+      // Update workspace idea status
+      await supabase
+        .from('workspace_ideas')
+        .update({ 
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', planData.workspace_idea_id)
+        .eq('user_id', user.id); // Ensure user owns the workspace idea
+
+      // Log activity (non-blocking)
+      logWorkspaceActivity(planData.workspace_idea_id, 'plan_generated', {
+        version: data.version
+      }).catch(err => console.warn('Failed to log activity:', err));
+
+      return data;
+    } catch (error: any) {
+      lastError = error;
+      console.error(`Error in saveBusinessPlan (attempt ${attempt}):`, error);
+      
+      // Don't retry for authentication or permission errors
+      if (error.message?.includes('not authenticated') || error.code === '42501') {
+        throw error;
+      }
+      
+      // Retry for other errors
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 200 * attempt));
+      }
     }
-
-    // Set previous plans as not current
-    await supabase
-      .from('business_plans')
-      .update({ is_current: false })
-      .eq('workspace_idea_id', planData.workspace_idea_id);
-
-    const { data, error } = await supabase
-      .from('business_plans')
-      .insert({
-        ...planData,
-        is_current: true,
-        version: planData.version || 1,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error saving business plan:', error);
-      throw error;
-    }
-
-    // Update workspace idea status
-    await supabase
-      .from('workspace_ideas')
-      .update({ 
-        status: 'completed',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', planData.workspace_idea_id);
-
-    // Log activity
-    await logWorkspaceActivity(planData.workspace_idea_id, 'plan_generated', {
-      version: data.version
-    });
-
-    return data;
-  } catch (error) {
-    console.error('Error in saveBusinessPlan:', error);
-    throw error;
   }
+  
+  throw lastError;
 }
 
 // Get workspace ideas for a user
