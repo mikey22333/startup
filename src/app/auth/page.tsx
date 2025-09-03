@@ -101,36 +101,46 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="h-screen bg-gray-100 flex flex-col lg:flex-row overflow-hidden">
+      {/* Mobile Header - Only visible on small screens */}
+      <div className="lg:hidden bg-black text-white py-2 px-4 flex-shrink-0">
+        <div className="flex items-center justify-center">
+          <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center mr-2">
+            <span className="text-xs font-bold">PS</span>
+          </div>
+          <h1 className="text-base font-semibold">PlanSpark</h1>
+        </div>
+      </div>
+
       {/* Left Panel - Sign In Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-white">
-        <div className="max-w-sm w-full space-y-8">
-          {/* Logo */}
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="flex-1 flex items-center justify-center px-4 py-2 lg:p-8 bg-white overflow-y-auto">
+        <div className="max-w-sm w-full space-y-3 lg:space-y-6">
+          {/* Logo - Hidden on mobile since we have the header */}
+          <div className="text-center hidden lg:block">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               PlanSpark
             </div>
           </div>
 
           {/* Sign In Header */}
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+          <div className="text-center lg:text-left">
+            <h2 className="text-lg lg:text-2xl font-semibold text-gray-900">
               {isSignUp ? 'Create Account' : 'Sign in'}
             </h2>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm font-medium">{error}</p>
+            <div className="p-2 lg:p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-xs lg:text-sm font-medium">{error}</p>
             </div>
           )}
 
           {/* Sign In Form */}
-          <form onSubmit={handleEmailAuth} className="space-y-6">
+          <form onSubmit={handleEmailAuth} className="space-y-3 lg:space-y-4">
             {isSignUp && (
               <div>
-                <label className="block text-sm font-medium text-gray-800 mb-2">
+                <label className="block text-xs lg:text-sm font-medium text-gray-800 mb-1">
                   Full Name
                 </label>
                 <input
@@ -139,14 +149,14 @@ export default function AuthPage() {
                   value={formData.full_name}
                   onChange={handleInputChange}
                   placeholder="John Doe"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-gray-900 placeholder-gray-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-gray-900 placeholder-gray-500 text-base"
                   required={isSignUp}
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-800 mb-2">
+              <label className="block text-xs lg:text-sm font-medium text-gray-800 mb-1">
                 Email Address
               </label>
               <input
@@ -155,13 +165,13 @@ export default function AuthPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="john@example.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-gray-900 placeholder-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-gray-900 placeholder-gray-500 text-base"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-800 mb-2">
+              <label className="block text-xs lg:text-sm font-medium text-gray-800 mb-1">
                 Password
               </label>
               <input
@@ -170,7 +180,7 @@ export default function AuthPage() {
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="••••••••"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-gray-900 placeholder-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-gray-900 placeholder-gray-500 text-base"
                 required
               />
             </div>
@@ -191,7 +201,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 px-4 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+              className="w-full py-2 lg:py-2.5 px-4 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed text-sm lg:text-base"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -203,7 +213,7 @@ export default function AuthPage() {
               )}
             </button>
 
-            <div className="text-center text-sm">
+            <div className="text-center text-xs lg:text-sm">
               <span className="text-gray-700">
                 {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
               </span>
@@ -225,7 +235,7 @@ export default function AuthPage() {
                 <button 
                   type="button" 
                   onClick={() => window.location.href = '/auth/reset-password'}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  className="text-blue-600 hover:text-blue-800 text-xs lg:text-sm font-medium"
                 >
                   Forgot Password
                 </button>
@@ -234,12 +244,12 @@ export default function AuthPage() {
           </form>
 
           {/* Social Login */}
-          <div className="space-y-3">
+          <div className="space-y-2 lg:space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
+              <div className="relative flex justify-center text-xs lg:text-sm">
                 <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
@@ -247,7 +257,7 @@ export default function AuthPage() {
             <button
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50 bg-white"
+              className="w-full flex items-center justify-center px-4 py-2 lg:py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50 bg-white text-sm lg:text-base"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
@@ -267,8 +277,8 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* Right Panel - Dark Minimalistic */}
-      <div className="flex-1 bg-black flex items-center justify-center p-8">
+      {/* Right Panel - Dark Minimalistic - Hidden on mobile, visible on large screens */}
+      <div className="hidden lg:flex flex-1 bg-black items-center justify-center p-8">
         <div className="max-w-md text-center text-white">
           {/* Simple Logo */}
           <div className="mb-12">
