@@ -3,6 +3,9 @@ import type { Metadata, Viewport } from 'next'
 import { AuthProvider } from '@/components/AuthProvider'
 import { PostHogProvider } from '@/components/PostHogProvider'
 
+// Force dynamic rendering for all pages to prevent useSearchParams errors
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'PlanSpark - Ignite Your Business Ideas',
   description: 'Generate detailed, actionable 30-60-90 day business plans from your ideas using AI',

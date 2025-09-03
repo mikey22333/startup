@@ -3,10 +3,13 @@ const nextConfig = {
   // Optimize for Render deployment
   output: 'standalone',
   
-  // Performance optimizations
+  // Force dynamic rendering to fix useSearchParams errors
   experimental: {
     forceSwcTransforms: true,
   },
+
+  // Skip static generation for pages with dynamic content
+  trailingSlash: false,
   
   // ESLint configuration for production builds
   eslint: {
