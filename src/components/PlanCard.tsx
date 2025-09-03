@@ -935,7 +935,10 @@ export default memo(function PlanCard({ plan, isLoading }: PlanCardProps) {
             )}
           </div>
             
-            <button className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-full hover:bg-neutral-50 transition-all text-sm font-medium">
+            <button 
+              onClick={() => router.push('/generate')}
+              className="inline-flex items-center space-x-2 px-4 md:px-6 py-2 md:py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-full hover:bg-neutral-50 transition-all text-sm font-medium"
+            >
               <span>New Plan</span>
             </button>
           </div>

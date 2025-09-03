@@ -171,45 +171,45 @@ export default function Workspace() {
             </button>
           </div>
         ) : (
-          <div className="space-y-2 sm:space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {businessPlans.map((plan) => (
               <div
                 key={plan.id}
                 className="group border border-gray-100 rounded-lg p-3 sm:p-4 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer relative"
                 onClick={() => router.push(`/plan?id=${plan.id}`)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate pr-2">
-                        {plan.title || plan.business_idea || 'Untitled Plan'}
-                      </h3>
-                      <div className="flex items-center space-x-2 sm:space-x-3 mt-1">
-                        <span className="text-xs sm:text-sm text-gray-500">{getTimeAgo(plan.created_at)}</span>
-                        {plan.business_type && (
-                          <span className="text-xs px-2 py-0.5 sm:py-1 bg-gray-100 text-gray-600 rounded-full uppercase tracking-wide">
-                            {plan.business_type}
-                          </span>
-                        )}
-                      </div>
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePlan(plan.id);
+                        }}
+                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50"
+                        title="Delete plan"
+                      >
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2 flex-shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deletePlan(plan.id);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50"
-                      title="Delete plan"
-                    >
-                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2 truncate">
+                      {plan.title || plan.business_idea || 'Untitled Plan'}
+                    </h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-1 sm:space-y-0">
+                      <span className="text-xs sm:text-sm text-gray-500">{getTimeAgo(plan.created_at)}</span>
+                      {plan.business_type && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full uppercase tracking-wide w-fit">
+                          {plan.business_type}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
