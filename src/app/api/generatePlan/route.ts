@@ -78,8 +78,8 @@ function recordRequest(clientId: string): void {
   requestTimestamps.set(clientId, Date.now())
 }
 
-// Track OpenRouter API failures to trigger offline mode earlier
-let consecutiveOpenRouterFailures = 0
+// Track Groq API failures to trigger offline mode earlier
+let consecutiveGroqFailures = 0
 const MAX_FAILURES_BEFORE_OFFLINE = 5 // Increase threshold
 const FAILURE_RESET_TIME = 300000 // 5 minutes
 let lastFailureTime = 0
@@ -87,26 +87,26 @@ let lastFailureTime = 0
 function shouldUseOfflineMode(): boolean {
   // Reset counter if enough time has passed since last failure
   if (Date.now() - lastFailureTime > FAILURE_RESET_TIME) {
-    consecutiveOpenRouterFailures = 0
+    consecutiveGroqFailures = 0
   }
-  return consecutiveOpenRouterFailures >= MAX_FAILURES_BEFORE_OFFLINE
+  return consecutiveGroqFailures >= MAX_FAILURES_BEFORE_OFFLINE
 }
 
-function recordOpenRouterFailure(): void {
-  consecutiveOpenRouterFailures++
+function recordGroqFailure(): void {
+  consecutiveGroqFailures++
   lastFailureTime = Date.now()
-  console.log(`OpenRouter failure count: ${consecutiveOpenRouterFailures} (max: ${MAX_FAILURES_BEFORE_OFFLINE})`)
+  console.log(`Groq failure count: ${consecutiveGroqFailures} (max: ${MAX_FAILURES_BEFORE_OFFLINE})`)
 }
 
-function resetOpenRouterFailures(): void {
-  consecutiveOpenRouterFailures = 0
+function resetGroqFailures(): void {
+  consecutiveGroqFailures = 0
   lastFailureTime = 0
-  console.log('OpenRouter failures reset - API working normally')
+  console.log('Groq failures reset - API working normally')
 }
 
-// OpenRouter API configuration
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
-const OPENROUTER_MODEL = 'openai/gpt-oss-20b:free'
+// Groq API configuration
+const GROQ_API_KEY = process.env.GROQ_API_KEY
+const GROQ_MODEL = 'llama-3.1-70b-versatile'
 
 interface GoogleSearchResult {
   title: string
@@ -6850,11 +6850,11 @@ Make the action plan HIGHLY RELEVANT to "${idea}" - avoid generic steps. Include
         error: errorText
       })
       
-      // Try OpenRouter fallback for simplified plan
-      content = await callOpenRouterAPI('You are a business consultant. Create accurate, actionable business plans.', simplifiedPrompt)
+      // Try Groq fallback for simplified plan
+      content = await callGroqAPI('You are a business consultant. Create accurate, actionable business plans.', simplifiedPrompt)
       
       if (!content) {
-        console.error('Both Gemini and OpenRouter failed for simplified plan')
+        console.error('Both Gemini and Groq failed for simplified plan')
         return null
       }
     } else {
@@ -6862,8 +6862,8 @@ Make the action plan HIGHLY RELEVANT to "${idea}" - avoid generic steps. Include
       content = data.candidates?.[0]?.content?.parts?.[0]?.text
       
       if (!content) {
-        console.error('No content from Gemini for simplified plan, trying OpenRouter...')
-        content = await callOpenRouterAPI('You are a business consultant. Create accurate, actionable business plans.', simplifiedPrompt)
+        console.error('No content from Gemini for simplified plan, trying Groq...')
+        content = await callGroqAPI('You are a business consultant. Create accurate, actionable business plans.', simplifiedPrompt)
         
         if (!content) {
           return null
@@ -6888,9 +6888,9 @@ Make the action plan HIGHLY RELEVANT to "${idea}" - avoid generic steps. Include
       isNetwork: errorObj.message.includes('fetch')
     })
     
-    // If it's a timeout or network error, try OpenRouter as fallback
+    // If it's a timeout or network error, try Groq as fallback
     if (errorObj.name === 'AbortError' || errorObj.name === 'TimeoutError' || errorObj.message.includes('fetch')) {
-      console.log('Network/timeout error, trying OpenRouter fallback for simplified plan...')
+      console.log('Network/timeout error, trying Groq fallback for simplified plan...')
       try {
         const businessType = detectBusinessType(idea, providedBusinessType)
         const currencySymbol = getCurrencySymbol(currency || 'USD')
@@ -6932,7 +6932,7 @@ Return ONLY a JSON object with this structure:
   }
 }`
         
-        const content = await callOpenRouterAPI('You are a business consultant. Create accurate, actionable business plans.', fallbackPrompt)
+        const content = await callGroqAPI('You are a business consultant. Create accurate, actionable business plans.', fallbackPrompt)
         if (content) {
           const jsonMatch = content.match(/\{[\s\S]*\}/)
           if (jsonMatch) {
@@ -6940,7 +6940,7 @@ Return ONLY a JSON object with this structure:
           }
         }
       } catch (fallbackError) {
-        console.error('OpenRouter fallback also failed:', fallbackError)
+        console.error('Groq fallback also failed:', fallbackError)
       }
     }
     
@@ -7451,7 +7451,7 @@ export async function POST(request: NextRequest) {
 
     // Check if we should use offline mode due to consecutive API failures
     if (shouldUseOfflineMode()) {
-      console.log(`Using offline mode due to consecutive API failures (${consecutiveOpenRouterFailures}/${MAX_FAILURES_BEFORE_OFFLINE})`)
+      console.log(`Using offline mode due to consecutive API failures (${consecutiveGroqFailures}/${MAX_FAILURES_BEFORE_OFFLINE})`)
       const businessType = providedBusinessType || detectBusinessType(idea)
       const offlinePlan = generateOfflineFallbackPlan(idea, businessType, budget, currency, timeline)
       
@@ -7464,7 +7464,7 @@ export async function POST(request: NextRequest) {
         }
       })
     } else {
-      console.log(`API mode active - failure count: ${consecutiveOpenRouterFailures}/${MAX_FAILURES_BEFORE_OFFLINE}`)
+      console.log(`API mode active - failure count: ${consecutiveGroqFailures}/${MAX_FAILURES_BEFORE_OFFLINE}`)
     }
 
     // Add timestamp for more frequent cache invalidation and fresher data
@@ -7702,16 +7702,16 @@ Currency: ${currency || 'USD'}`
         
         // Handle specific validation errors
         if (geminiResponse.status === 400) {
-          console.log('Gemini AI validation error (likely token limit), trying OpenRouter fallback...')
+          console.log('Gemini AI validation error (likely token limit), trying Groq fallback...')
           
-          aiContent = await callOpenRouterAPI(enhancedSystemPrompt, userPrompt)
+          aiContent = await callGroqAPI(enhancedSystemPrompt, userPrompt)
           if (!aiContent) {
-            throw new Error('Gemini AI token limit exceeded and OpenRouter fallback failed')
+            throw new Error('Gemini AI token limit exceeded and Groq fallback failed')
           }
         } else if (geminiResponse.status === 429) {
-          console.log('Gemini AI rate limited, trying OpenRouter fallback...')
+          console.log('Gemini AI rate limited, trying Groq fallback...')
           
-          aiContent = await callOpenRouterAPI(enhancedSystemPrompt, userPrompt)
+          aiContent = await callGroqAPI(enhancedSystemPrompt, userPrompt)
           if (!aiContent) {
             return NextResponse.json(
               { error: 'API rate limit reached and fallback failed. Please wait a minute and try again.' },
@@ -7719,9 +7719,9 @@ Currency: ${currency || 'USD'}`
             )
           }
         } else if (geminiResponse.status === 503) {
-          console.log('Gemini AI service overloaded (503), trying OpenRouter fallback...')
+          console.log('Gemini AI service overloaded (503), trying Groq fallback...')
           
-          aiContent = await callOpenRouterAPI(enhancedSystemPrompt, userPrompt)
+          aiContent = await callGroqAPI(enhancedSystemPrompt, userPrompt)
           if (!aiContent) {
             return NextResponse.json(
               { error: 'Gemini AI service is temporarily overloaded. Please try again in a few minutes.' },
@@ -7729,10 +7729,10 @@ Currency: ${currency || 'USD'}`
             )
           }
         } else {
-          // For other errors, try OpenRouter fallback first before failing
-          console.log('Gemini AI failed, trying OpenRouter fallback...')
+          // For other errors, try Groq fallback first before failing
+          console.log('Gemini AI failed, trying Groq fallback...')
           
-          aiContent = await callOpenRouterAPI(enhancedSystemPrompt, userPrompt)
+          aiContent = await callGroqAPI(enhancedSystemPrompt, userPrompt)
           if (!aiContent) {
             throw new Error(`Gemini AI request failed: ${geminiResponse.statusText} - ${errorText}`)
           }
@@ -7750,13 +7750,13 @@ Currency: ${currency || 'USD'}`
         isNetwork: errorObj.message.includes('fetch') || errorObj.message.includes('network')
       })
       
-      // On network/timeout errors, try OpenRouter fallback
-      console.log('Network/timeout error, trying OpenRouter fallback...')
+      // On network/timeout errors, try Groq fallback
+      console.log('Network/timeout error, trying Groq fallback...')
       const userPrompt = `Business idea: ${idea}${location ? `\nLocation: ${location}` : ''}${budget ? `\nBudget: ${budget}` : ''}${timeline ? `\nTimeline: ${timeline}` : ''}${providedBusinessType ? `\nBusiness type: ${providedBusinessType}` : ''}${currency ? `\nCurrency: ${currency}` : ''}`
       
-      aiContent = await callOpenRouterAPI(enhancedSystemPrompt, userPrompt)
+      aiContent = await callGroqAPI(enhancedSystemPrompt, userPrompt)
       if (!aiContent) {
-        throw new Error(`Gemini AI network error and OpenRouter fallback failed: ${errorObj.message}`)
+        throw new Error(`Gemini AI network error and Groq fallback failed: ${errorObj.message}`)
       }
     }
 
@@ -8029,31 +8029,36 @@ function cleanJsonString(jsonStr: string): string {
   }
 }
 
-// OpenRouter API fallback function
-async function callOpenRouterAPI(systemPrompt: string, userPrompt: string): Promise<string | null> {
+// Groq API fallback function
+async function callGroqAPI(systemPrompt: string, userPrompt: string): Promise<string | null> {
+  // Check if Groq API key is available
+  if (!GROQ_API_KEY) {
+    console.log('Groq API key not configured, skipping fallback')
+    return null
+  }
+  
   const maxRetries = 3
-  const baseDelay = 2000 // Start with 2 seconds for rate limits
+  const baseDelay = 1000 // Start with 1 second for Groq
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Calling OpenRouter API as fallback... (attempt ${attempt}/${maxRetries})`)
+      console.log(`Calling Groq API as fallback... (attempt ${attempt}/${maxRetries})`)
       
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'PlanSpark Business Plan Generator'
         },
         body: JSON.stringify({
-          model: OPENROUTER_MODEL,
+          model: GROQ_MODEL,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
           temperature: 0.7,
-          max_tokens: 4000,
+          max_tokens: 8000, // Groq supports larger tokens
+          stream: false
         }),
       })
 
@@ -8062,22 +8067,22 @@ async function callOpenRouterAPI(systemPrompt: string, userPrompt: string): Prom
         const content = data.choices[0]?.message?.content
 
         if (!content) {
-          console.error('No content received from OpenRouter API')
+          console.error('No content received from Groq API')
           return null
         }
 
-        console.log('OpenRouter API responded successfully, content length:', content.length)
-        resetOpenRouterFailures() // Reset on success
+        console.log('Groq API responded successfully, content length:', content.length)
+        resetGroqFailures() // Reset on success
         return content
       }
 
       // Handle rate limiting (429) and other retryable errors
       if (response.status === 429 || response.status >= 500) {
-        console.log(`OpenRouter API returned ${response.status} ${response.statusText}`)
+        console.log(`Groq API returned ${response.status} ${response.statusText}`)
         
         // Only record failure on the last attempt to avoid premature offline mode
         if (attempt === maxRetries) {
-          recordOpenRouterFailure()
+          recordGroqFailure()
         }
         
         if (attempt < maxRetries) {
@@ -8088,16 +8093,16 @@ async function callOpenRouterAPI(systemPrompt: string, userPrompt: string): Prom
         }
       }
 
-      console.error('OpenRouter API failed:', response.status, response.statusText)
-      recordOpenRouterFailure() // Only record failure after all retries exhausted
+      console.error('Groq API failed:', response.status, response.statusText)
+      recordGroqFailure() // Only record failure after all retries exhausted
       return null
       
     } catch (error) {
-      console.error(`OpenRouter API error (attempt ${attempt}/${maxRetries}):`, error)
+      console.error(`Groq API error (attempt ${attempt}/${maxRetries}):`, error)
       
       // Only record failure on the last attempt
       if (attempt === maxRetries) {
-        recordOpenRouterFailure()
+        recordGroqFailure()
       }
       
       if (attempt < maxRetries) {
