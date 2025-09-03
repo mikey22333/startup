@@ -1,16 +1,16 @@
 import Stripe from 'stripe'
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set in environment variables')
-}
+// Only initialize Stripe if the secret key is available
+// This prevents build errors when environment variables aren't set
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+export const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
   apiVersion: '2023-10-16',
   appInfo: {
     name: 'PlanSpark',
     version: '1.0.0',
   },
-})
+}) : null
 
 // Stripe price IDs - Replace these with your actual Stripe price IDs
 export const PRICE_IDS = {

@@ -4,6 +4,14 @@ import { createClient } from '@/lib/supabase-server'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is available
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Payment system not configured' }, 
+        { status: 503 }
+      )
+    }
+
     const supabase = createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 

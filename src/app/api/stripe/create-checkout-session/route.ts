@@ -5,6 +5,14 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is available
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Payment system not configured' }, 
+        { status: 503 }
+      )
+    }
+
     const { priceId, billingPeriod = 'monthly' } = await request.json()
 
     // Get user from session
