@@ -133,7 +133,7 @@ export default function Workspace() {
               </div>
               
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/generate')}
                 className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -162,7 +162,7 @@ export default function Workspace() {
               Create your first business plan to get started with your entrepreneurial journey.
             </p>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/generate')}
               className="inline-flex items-center px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4 mr-2" />

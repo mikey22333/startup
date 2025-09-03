@@ -21,7 +21,7 @@ export default function AuthPage() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        router.push('/')
+        router.push('/generate')
       }
     }
     checkAuth()
@@ -29,7 +29,7 @@ export default function AuthPage() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        router.push('/')
+        router.push('/generate')
       }
     })
 
@@ -67,8 +67,8 @@ export default function AuthPage() {
         
         // Check if user is immediately confirmed (email verification disabled)
         if (result.user && result.user.email_confirmed_at) {
-          // User is confirmed, redirect to home
-          router.push('/')
+          // User is confirmed, redirect to generate page
+          router.push('/generate')
         } else if (result.user && !result.user.email_confirmed_at) {
           // Email verification required
           setError('Please check your email to verify your account before signing in.')

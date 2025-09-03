@@ -1,782 +1,463 @@
-'use client';
+'use client'
 
-import { useState, useCallback, useMemo, memo, lazy, Suspense, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
-import { useAuth } from '@/components/AuthProvider';
-import { useSubscription } from '@/hooks/useSubscription';
-import NewPlanModal from '@/components/NewPlanModal';
+import { useState } from 'react'
+import Link from 'next/link'
+import { Menu, X, ArrowRight, Check, Brain, BarChart3, FileText, Users, ChevronRight } from 'lucide-react'
 
-// Lazy load heavy components
-const Beams = lazy(() => import("@/components/Beams"))
+export default function LandingPage() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-// Memoized example prompts data
-const EXAMPLE_PROMPTS = [
-  "I want to start a car rental business in Texas",
-  "I want to build a food delivery app",
-  "I want to open a boutique coffee shop in downtown Seattle",
-  "I want to create a SaaS tool for project management",
-  "I want to start an online fitness coaching business"
-]
-
-// Memoized form fields component
-const FormField = memo(({ 
-  label, 
-  value, 
-  onChange, 
-  placeholder, 
-  type = "text",
-  options 
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  type?: string;
-  options?: { value: string; label: string }[];
-}) => (
-  <div className="space-y-2">
-    <label className="block text-sm font-medium text-gray-700">
-      {label}
-    </label>
-    {type === "select" && options ? (
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm"
-      >
-        <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    ) : type === "textarea" ? (
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={4}
-        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white/80 backdrop-blur-sm"
-      />
-    ) : (
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm"
-      />
-    )}
-  </div>
-))
-
-FormField.displayName = 'FormField'
-
-// Optimized ExamplePrompt component
-const ExamplePrompt = memo(({ 
-  prompt, 
-  onClick 
-}: { 
-  prompt: string
-  onClick: (prompt: string) => void 
-}) => (
-  <button
-    type="button"
-    onClick={() => onClick(prompt)}
-    className="text-left p-4 bg-black/40 backdrop-blur-sm rounded-xl border border-white/20 hover:border-white/40 hover:bg-black/50 transition-all text-sm text-white/90 font-light shadow-lg"
-  >
-    {prompt}
-  </button>
-))
-
-ExamplePrompt.displayName = 'ExamplePrompt'
-
-export default memo(function HomePage() {
-  const [idea, setIdea] = useState('')
-  const [location, setLocation] = useState('')
-  const [budget, setBudget] = useState('')
-  const [timeline, setTimeline] = useState('')
-  const [businessType, setBusinessType] = useState('')
-  const [currency, setCurrency] = useState('USD')
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isNewPlanModalOpen, setIsNewPlanModalOpen] = useState(false)
-  const router = useRouter()
-  const { user, signOut } = useAuth()
-  const { usageStatus } = useSubscription()
-
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 User state:', user ? user.email : 'No user')
-    console.log('🔍 Usage status:', usageStatus)
-  }, [user, usageStatus])
-
-  // Get user's first letter for profile
-  const getUserInitial = () => {
-    if (!user?.user_metadata?.full_name) return 'U'
-    return user.user_metadata.full_name.charAt(0).toUpperCase()
-  }
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
-      if (isDropdownOpen && !target.closest('.dropdown-container')) {
-        setIsDropdownOpen(false)
-      }
+  const features = [
+    {
+      icon: Brain,
+      title: 'AI-Powered Planning',
+      description: 'Advanced AI generates comprehensive business plans tailored to your specific idea and market conditions.'
+    },
+    {
+      icon: BarChart3,
+      title: 'Real-Time Market Data',
+      description: 'Access verified industry data, competitive analysis, and market trends to validate your business idea.'
+    },
+    {
+      icon: FileText,
+      title: 'Professional Export',
+      description: 'Generate beautiful, investor-ready PDF documents with financial projections and action plans.'
+    },
+    {
+      icon: Users,
+      title: 'Business Advisory',
+      description: 'Get personalized recommendations and strategic insights from our AI business advisor.'
     }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isDropdownOpen])
-
-  // Memoized handlers
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Check if user is authenticated
-    if (!user) {
-      // Show login prompt and redirect to auth page
-      if (window.confirm('You need to sign in to generate a business plan. Would you like to sign in now?')) {
-        router.push('/auth')
-      }
-      return
-    }
-    
-    if (idea.trim()) {
-      const params = new URLSearchParams({
-        idea: idea.trim(),
-        ...(location.trim() && { location: location.trim() }),
-        ...(budget && { budget }),
-        ...(timeline && { timeline }),
-        ...(businessType && { businessType }),
-        ...(currency && { currency })
-      })
-      router.push(`/plan?${params.toString()}`)
-    }
-  }, [idea, location, budget, timeline, businessType, currency, router, user])
-
-  const handleExampleClick = useCallback((prompt: string) => {
-    setIdea(prompt)
-  }, [])
-
-  const toggleMobileNav = useCallback(() => {
-    setIsMobileNavOpen(prev => !prev)
-  }, [])
-
-  const closeMobileNav = useCallback(() => {
-    setIsMobileNavOpen(false)
-  }, [])
-
-  const handleNavigation = useCallback((path: string) => {
-    router.push(path)
-    closeMobileNav()
-  }, [router, closeMobileNav])
-
-  // Memoized options
-  const timelineOptions = useMemo(() => [
-    { value: '30', label: '30 days' },
-    { value: '60', label: '60 days' },
-    { value: '90', label: '90 days' },
-    { value: '180', label: '6 months' },
-    { value: '365', label: '1 year' }
-  ], [])
-
-  const businessTypeOptions = useMemo(() => [
-    { value: 'startup', label: 'Startup' },
-    { value: 'franchise', label: 'Franchise' },
-    { value: 'online', label: 'Online Business' },
-    { value: 'retail', label: 'Retail Store' },
-    { value: 'service', label: 'Service Business' },
-    { value: 'consulting', label: 'Consulting' }
-  ], [])
-
-  const currencyOptions = useMemo(() => [
-    { value: 'USD', label: 'USD ($)' },
-    { value: 'EUR', label: 'EUR (€)' },
-    { value: 'GBP', label: 'GBP (£)' },
-    { value: 'CAD', label: 'CAD (C$)' },
-    { value: 'AUD', label: 'AUD (A$)' }
-  ], [])
-
-  // Memoized Beams props
-  const beamsProps = useMemo(() => ({
-    beamWidth: 3,
-    beamHeight: 30,
-    beamNumber: 20,
-    lightColor: "#f5f5f5",
-    speed: 1.5,
-    noiseIntensity: 1,
-    scale: 0.1,
-    rotation: 30
-  }), [])
-
-  // Memoized example prompts
-  const examplePrompts = useMemo(() => [
-    "I want to start a car rental business in Texas",
-    "I want to build a food delivery app",
-    "I want to open a boutique coffee shop in downtown Seattle",
-    "I want to create a SaaS tool for project management",
-    "I want to start an online fitness coaching business"
-  ], [])
+  ]
 
   return (
-    <div className="bg-black relative">
-      {/* Mobile Navigation Overlay */}
-      {isMobileNavOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={closeMobileNav}
-        />
-      )}
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Navigation */}
+      <nav className="border-b border-gray-100 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex items-center">
+              <span className="text-xl font-bold text-gray-900">PlanSpark</span>
+            </div>
 
-      {/* Mobile Navigation Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-64 bg-black/90 backdrop-blur-md border-r border-white/10 z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
-        isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="p-6">
-          {/* Close Button */}
-          <button
-            onClick={closeMobileNav}
-            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-
-          {/* Logo/Brand */}
-          <div className="mb-8 mt-4">
-            <h2 className="text-xl font-bold text-white">PlanSpark</h2>
-            <p className="text-white/60 text-sm mt-1">Business Planning</p>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="space-y-4">
-            {user && (
-              <button
-                onClick={() => handleNavigation('/dashboard')}
-                className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
-              >
-                Dashboard
-              </button>
-            )}
-            <button
-              onClick={() => handleNavigation('/workspace')}
-              className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
-            >
-              My Workspace
-            </button>
-            <button
-              onClick={() => handleNavigation('/pricing')}
-              className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
-            >
-              Pricing
-            </button>
-            <button
-              onClick={() => handleNavigation('/contact')}
-              className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium"
-            >
-              Contact
-            </button>
-            {user ? (
-              <div className="border-t border-white/10 mt-6 pt-6">
-                <div className="flex items-center space-x-3 px-4 py-3 text-white/90">
-                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium">
-                    {getUserInitial()}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
-                    <p className="text-xs text-white/60">{user.email}</p>
-                  </div>
-                </div>
-                
-                {/* Mobile Usage Statistics */}
-                {usageStatus?.dailyUsage && (
-                  <div className="px-4 py-3 bg-white/5 rounded-lg mx-4 mb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-white/70 text-xs font-medium">Daily Usage</span>
-                      <span className="text-white text-xs font-medium">
-                        {usageStatus.subscriptionTier?.toUpperCase() || 'FREE'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-white/60 text-xs">Plans Generated</span>
-                      <span className="text-white text-xs font-medium">
-                        {usageStatus.dailyUsage.used} / {usageStatus.dailyUsage.limit === 'unlimited' ? '∞' : usageStatus.dailyUsage.limit}
-                      </span>
-                    </div>
-                    
-                    {/* Progress bar */}
-                    <div className="w-full bg-white/10 rounded-full h-1.5 mb-1">
-                      <div 
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                          usageStatus.dailyUsage.limit === 'unlimited' 
-                            ? 'bg-green-400' 
-                            : usageStatus.dailyUsage.used >= usageStatus.dailyUsage.limit
-                              ? 'bg-red-400' 
-                              : usageStatus.dailyUsage.used / (usageStatus.dailyUsage.limit as number) > 0.8
-                                ? 'bg-yellow-400'
-                                : 'bg-blue-400'
-                        }`}
-                        style={{
-                          width: usageStatus.dailyUsage.limit === 'unlimited' 
-                            ? '100%' 
-                            : `${Math.min(100, (usageStatus.dailyUsage.used / (usageStatus.dailyUsage.limit as number)) * 100)}%`
-                        }}
-                      />
-                    </div>
-                    
-                    {usageStatus.dailyUsage.remaining !== 'unlimited' && (
-                      <p className="text-white/50 text-xs">
-                        {usageStatus.dailyUsage.remaining} remaining today
-                      </p>
-                    )}
-                  </div>
-                )}
-                
-                <button
-                  onClick={() => signOut()}
-                  className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium mt-2"
-                >
-                  Sign Out
-                </button>
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center justify-center flex-1">
+              <div className="flex items-center space-x-8">
+                <Link href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Features
+                </Link>
+                <Link href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Pricing
+                </Link>
+                <Link href="/about" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  About
+                </Link>
               </div>
-            ) : (
-              <button
-                onClick={() => router.push('/auth')}
-                className="w-full text-left px-4 py-3 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 font-medium border-t border-white/10 mt-6 pt-6"
-              >
-                Sign In
-              </button>
-            )}
-          </nav>
-        </div>
-      </div>
-
-      {/* Desktop Navigation - Left Side */}
-      <div className="absolute top-6 left-6 z-20 hidden lg:flex items-center space-x-4">
-        <button 
-          onClick={() => router.push('/workspace')}
-          className="px-6 py-2.5 text-white/95 hover:text-white bg-black/20 hover:bg-black/30 rounded-full transition-all duration-300 font-medium text-sm border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl tracking-wide"
-        >
-          My Workspace
-        </button>
-        <button 
-          onClick={() => router.push('/pricing')}
-          className="px-6 py-2.5 text-white/95 hover:text-white bg-black/20 hover:bg-black/30 rounded-full transition-all duration-300 font-medium text-sm border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl tracking-wide"
-        >
-          Pricing
-        </button>
-        <button 
-          onClick={() => router.push('/contact')}
-          className="px-6 py-2.5 text-white/95 hover:text-white bg-black/20 hover:bg-black/30 rounded-full transition-all duration-300 font-medium text-sm border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl tracking-wide"
-        >
-          Contact
-        </button>
-      </div>
-
-      {/* Mobile Hamburger Menu */}
-      <div className="absolute top-6 left-6 z-20 lg:hidden">
-        <button
-          onClick={toggleMobileNav}
-          className="p-2 text-white/90 hover:text-white bg-black/20 hover:bg-black/30 rounded-lg transition-all duration-300 border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Desktop Navigation - Profile/Sign In */}
-      <div className="absolute top-6 right-6 z-20 hidden lg:block">
-        {user ? (
-          <div className="relative dropdown-container">
-            <button 
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-300 border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl flex items-center justify-center text-white font-medium"
-            >
-              {getUserInitial()}
-            </button>
+            </div>
             
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-black/90 backdrop-blur-md rounded-lg border border-white/10 shadow-xl py-2">
-                <div className="px-4 py-3 border-b border-white/10">
-                  <p className="text-white text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
-                  <p className="text-white/60 text-xs">{user.email}</p>
-                </div>
-                
-                {/* Usage Statistics */}
-                <div className="px-4 py-3 border-b border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white/70 text-xs font-medium">Daily Usage</span>
-                    <span className="text-white text-xs font-medium">
-                      {usageStatus?.subscriptionTier?.toUpperCase() || 'FREE'}
-                    </span>
-                  </div>
-                  
-                  {usageStatus?.dailyUsage ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-white/60 text-xs">Plans Generated</span>
-                        <span className="text-white text-xs font-medium">
-                          {usageStatus.dailyUsage.used} / {usageStatus.dailyUsage.limit === 'unlimited' ? '∞' : usageStatus.dailyUsage.limit}
-                        </span>
-                      </div>
-                      
-                      {/* Progress bar */}
-                      <div className="w-full bg-white/10 rounded-full h-1.5">
-                        <div 
-                          className={`h-1.5 rounded-full transition-all duration-300 ${
-                            usageStatus.dailyUsage.limit === 'unlimited' 
-                              ? 'bg-green-400' 
-                              : usageStatus.dailyUsage.used >= usageStatus.dailyUsage.limit
-                                ? 'bg-red-400' 
-                                : usageStatus.dailyUsage.used / (usageStatus.dailyUsage.limit as number) > 0.8
-                                  ? 'bg-yellow-400'
-                                  : 'bg-blue-400'
-                          }`}
-                          style={{
-                            width: usageStatus.dailyUsage.limit === 'unlimited' 
-                              ? '100%' 
-                              : `${Math.min(100, (usageStatus.dailyUsage.used / (usageStatus.dailyUsage.limit as number)) * 100)}%`
-                          }}
-                        />
-                      </div>
-                      
-                      {usageStatus.dailyUsage.remaining !== 'unlimited' && (
-                        <p className="text-white/50 text-xs">
-                          {usageStatus.dailyUsage.remaining} plans remaining today
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-white/50 text-xs">Loading usage stats...</div>
-                  )}
-                </div>
-                
-                <div className="py-1 border-b border-white/10">
-                  <button
-                    onClick={() => {
-                      router.push('/dashboard')
-                      setIsDropdownOpen(false)
-                    }}
-                    className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => {
-                      router.push('/pricing')
-                      setIsDropdownOpen(false)
-                    }}
-                    className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
-                  >
-                    Upgrade Plan
-                  </button>
-                </div>
-                
-                <button
-                  onClick={() => {
-                    signOut()
-                    setIsDropdownOpen(false)
-                  }}
-                  className="w-full text-left px-4 py-2 text-white/90 hover:text-white hover:bg-white/10 transition-colors text-sm"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
+            {/* Try for free button */}
+            <div className="hidden md:block">
+              <a 
+                href="/generate" 
+                className="bg-gray-900 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-800 transition-colors font-medium"
+              >
+                Try for free
+              </a>
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
-        ) : (
-          <button 
-            onClick={() => router.push('/auth')}
-            className="px-6 py-2.5 text-white/95 hover:text-white bg-black/20 hover:bg-black/30 rounded-full transition-all duration-300 font-medium text-sm border border-white/10 hover:border-white/20 backdrop-blur-md shadow-lg hover:shadow-xl tracking-wide"
-          >
-            Sign In
-          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-white border-t border-gray-100">
+            <div className="px-4 py-3 space-y-3">
+              <Link href="#features" className="block py-2 text-sm text-gray-600 text-center">Features</Link>
+              <Link href="#pricing" className="block py-2 text-sm text-gray-600 text-center">Pricing</Link>
+              <Link href="/about" className="block py-2 text-sm text-gray-600 text-center">About</Link>
+              <div className="pt-3 border-t border-gray-100">
+                <a href="/generate" className="block py-2 px-4 bg-gray-900 text-white text-sm rounded-md font-medium text-center">Try for free</a>
+              </div>
+            </div>
+          </div>
         )}
-      </div>
-      
-      {/* 3D Background */}
-      <div className="fixed inset-0 z-0">
-        <Beams {...beamsProps} />
-      </div>
-      
-      <div className="max-w-4xl mx-auto px-6 py-8 md:py-16 relative z-10">
-        {/* Hero Section */}
-        <div className="text-center mb-8 md:mb-16">
-          <div className="inline-flex items-center space-x-3 mb-6 md:mb-8">
-            <div className="w-2 h-2 bg-white/80 rounded-full shadow-lg" />
-            <span className="text-xs font-medium text-white/90 tracking-wider uppercase bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">AI-Powered Business Planning</span>
-            <div className="w-2 h-2 bg-white/80 rounded-full shadow-lg" />
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative pt-20 pb-8 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Small tag */}
+          <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 border border-orange-200/50 mb-8">
+            <span className="mr-2">✨</span>
+            AI-POWERED BUSINESS PLANNING
           </div>
           
-          <h1 className="text-3xl md:text-6xl font-light text-white mb-6 md:mb-8 leading-tight drop-shadow-2xl">
-            Ignite Your Business Ideas
-            <span className="block font-normal text-white/90 drop-shadow-xl">Into Actionable Plans</span>
+          {/* Main heading - Premium styling */}
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 leading-[0.9] mb-8 tracking-tight">
+            Turn your <span className="font-semibold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">idea</span> into
+            <br />
+            a <span className="font-semibold italic">business plan</span>
           </h1>
-          <p className="text-base md:text-lg text-white mb-8 md:mb-12 max-w-3xl mx-auto font-light leading-relaxed drop-shadow-xl bg-black/20 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/20">
-            Get a detailed, step-by-step action plan tailored to your specific business idea. 
-            Powered by AI with verified industry data and real-time market research.
+          
+          {/* Description */}
+          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed font-light">
+            Generate comprehensive, investor-ready business plans in minutes using AI and real market data.
           </p>
-        </div>
-
-        {/* Input Form */}
-        <div className="bg-black/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/40 p-6 md:p-8 mb-8 md:mb-16" suppressHydrationWarning>
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div>
-              <label htmlFor="idea" className="block text-left text-lg font-medium text-white mb-3">
-                What&apos;s your business idea? <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                id="idea"
-                value={idea}
-                onChange={(e) => setIdea(e.target.value)}
-                placeholder="Describe your business idea in detail..."
-                className="w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-400/50 resize-none h-32 font-light transition-all backdrop-blur-sm shadow-lg"
-                style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                  color: '#ffffff',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  outline: 'none'
-                }}
-                required
-                autoComplete="off"
-              />
-            </div>
-
-            {/* Optional Fields Section */}
-            <div className="border-t border-white/20 pt-8">
-              <h3 className="text-lg font-medium text-white mb-6">Optional Details (helps create more precise plans)</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="location" className="block text-left font-semibold text-white mb-2">
-                    Location
-                  </label>
-                  <select
-                    id="location"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-white/50 font-light text-white transition-all bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg"
-                    style={{
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                      color: '#ffffff'
-                    }}
-                  >
-                    <option value="" style={{ backgroundColor: '#000', color: '#fff' }}>Select location...</option>
-                    <optgroup label="United States" style={{ backgroundColor: '#000000', color: '#ffffff', fontWeight: 'bold' }}>
-                      <option value="New York, NY" style={{ backgroundColor: '#000', color: '#fff' }}>New York, NY</option>
-                      <option value="Los Angeles, CA" style={{ backgroundColor: '#000', color: '#fff' }}>Los Angeles, CA</option>
-                      <option value="Chicago, IL" style={{ backgroundColor: '#000', color: '#fff' }}>Chicago, IL</option>
-                      <option value="Houston, TX" style={{ backgroundColor: '#000', color: '#fff' }}>Houston, TX</option>
-                      <option value="Phoenix, AZ" style={{ backgroundColor: '#000', color: '#fff' }}>Phoenix, AZ</option>
-                      <option value="Philadelphia, PA" style={{ backgroundColor: '#000', color: '#fff' }}>Philadelphia, PA</option>
-                      <option value="San Antonio, TX" style={{ backgroundColor: '#000', color: '#fff' }}>San Antonio, TX</option>
-                      <option value="San Diego, CA" style={{ backgroundColor: '#000', color: '#fff' }}>San Diego, CA</option>
-                      <option value="Dallas, TX" style={{ backgroundColor: '#000', color: '#fff' }}>Dallas, TX</option>
-                      <option value="San Jose, CA" style={{ backgroundColor: '#000', color: '#fff' }}>San Jose, CA</option>
-                      <option value="Austin, TX" style={{ backgroundColor: '#000', color: '#fff' }}>Austin, TX</option>
-                      <option value="Jacksonville, FL" style={{ backgroundColor: '#000', color: '#fff' }}>Jacksonville, FL</option>
-                      <option value="San Francisco, CA" style={{ backgroundColor: '#000', color: '#fff' }}>San Francisco, CA</option>
-                      <option value="Columbus, OH" style={{ backgroundColor: '#000', color: '#fff' }}>Columbus, OH</option>
-                      <option value="Charlotte, NC" style={{ backgroundColor: '#000', color: '#fff' }}>Charlotte, NC</option>
-                      <option value="Fort Worth, TX" style={{ backgroundColor: '#000', color: '#fff' }}>Fort Worth, TX</option>
-                      <option value="Indianapolis, IN" style={{ backgroundColor: '#000', color: '#fff' }}>Indianapolis, IN</option>
-                      <option value="Seattle, WA" style={{ backgroundColor: '#000', color: '#fff' }}>Seattle, WA</option>
-                      <option value="Denver, CO" style={{ backgroundColor: '#000', color: '#fff' }}>Denver, CO</option>
-                      <option value="Boston, MA" style={{ backgroundColor: '#000', color: '#fff' }}>Boston, MA</option>
-                      <option value="Miami, FL" style={{ backgroundColor: '#000', color: '#fff' }}>Miami, FL</option>
-                      <option value="Nashville, TN" style={{ backgroundColor: '#000', color: '#fff' }}>Nashville, TN</option>
-                      <option value="Atlanta, GA" style={{ backgroundColor: '#000', color: '#fff' }}>Atlanta, GA</option>
-                      <option value="Las Vegas, NV" style={{ backgroundColor: '#000', color: '#fff' }}>Las Vegas, NV</option>
-                      <option value="Portland, OR" style={{ backgroundColor: '#000', color: '#fff' }}>Portland, OR</option>
-                    </optgroup>
-                    <optgroup label="Canada" style={{ backgroundColor: '#000000', color: '#ffffff', fontWeight: 'bold' }}>
-                      <option value="Toronto, ON" style={{ backgroundColor: '#000', color: '#fff' }}>Toronto, ON</option>
-                      <option value="Vancouver, BC" style={{ backgroundColor: '#000', color: '#fff' }}>Vancouver, BC</option>
-                      <option value="Montreal, QC" style={{ backgroundColor: '#000', color: '#fff' }}>Montreal, QC</option>
-                      <option value="Calgary, AB" style={{ backgroundColor: '#000', color: '#fff' }}>Calgary, AB</option>
-                      <option value="Edmonton, AB" style={{ backgroundColor: '#000', color: '#fff' }}>Edmonton, AB</option>
-                      <option value="Ottawa, ON" style={{ backgroundColor: '#000', color: '#fff' }}>Ottawa, ON</option>
-                    </optgroup>
-                    <optgroup label="United Kingdom" style={{ backgroundColor: '#000000', color: '#ffffff', fontWeight: 'bold' }}>
-                      <option value="London, UK" style={{ backgroundColor: '#000', color: '#fff' }}>London, UK</option>
-                      <option value="Manchester, UK" style={{ backgroundColor: '#000', color: '#fff' }}>Manchester, UK</option>
-                      <option value="Birmingham, UK" style={{ backgroundColor: '#000', color: '#fff' }}>Birmingham, UK</option>
-                      <option value="Edinburgh, UK" style={{ backgroundColor: '#000', color: '#fff' }}>Edinburgh, UK</option>
-                      <option value="Glasgow, UK" style={{ backgroundColor: '#000', color: '#fff' }}>Glasgow, UK</option>
-                      <option value="Liverpool, UK" style={{ backgroundColor: '#000', color: '#fff' }}>Liverpool, UK</option>
-                    </optgroup>
-                    <optgroup label="Australia" style={{ backgroundColor: '#000000', color: '#ffffff', fontWeight: 'bold' }}>
-                      <option value="Sydney, AU" style={{ backgroundColor: '#000', color: '#fff' }}>Sydney, AU</option>
-                      <option value="Melbourne, AU" style={{ backgroundColor: '#000', color: '#fff' }}>Melbourne, AU</option>
-                      <option value="Brisbane, AU" style={{ backgroundColor: '#000', color: '#fff' }}>Brisbane, AU</option>
-                      <option value="Perth, AU" style={{ backgroundColor: '#000', color: '#fff' }}>Perth, AU</option>
-                      <option value="Adelaide, AU" style={{ backgroundColor: '#000', color: '#fff' }}>Adelaide, AU</option>
-                    </optgroup>
-                    <optgroup label="Europe" style={{ backgroundColor: '#000000', color: '#ffffff', fontWeight: 'bold' }}>
-                      <option value="Paris, France" style={{ backgroundColor: '#000', color: '#fff' }}>Paris, France</option>
-                      <option value="Berlin, Germany" style={{ backgroundColor: '#000', color: '#fff' }}>Berlin, Germany</option>
-                      <option value="Madrid, Spain" style={{ backgroundColor: '#000', color: '#fff' }}>Madrid, Spain</option>
-                      <option value="Rome, Italy" style={{ backgroundColor: '#000', color: '#fff' }}>Rome, Italy</option>
-                      <option value="Amsterdam, Netherlands" style={{ backgroundColor: '#000', color: '#fff' }}>Amsterdam, Netherlands</option>
-                      <option value="Zurich, Switzerland" style={{ backgroundColor: '#000', color: '#fff' }}>Zurich, Switzerland</option>
-                      <option value="Stockholm, Sweden" style={{ backgroundColor: '#000', color: '#fff' }}>Stockholm, Sweden</option>
-                      <option value="Copenhagen, Denmark" style={{ backgroundColor: '#000', color: '#fff' }}>Copenhagen, Denmark</option>
-                    </optgroup>
-                    <optgroup label="Asia" style={{ backgroundColor: '#000000', color: '#ffffff', fontWeight: 'bold' }}>
-                      <option value="Tokyo, Japan" style={{ backgroundColor: '#000', color: '#fff' }}>Tokyo, Japan</option>
-                      <option value="Singapore" style={{ backgroundColor: '#000', color: '#fff' }}>Singapore</option>
-                      <option value="Hong Kong" style={{ backgroundColor: '#000', color: '#fff' }}>Hong Kong</option>
-                      <option value="Seoul, South Korea" style={{ backgroundColor: '#000', color: '#fff' }}>Seoul, South Korea</option>
-                      <option value="Mumbai, India" style={{ backgroundColor: '#000', color: '#fff' }}>Mumbai, India</option>
-                      <option value="Delhi, India" style={{ backgroundColor: '#000', color: '#fff' }}>Delhi, India</option>
-                      <option value="Shanghai, China" style={{ backgroundColor: '#000', color: '#fff' }}>Shanghai, China</option>
-                      <option value="Beijing, China" style={{ backgroundColor: '#000', color: '#fff' }}>Beijing, China</option>
-                    </optgroup>
-                    <optgroup label="Other" style={{ backgroundColor: '#000000', color: '#ffffff', fontWeight: 'bold' }}>
-                      <option value="São Paulo, Brazil" style={{ backgroundColor: '#000', color: '#fff' }}>São Paulo, Brazil</option>
-                      <option value="Mexico City, Mexico" style={{ backgroundColor: '#000', color: '#fff' }}>Mexico City, Mexico</option>
-                      <option value="Dubai, UAE" style={{ backgroundColor: '#000', color: '#fff' }}>Dubai, UAE</option>
-                      <option value="Tel Aviv, Israel" style={{ backgroundColor: '#000', color: '#fff' }}>Tel Aviv, Israel</option>
-                    </optgroup>
-                  </select>
-                  <p className="text-xs text-gray-200 mt-1 font-medium drop-shadow-lg">Select your business location for local regulations and market data</p>
-                </div>
-
-                <div>
-                  <label htmlFor="budget" className="block text-left font-semibold text-white mb-2">
-                    Budget Range
-                  </label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <select
-                      id="currency"
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                      className="w-48 px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-white/50 text-sm font-light text-white transition-all bg-black/50 backdrop-blur-sm border border-white/20 shadow-lg"
-                      style={{
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        color: '#ffffff'
-                      }}
-                    >
-                      <option value="USD" style={{ backgroundColor: '#000000', color: '#ffffff' }}>USD - United States</option>
-                      <option value="EUR" style={{ backgroundColor: '#000000', color: '#ffffff' }}>EUR - Eurozone</option>
-                      <option value="GBP" style={{ backgroundColor: '#000000', color: '#ffffff' }}>GBP - United Kingdom</option>
-                      <option value="CAD" style={{ backgroundColor: '#000000', color: '#ffffff' }}>CAD - Canada</option>
-                      <option value="AUD" style={{ backgroundColor: '#000000', color: '#ffffff' }}>AUD - Australia</option>
-                      <option value="JPY" style={{ backgroundColor: '#000000', color: '#ffffff' }}>JPY - Japan</option>
-                      <option value="CHF" style={{ backgroundColor: '#000000', color: '#ffffff' }}>CHF - Switzerland</option>
-                      <option value="CNY" style={{ backgroundColor: '#000000', color: '#ffffff' }}>CNY - China</option>
-                      <option value="INR" style={{ backgroundColor: '#000000', color: '#ffffff' }}>INR - India</option>
-                      <option value="BRL" style={{ backgroundColor: '#000000', color: '#ffffff' }}>BRL - Brazil</option>
-                      <option value="MXN" style={{ backgroundColor: '#000000', color: '#ffffff' }}>MXN - Mexico</option>
-                      <option value="SGD" style={{ backgroundColor: '#000000', color: '#ffffff' }}>SGD - Singapore</option>
-                    </select>
-                    <select
-                      id="budget"
-                      value={budget}
-                      onChange={(e) => setBudget(e.target.value)}
-                      className="flex-1 px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-white/50 font-light text-white transition-all bg-black/50 backdrop-blur-sm border border-white/20 shadow-lg"
-                      style={{
-                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                        color: '#ffffff'
-                      }}
-                    >
-                      <option value="" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Select budget range...</option>
-                      <option value="under-5k" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Under {currency === 'JPY' ? '¥750,000' : currency === 'INR' ? '₹400,000' : currency === 'EUR' ? '€4,500' : currency === 'GBP' ? '£4,000' : currency === 'CAD' ? 'C$6,500' : currency === 'AUD' ? 'A$7,500' : currency === 'CHF' ? 'CHF 4,500' : currency === 'CNY' ? '¥35,000' : currency === 'BRL' ? 'R$25,000' : currency === 'MXN' ? '$90,000' : currency === 'SGD' ? 'S$6,500' : '$5,000'}</option>
-                      <option value="5k-10k" style={{ backgroundColor: '#000000', color: '#ffffff' }}>{currency === 'JPY' ? '¥750,000 - ¥1,500,000' : currency === 'INR' ? '₹400,000 - ₹800,000' : currency === 'EUR' ? '€4,500 - €9,000' : currency === 'GBP' ? '£4,000 - £8,000' : currency === 'CAD' ? 'C$6,500 - C$13,000' : currency === 'AUD' ? 'A$7,500 - A$15,000' : currency === 'CHF' ? 'CHF 4,500 - CHF 9,000' : currency === 'CNY' ? '¥35,000 - ¥70,000' : currency === 'BRL' ? 'R$25,000 - R$50,000' : currency === 'MXN' ? '$90,000 - $180,000' : currency === 'SGD' ? 'S$6,500 - S$13,000' : '$5,000 - $10,000'}</option>
-                      <option value="10k-25k" style={{ backgroundColor: '#000000', color: '#ffffff' }}>{currency === 'JPY' ? '¥1,500,000 - ¥3,750,000' : currency === 'INR' ? '₹800,000 - ₹2,000,000' : currency === 'EUR' ? '€9,000 - €22,500' : currency === 'GBP' ? '£8,000 - £20,000' : currency === 'CAD' ? 'C$13,000 - C$32,500' : currency === 'AUD' ? 'A$15,000 - A$37,500' : currency === 'CHF' ? 'CHF 9,000 - CHF 22,500' : currency === 'CNY' ? '¥70,000 - ¥175,000' : currency === 'BRL' ? 'R$50,000 - R$125,000' : currency === 'MXN' ? '$180,000 - $450,000' : currency === 'SGD' ? 'S$13,000 - S$32,500' : '$10,000 - $25,000'}</option>
-                      <option value="25k-50k" style={{ backgroundColor: '#000000', color: '#ffffff' }}>{currency === 'JPY' ? '¥3,750,000 - ¥7,500,000' : currency === 'INR' ? '₹2,000,000 - ₹4,000,000' : currency === 'EUR' ? '€22,500 - €45,000' : currency === 'GBP' ? '£20,000 - £40,000' : currency === 'CAD' ? 'C$32,500 - C$65,000' : currency === 'AUD' ? 'A$37,500 - A$75,000' : currency === 'CHF' ? 'CHF 22,500 - CHF 45,000' : currency === 'CNY' ? '¥175,000 - ¥350,000' : currency === 'BRL' ? 'R$125,000 - R$250,000' : currency === 'MXN' ? '$450,000 - $900,000' : currency === 'SGD' ? 'S$32,500 - S$65,000' : '$25,000 - $50,000'}</option>
-                      <option value="50k-100k" style={{ backgroundColor: '#000000', color: '#ffffff' }}>{currency === 'JPY' ? '¥7,500,000 - ¥15,000,000' : currency === 'INR' ? '₹4,000,000 - ₹8,000,000' : currency === 'EUR' ? '€45,000 - €90,000' : currency === 'GBP' ? '£40,000 - £80,000' : currency === 'CAD' ? 'C$65,000 - C$130,000' : currency === 'AUD' ? 'A$75,000 - A$150,000' : currency === 'CHF' ? 'CHF 45,000 - CHF 90,000' : currency === 'CNY' ? '¥350,000 - ¥700,000' : currency === 'BRL' ? 'R$250,000 - R$500,000' : currency === 'MXN' ? '$900,000 - $1,800,000' : currency === 'SGD' ? 'S$65,000 - S$130,000' : '$50,000 - $100,000'}</option>
-                      <option value="100k-250k" style={{ backgroundColor: '#000000', color: '#ffffff' }}>{currency === 'JPY' ? '¥15,000,000 - ¥37,500,000' : currency === 'INR' ? '₹8,000,000 - ₹20,000,000' : currency === 'EUR' ? '€90,000 - €225,000' : currency === 'GBP' ? '£80,000 - £200,000' : currency === 'CAD' ? 'C$130,000 - C$325,000' : currency === 'AUD' ? 'A$150,000 - A$375,000' : currency === 'CHF' ? 'CHF 90,000 - CHF 225,000' : currency === 'CNY' ? '¥700,000 - ¥1,750,000' : currency === 'BRL' ? 'R$500,000 - R$1,250,000' : currency === 'MXN' ? '$1,800,000 - $4,500,000' : currency === 'SGD' ? 'S$130,000 - S$325,000' : '$100,000 - $250,000'}</option>
-                      <option value="250k+" style={{ backgroundColor: '#000000', color: '#ffffff' }}>{currency === 'JPY' ? '¥37,500,000+' : currency === 'INR' ? '₹20,000,000+' : currency === 'EUR' ? '€225,000+' : currency === 'GBP' ? '£200,000+' : currency === 'CAD' ? 'C$325,000+' : currency === 'AUD' ? 'A$375,000+' : currency === 'CHF' ? 'CHF 225,000+' : currency === 'CNY' ? '¥1,750,000+' : currency === 'BRL' ? 'R$1,250,000+' : currency === 'MXN' ? '$4,500,000+' : currency === 'SGD' ? 'S$325,000+' : '$250,000+'}</option>
-                    </select>
-                  </div>
-                  <p className="text-xs text-gray-200 mt-1 font-medium drop-shadow-lg">Select your preferred currency and budget range</p>
-                </div>
-
-                <div>
-                  <label htmlFor="timeline" className="block text-left font-semibold text-white mb-2">
-                    Timeline to Launch
-                  </label>
-                  <select
-                    id="timeline"
-                    value={timeline}
-                    onChange={(e) => setTimeline(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-white/50 font-light text-white transition-all bg-black/50 backdrop-blur-sm border border-white/20 shadow-lg"
-                    style={{
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                      color: '#ffffff'
-                    }}
-                  >
-                    <option value="" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Select timeline...</option>
-                    <option value="1-month" style={{ backgroundColor: '#000000', color: '#ffffff' }}>1 month</option>
-                    <option value="2-3-months" style={{ backgroundColor: '#000000', color: '#ffffff' }}>2-3 months</option>
-                    <option value="3-6-months" style={{ backgroundColor: '#000000', color: '#ffffff' }}>3-6 months</option>
-                    <option value="6-12-months" style={{ backgroundColor: '#000000', color: '#ffffff' }}>6-12 months</option>
-                    <option value="12-months+" style={{ backgroundColor: '#000000', color: '#ffffff' }}>12+ months</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="businessType" className="block text-left font-semibold text-white mb-2">
-                    Business Type
-                  </label>
-                  <select
-                    id="businessType"
-                    value={businessType}
-                    onChange={(e) => setBusinessType(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl focus:ring-2 focus:ring-white/50 font-light text-white transition-all bg-black/50 backdrop-blur-sm border border-white/20 shadow-lg"
-                    style={{
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                      color: '#ffffff'
-                    }}
-                  >
-                    <option value="" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Auto-detect from idea...</option>
-                    <option value="DIGITAL" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Website / App / SaaS</option>
-                    <option value="PHYSICAL/SERVICE" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Physical Store / Service Business</option>
-                    <option value="HYBRID" style={{ backgroundColor: '#000000', color: '#ffffff' }}>E-commerce with Physical Components</option>
-                    <option value="MANUFACTURING" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Manufacturing</option>
-                    <option value="CONSULTING" style={{ backgroundColor: '#000000', color: '#ffffff' }}>Consulting / Professional Services</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={!idea.trim()}
-              className="w-full bg-white/20 backdrop-blur-sm hover:bg-white/30 disabled:bg-white/10 text-white font-medium py-4 px-8 rounded-xl text-lg transition-all border border-white/30 shadow-lg"
+          
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            <a
+              href="/generate"
+              className="bg-orange-500 text-white px-8 py-4 rounded-lg hover:bg-orange-600 transition-colors font-semibold text-lg"
             >
-              {!user ? 'Sign In to Generate Plan →' : 'Generate My Action Plan →'}
+              Create your plan
+            </a>
+            <button className="flex items-center text-gray-700 hover:text-gray-900 transition-colors font-medium text-lg">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+              </svg>
+              Watch demo
             </button>
-          </form>
-        </div>
-
-        {/* Example Prompts */}
-        <div className="mb-8 md:mb-16">
-          <div className="text-center mb-6 md:mb-8">
-            <h3 className="text-lg font-medium text-white mb-2 drop-shadow-lg">Try these examples:</h3>
-            <p className="text-sm text-white/70 font-light">Click any example to get started</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {examplePrompts.map((prompt, index) => (
-              <ExamplePrompt
-                key={index}
-                prompt={`"${prompt}"`}
-                onClick={handleExampleClick}
+        </div>
+        
+        {/* Dashboard Preview */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+              <img 
+                src="/Screenshot 2025-09-01 202851.png" 
+                alt="PlanSpark Dashboard interface"
+                className="w-full h-auto rounded-2xl"
               />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-light text-gray-900 mb-6">
+              Everything you need to
+              <span className="block font-normal">launch your business</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              From idea validation to execution roadmap, powered by AI and real market data.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div key={index} className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-6">
+                  <feature.icon className="w-6 h-6 text-gray-700" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+              </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* New Plan Modal */}
-      <NewPlanModal
-        isOpen={isNewPlanModalOpen}
-        onClose={() => setIsNewPlanModalOpen(false)}
-      />
+      {/* Process Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left Content */}
+            <div className="space-y-8">
+              <h2 className="text-4xl lg:text-5xl font-light text-gray-900 leading-tight">
+                Build with confidence
+              </h2>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                From automated business plan generation to comprehensive market analysis and financial projections - all powered by AI to help you build your next successful venture.
+              </p>
+              
+              {/* Feature List */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                  <span className="text-gray-900 font-medium">Market Research</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                  <span className="text-gray-900 font-medium">Financial Projections</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                  <span className="text-gray-900 font-medium">Business Strategy</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                  <span className="text-gray-900 font-medium">Competitive Analysis</span>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <a 
+                  href="#"
+                  className="inline-flex items-center text-gray-900 font-medium hover:text-gray-700 transition-colors"
+                >
+                  Get on top of your business planning
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </a>
+              </div>
+            </div>
+
+            {/* Right Content - Visual */}
+            <div className="relative">
+              <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
+                <img 
+                  src="/Screenshot 2025-09-01 202824.png" 
+                  alt="PlanSpark Business Planning Dashboard"
+                  className="w-full h-auto rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-light text-gray-900 mb-6">
+              From idea to plan
+              <span className="block font-normal">in three simple steps</span>
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+                1
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Describe Your Idea</h3>
+              <p className="text-gray-600">Tell us about your business idea, target market, and goals. Our AI will understand your vision.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+                2
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">AI Generates Plan</h3>
+              <p className="text-gray-600">Our AI analyzes market data, competitors, and industry trends to create a comprehensive business plan.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6">
+                3
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Export & Execute</h3>
+              <p className="text-gray-600">Download your professional business plan as a PDF and start executing your vision with confidence.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-light text-gray-900 mb-6">
+              Simple, transparent
+              <span className="block font-normal">pricing</span>
+            </h2>
+            <p className="text-xl text-gray-600">Choose the plan that fits your needs</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Basic Plan */}
+            <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">Basic</h3>
+                <div className="text-4xl font-bold text-gray-900 mb-2">Free</div>
+                <p className="text-gray-600">Best for personal use</p>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">1 business plan per day</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Basic financial projections</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Market size analysis</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Risk assessment</span>
+                </li>
+              </ul>
+              <a 
+                href="/generate"
+                className="w-full bg-gray-100 text-gray-900 py-3 rounded-lg text-center font-medium hover:bg-gray-200 transition-colors block"
+              >
+                Get Started
+              </a>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="bg-white text-black p-8 rounded-2xl relative border-2 border-gray-900 shadow-lg">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-gray-900 text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
+              </div>
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-semibold mb-2">Pro</h3>
+                <div className="text-4xl font-bold mb-2">$19<span className="text-lg font-normal">/month</span></div>
+                <p className="text-gray-600">For entrepreneurs & startups</p>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>Everything in Basic</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>5 business plans per day</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>PDF export</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>Advanced competitor analysis</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span>Priority customer support</span>
+                </li>
+              </ul>
+              <a 
+                href="/generate"
+                className="w-full bg-gray-900 text-white py-3 rounded-lg text-center font-medium hover:bg-gray-800 transition-colors block"
+              >
+                Get Started
+              </a>
+            </div>
+
+            {/* Pro+ Plan */}
+            <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">Pro+</h3>
+                <div className="text-4xl font-bold text-gray-900 mb-2">$39<span className="text-lg font-normal">/month</span></div>
+                <p className="text-gray-600">For agencies & consultants</p>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Unlimited business plans</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Everything in Pro</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Premium market research</span>
+                </li>
+                <li className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">Custom branding options</span>
+                </li>
+              </ul>
+              <a 
+                href="/generate"
+                className="w-full bg-gray-100 text-gray-900 py-3 rounded-lg text-center font-medium hover:bg-gray-200 transition-colors block"
+              >
+                Get Started
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-white text-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl lg:text-5xl font-light mb-6">
+            Ready to turn your idea
+            <span className="block font-normal">into a business?</span>
+          </h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Join thousands of entrepreneurs who've launched successful businesses with PlanSpark.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <button className="border border-gray-300 text-gray-900 px-8 py-4 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+              View examples
+            </button>
+            <a
+              href="/generate"
+              className="bg-gray-900 text-white px-8 py-4 rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center space-x-2 text-lg font-medium"
+            >
+              <span>Start planning now</span>
+            </a>
+          </div>
+          <p className="text-gray-500 text-sm mt-4">No credit card required</p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Company Info */}
+            <div>
+              <span className="text-xl font-bold text-gray-900">PlanSpark</span>
+              <p className="text-gray-600 mt-4">
+                Turn ideas into reality with AI-powered business planning.
+              </p>
+            </div>
+            
+            {/* Quick Links */}
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li><Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link></li>
+                <li><Link href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</Link></li>
+                <li><Link href="/about" className="text-gray-600 hover:text-gray-900 transition-colors">About</Link></li>
+              </ul>
+            </div>
+            
+            {/* Legal */}
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-4">Legal</h3>
+              <ul className="space-y-2">
+                <li><Link href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-gray-600 hover:text-gray-900 transition-colors">Terms of Service</Link></li>
+                <li><Link href="/support" className="text-gray-600 hover:text-gray-900 transition-colors">Support</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-200 mt-8 pt-8 text-center">
+            <p className="text-gray-500 text-sm">&copy; 2025 PlanSpark. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
-})
+}

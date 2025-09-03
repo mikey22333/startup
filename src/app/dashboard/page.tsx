@@ -50,7 +50,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/generate')}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />

@@ -184,7 +184,7 @@ export default function PricingPage() {
 
   // Memoized handlers
   const handleBack = useCallback(() => {
-    router.push('/')
+    router.push('/generate')
   }, [router])
 
   const handleSetMonthly = useCallback(() => {

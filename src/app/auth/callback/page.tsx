@@ -19,8 +19,8 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
-          // User is authenticated, redirect to home
-          router.push('/')
+          // User is authenticated, redirect to generate page
+          router.push('/generate')
         } else {
           // No session found, redirect back to auth
           router.push('/auth')

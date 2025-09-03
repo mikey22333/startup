@@ -7,7 +7,7 @@ const HeroSection = () => {
   const router = useRouter()
 
   const handleGetStarted = () => {
-    router.push('/')
+    router.push('/generate')
   }
 
   return (

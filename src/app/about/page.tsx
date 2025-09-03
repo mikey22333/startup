@@ -11,17 +11,17 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/landing" className="flex items-center">
+            <Link href="/" className="flex items-center">
               <span className="text-xl font-bold text-gray-900">PlanSpark</span>
             </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center justify-center flex-1">
               <div className="flex items-center space-x-8">
-                <Link href="/landing#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                <Link href="/#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
                   Features
                 </Link>
-                <Link href="/landing#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                <Link href="/#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
                   Pricing
                 </Link>
                 <Link href="/about" className="text-sm text-gray-900 font-medium">
@@ -227,7 +227,7 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              href="/landing"
+              href="/"
               className="text-gray-300 hover:text-white transition-colors inline-flex items-center space-x-2"
             >
               <span>Learn more about our features</span>
@@ -262,8 +262,8 @@ export default function AboutPage() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-4">Features</h3>
               <ul className="space-y-2">
-                <li><Link href="/landing#features" className="text-gray-600 hover:text-gray-900">Overview</Link></li>
-                <li><Link href="/landing#pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link></li>
+                <li><Link href="/#features" className="text-gray-600 hover:text-gray-900">Overview</Link></li>
+                <li><Link href="/#pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link></li>
                 <li><a href="/" className="text-gray-600 hover:text-gray-900">Dashboard</a></li>
                 <li><a href="/" className="text-gray-600 hover:text-gray-900">Download</a></li>
               </ul>

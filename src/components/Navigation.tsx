@@ -9,7 +9,7 @@ const Navigation = memo(() => {
   const router = useRouter()
 
   const handleCreatePlan = useCallback(() => {
-    router.push('/')
+    router.push('/generate')
   }, [router])
 
   const handlePricingClick = useCallback(() => {

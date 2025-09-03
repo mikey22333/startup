@@ -11,17 +11,17 @@ export default function SupportPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/landing" className="flex items-center">
+            <Link href="/" className="flex items-center">
               <span className="text-xl font-bold text-gray-900">PlanSpark</span>
             </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center justify-center flex-1">
               <div className="flex items-center space-x-8">
-                <Link href="/landing#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                <Link href="/#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
                   Features
                 </Link>
-                <Link href="/landing#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                <Link href="/#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
                   Pricing
                 </Link>
                 <Link href="/about" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
@@ -235,7 +235,7 @@ export default function SupportPage() {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Link href="/landing" className="text-gray-600 hover:text-gray-900 transition-colors">
+          <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">
             ← Back to Home
           </Link>
         </div>
