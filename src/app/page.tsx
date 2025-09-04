@@ -7,6 +7,7 @@ import { trackEvent } from '@/components/PostHogProvider'
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
 
   const handleCTAClick = (location: string) => {
     trackEvent('cta_clicked', {
@@ -17,6 +18,7 @@ export default function LandingPage() {
   }
 
   const handleWatchDemo = () => {
+    setIsVideoModalOpen(true)
     trackEvent('watch_demo_clicked', {
       page: 'landing',
       timestamp: new Date().toISOString(),
@@ -489,6 +491,32 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Video Modal */}
+      {isVideoModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="relative bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            {/* Close button */}
+            <button
+              onClick={() => setIsVideoModalOpen(false)}
+              className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-opacity-75 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            
+            {/* Video */}
+            <video
+              controls
+              autoPlay
+              className="w-full h-auto"
+              poster="/Screenshot 2025-09-01 202851.png"
+            >
+              <source src="/planspark.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
