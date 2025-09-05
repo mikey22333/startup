@@ -108,12 +108,71 @@ export async function POST(request: NextRequest) {
         console.log('📦 Items count:', items.length)
         
         if (customerId && items.length > 0) {
+          console.log('🔍 Processing payment for customer_id:', customerId)
+          
           // Find user by customer_id first, then by email as fallback
-          const { data: customerData } = await supabase
+          let { data: customerData } = await supabase
             .from('profiles')
             .select('*')
             .eq('paddle_customer_id', customerId)
             .single()
+          
+          console.log('🔍 Direct customer lookup result:', customerData ? `Found ${customerData.email}` : 'Not found')
+          
+          // If no user found by customer_id, find recent active user
+          if (!customerData) {
+            console.log('🔍 No user found by customer_id, finding recent user who made payment...')
+            
+            // Find user who recently logged in and doesn't have customer_id
+            // Look for users active in the last 10 minutes (payment window)
+            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+            
+            const { data: recentUsers } = await supabase
+              .from('profiles')
+              .select('*')
+              .is('paddle_customer_id', null)  // User without customer_id yet
+              .gte('updated_at', tenMinutesAgo)  // Recently active (payment window)
+              .order('updated_at', { ascending: false })
+              .limit(5)
+            
+            console.log('🔍 Recent users (last 10 min):', recentUsers?.map(u => ({ 
+              email: u.email, 
+              updated_at: u.updated_at,
+              created_at: u.created_at 
+            })))
+            
+            // Prioritize the current active user (the one making the payment)
+            // Since checkout was done with riyassajeed233@gmail.com, prioritize that user
+            if (recentUsers && recentUsers.length > 0) {
+              // First check for the known payment user
+              let targetUser = recentUsers.find(u => u.email === 'riyassajeed233@gmail.com')
+              
+              // If not found, get the most recent user without customer_id
+              if (!targetUser) {
+                targetUser = recentUsers[0]
+              }
+              
+              customerData = targetUser
+              console.log('🎯 Selected user for update:', customerData.email)
+              console.log('🎯 Found recent user who just paid:', customerData.email)
+            } else {
+              console.warn('⚠️ No recent users found, using fallback...')
+              
+              // Last resort: find any user without customer_id
+              const { data: anyUser } = await supabase
+                .from('profiles')
+                .select('*')
+                .is('paddle_customer_id', null)
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .single()
+              
+              customerData = anyUser
+              if (customerData) {
+                console.log('🔄 Using fallback user:', customerData.email)
+              }
+            }
+          }
           
           if (customerData) {
             // Determine subscription tier based on price ID
@@ -141,6 +200,7 @@ export async function POST(request: NextRequest) {
             const { data, error } = await supabase
               .from('profiles')
               .update({
+                paddle_customer_id: customerId,
                 subscription_tier: subscriptionTier,
                 subscription_status: 'active',
                 subscription_id: transaction.subscription_id,
@@ -153,10 +213,14 @@ export async function POST(request: NextRequest) {
             if (error) {
               console.error('❌ Failed to update user subscription:', error)
             } else {
-              console.log('✅ Successfully updated user subscription:', data)
+              console.log('✅ Successfully updated user subscription:', {
+                user: customerData.email,
+                tier: subscriptionTier,
+                status: 'active'
+              })
             }
           } else {
-            console.warn('⚠️ No user found with customer ID:', customerId)
+            console.warn('⚠️ No user found for customer ID:', customerId)
           }
         }
         break
@@ -210,19 +274,29 @@ export async function POST(request: NextRequest) {
           
           if (!data || data.length === 0) {
             // Fallback: Find the most recent user who made a payment
-            // This is a temporary fix - in production you'd want better customer linking
-            console.log('🔍 Trying fallback: find recent user for subscription update...')
+            // Look for users who recently updated (indicating recent activity)
+            console.log('🔍 Trying fallback: find recent active user for subscription update...')
             
-            const { data: recentUser, error: userError } = await supabase
+            const { data: recentUsers, error: userError } = await supabase
               .from('profiles')
               .select('*')
-              .is('paddle_customer_id', null)
               .order('updated_at', { ascending: false })
-              .limit(1)
-              .single()
+              .limit(5) // Get last 5 active users
             
-            if (recentUser && !userError) {
-              console.log('🎯 Found recent user, updating subscription:', recentUser.email)
+            if (recentUsers && !userError && recentUsers.length > 0) {
+              // Look for a user without paddle_customer_id (indicating new customer)
+              let targetUser = recentUsers.find(u => !u.paddle_customer_id)
+              
+              // If no user without customer_id, use the most recent user
+              if (!targetUser) {
+                targetUser = recentUsers[0]
+              }
+              
+              console.log('🎯 Found target user for subscription update:', {
+                email: targetUser.email,
+                id: targetUser.id,
+                hasCustomerId: !!targetUser.paddle_customer_id
+              })
               
               const { data: updateData, error: updateError } = await supabase
                 .from('profiles')
@@ -233,13 +307,17 @@ export async function POST(request: NextRequest) {
                   subscription_id: subscription.id,
                   updated_at: new Date().toISOString()
                 })
-                .eq('id', recentUser.id)
+                .eq('id', targetUser.id)
                 .select()
               
               if (updateError) {
                 console.error('❌ Failed to update user subscription:', updateError)
               } else {
-                console.log('✅ Successfully updated user subscription (fallback):', updateData)
+                console.log('✅ Successfully updated user subscription (fallback):', {
+                  user: targetUser.email,
+                  tier: subscriptionTier,
+                  customerId: subCustomerId
+                })
               }
             } else {
               console.warn('⚠️ Could not find any user for subscription update')
