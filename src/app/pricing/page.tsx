@@ -17,7 +17,8 @@ const PRICING_PLANS = [
   {
     name: "Basic",
     subtitle: "Best for personal use.",
-    price: "Free",
+    monthlyPrice: "Free",
+    yearlyPrice: "Free",
     features: [
       "1 business plan per day",
       "Basic financial projections",
@@ -35,8 +36,10 @@ const PRICING_PLANS = [
   {
     name: "Pro",
     subtitle: "For entrepreneurs & startups.",
-    price: "$12.99",
-    period: "per month",
+    monthlyPrice: "$12.99",
+    yearlyPrice: "$129.90",
+    yearlyMonthlyEquivalent: "$10.83",
+    savings: "16%",
     features: [
       "Everything in Basic",
       "5 business plans per day",
@@ -50,8 +53,10 @@ const PRICING_PLANS = [
   {
     name: "Pro+",
     subtitle: "For agencies & consultants.",
-    price: "$29.99",
-    period: "per month",
+    monthlyPrice: "$29.99",
+    yearlyPrice: "$299.90",
+    yearlyMonthlyEquivalent: "$24.99",
+    savings: "16%",
     features: [
       "Unlimited business plans",
       "Everything in Pro"
@@ -67,14 +72,29 @@ const PricingCard = memo(({
   onButtonClick, 
   isCurrentPlan, 
   isUpgrade, 
-  usageInfo 
+  usageInfo,
+  isAnnual = false
 }: { 
   plan: typeof PRICING_PLANS[0], 
   onButtonClick: () => void,
   isCurrentPlan?: boolean,
   isUpgrade?: boolean,
-  usageInfo?: { used: number, limit: number | 'unlimited' }
-}) => (
+  usageInfo?: { used: number, limit: number | 'unlimited' },
+  isAnnual?: boolean
+}) => {
+  const currentPrice = plan.name === 'Basic' 
+    ? plan.monthlyPrice 
+    : isAnnual 
+      ? plan.yearlyPrice 
+      : plan.monthlyPrice
+  
+  const period = plan.name === 'Basic' 
+    ? '' 
+    : isAnnual 
+      ? 'per year' 
+      : 'per month'
+
+  return (
   <div
     className={`relative bg-black/70 backdrop-blur-md rounded-2xl p-8 border transition-all duration-300 hover:bg-black/80 hover:scale-105 ${
       plan.isPopular ? 'border-white/30 shadow-2xl' : 'border-white/10'
@@ -89,6 +109,15 @@ const PricingCard = memo(({
       </div>
     )}
 
+    {/* Popular Badge */}
+    {plan.isPopular && (
+      <div className="absolute -top-3 right-4">
+        <span className="bg-white text-black px-3 py-1 rounded-full text-xs font-medium">
+          Most Popular
+        </span>
+      </div>
+    )}
+
     {/* Icon */}
     <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mb-6">
       <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -99,10 +128,19 @@ const PricingCard = memo(({
       <h3 className="text-2xl font-bold mb-2 text-white">{plan.name}</h3>
       <p className="text-white/60 text-sm mb-6">{plan.subtitle}</p>
       
-      <div className="mb-8">
-        <span className="text-4xl font-bold text-white">{plan.price}</span>
-        {plan.period && <span className="text-white/60 ml-2">{plan.period}</span>}
+      <div className="mb-2">
+        <span className="text-4xl font-bold text-white">{currentPrice}</span>
+        {period && <span className="text-white/60 ml-2">{period}</span>}
       </div>
+
+      {/* Show monthly equivalent and savings for annual plans */}
+      {isAnnual && plan.name !== 'Basic' && plan.yearlyMonthlyEquivalent && (
+        <div className="mb-4">
+          <p className="text-green-400 text-sm">
+            {plan.yearlyMonthlyEquivalent}/month • Save {plan.savings}
+          </p>
+        </div>
+      )}
 
       {/* Usage Info for Current Plan */}
       {isCurrentPlan && usageInfo && (
@@ -173,7 +211,8 @@ const PricingCard = memo(({
       )}
     </div>
   </div>
-))
+  )
+})
 
 PricingCard.displayName = 'PricingCard'
 
@@ -396,6 +435,7 @@ export default function PricingPage() {
                   isCurrentPlan={isCurrentPlan}
                   isUpgrade={isUpgrade}
                   usageInfo={isCurrentPlan ? usageStatus?.dailyUsage : undefined}
+                  isAnnual={isAnnual}
                 />
               )
             })}

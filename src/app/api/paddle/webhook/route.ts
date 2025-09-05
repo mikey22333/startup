@@ -164,11 +164,22 @@ export async function POST(request: NextRequest) {
             
             subscriptionTier = priceIdToTier[priceId] || 'pro'
             
+            // Calculate subscription expiration date based on billing period
+            const isYearly = priceId === 'pri_01k4arbvr91qy4gj4tk0pnw515' || priceId === 'pri_01k4arhcs2wsvr1f0rfhb8z550'
+            const expirationDate = new Date()
+            if (isYearly) {
+              expirationDate.setFullYear(expirationDate.getFullYear() + 1)
+            } else {
+              expirationDate.setMonth(expirationDate.getMonth() + 1)
+            }
+            
             console.log('🔄 Updating user subscription:', {
               userId: customerData.id,
               email: customerData.email,
               priceId,
-              subscriptionTier
+              subscriptionTier,
+              billingPeriod: isYearly ? 'yearly' : 'monthly',
+              expiresAt: expirationDate.toISOString()
             })
             
             // Update user's subscription status
@@ -179,6 +190,8 @@ export async function POST(request: NextRequest) {
                 subscription_tier: subscriptionTier,
                 subscription_status: 'active',
                 subscription_id: transaction.subscription_id,
+                subscription_expires_at: expirationDate.toISOString(),
+                subscription_started_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               })
               .eq('id', customerData.id)
@@ -227,10 +240,21 @@ export async function POST(request: NextRequest) {
           
           subscriptionTierSub = priceIdToTierSub[priceIdSub] || 'pro'
           
+          // Calculate subscription expiration date based on billing period
+          const isYearlySub = priceIdSub === 'pri_01k4arbvr91qy4gj4tk0pnw515' || priceIdSub === 'pri_01k4arhcs2wsvr1f0rfhb8z550'
+          const expirationDateSub = new Date()
+          if (isYearlySub) {
+            expirationDateSub.setFullYear(expirationDateSub.getFullYear() + 1)
+          } else {
+            expirationDateSub.setMonth(expirationDateSub.getMonth() + 1)
+          }
+          
           console.log('🔄 Updating subscription for customer:', {
             customerId: customerIdSub,
             subscriptionTier: subscriptionTierSub,
-            priceId: priceIdSub
+            priceId: priceIdSub,
+            billingPeriod: isYearlySub ? 'yearly' : 'monthly',
+            expiresAt: expirationDateSub.toISOString()
           })
           
           // Update user by customer_id (this should work since customer was linked during checkout)
@@ -241,6 +265,8 @@ export async function POST(request: NextRequest) {
               subscription_tier: subscriptionTierSub,
               subscription_status: 'active',
               subscription_id: subscriptionData.id,
+              subscription_expires_at: expirationDateSub.toISOString(),
+              subscription_started_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
             .eq('paddle_customer_id', customerIdSub)
@@ -279,6 +305,8 @@ export async function POST(request: NextRequest) {
                   subscription_tier: subscriptionTierSub,
                   subscription_status: 'active',
                   subscription_id: subscriptionData.id,
+                  subscription_expires_at: expirationDateSub.toISOString(),
+                  subscription_started_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
                 })
                 .eq('id', targetUserSub.id)
