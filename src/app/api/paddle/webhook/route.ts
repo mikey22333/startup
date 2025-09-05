@@ -225,13 +225,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
-// GET endpoint to test webhook connectivity
-export async function GET() {
-  console.log('🔍 Webhook GET test called')
-  return NextResponse.json({ 
-    status: 'Webhook endpoint is accessible',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
-  })
-}
