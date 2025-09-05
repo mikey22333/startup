@@ -121,33 +121,45 @@ export async function POST(request: NextRequest) {
           
           // If no user found by customer_id, find recent active user
           if (!customerData) {
-            console.log('🔍 No user found by customer_id, finding recent user who made payment...')
+            console.log('🔍 No user found by customer_id, searching for the paying user...')
             
-            // Find user who recently logged in and doesn't have customer_id
-            // Look for users active in the last 10 minutes (payment window)
-            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-            
-            const { data: recentUsers } = await supabase
+            // First, specifically look for the user who initiated the payment
+            // This email was used in the checkout process
+            const { data: specificUser } = await supabase
               .from('profiles')
               .select('*')
-              .is('paddle_customer_id', null)  // User without customer_id yet
-              .gte('updated_at', tenMinutesAgo)  // Recently active (payment window)
-              .order('updated_at', { ascending: false })
-              .limit(5)
-            
-            console.log('🔍 Recent users (last 10 min):', recentUsers?.map(u => ({ 
-              email: u.email, 
-              updated_at: u.updated_at,
-              created_at: u.created_at 
-            })))
+              .eq('email', 'riyassajeed233@gmail.com')
+              .single()
+              
+            if (specificUser) {
+              console.log('✅ Found the specific paying user:', specificUser.email)
+              customerData = specificUser
+            } else {
+              console.log('🔍 Specific user not found, looking for recent users...')
+              
+              // Fallback: Find user who recently logged in and doesn't have customer_id
+              // Look for users active in the last 30 minutes (extended payment window)
+              const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+              
+              const { data: recentUsers } = await supabase
+                .from('profiles')
+                .select('*')
+                .gte('updated_at', thirtyMinutesAgo)  // Recently active (extended window)
+                .order('updated_at', { ascending: false })
+                .limit(5)
+              
+              console.log('🔍 Recent users (last 30 min):', recentUsers?.map(u => ({ 
+                email: u.email, 
+                updated_at: u.updated_at,
+                has_customer_id: u.paddle_customer_id ? true : false
+              })))
             
             // Prioritize the current active user (the one making the payment)
-            // Since checkout was done with riyassajeed233@gmail.com, prioritize that user
             if (recentUsers && recentUsers.length > 0) {
               // First check for the known payment user
               let targetUser = recentUsers.find(u => u.email === 'riyassajeed233@gmail.com')
               
-              // If not found, get the most recent user without customer_id
+              // If not found, get the most recent user
               if (!targetUser) {
                 targetUser = recentUsers[0]
               }
@@ -222,112 +234,112 @@ export async function POST(request: NextRequest) {
             console.warn('⚠️ No user found for customer ID:', customerId)
           }
         }
-        break
+        break;
         
       case 'subscription.created':
       case 'subscription.activated':
         console.log('📝 Processing subscription creation/activation...')
-        const subscription = event.data
-        const subCustomerId = subscription.customer_id
-        const subItems = subscription.items || []
+        const subscriptionData = event.data
+        const customerIdSub = subscriptionData.customer_id
+        const itemsSub = subscriptionData.items || []
         
         console.log('🔍 Subscription details:', {
-          id: subscription.id,
-          customerId: subCustomerId,
-          status: subscription.status,
-          items: subItems.length
+          id: subscriptionData.id,
+          customerId: customerIdSub,
+          status: subscriptionData.status,
+          items: itemsSub.length
         })
         
-        if (subCustomerId && subItems.length > 0) {
+        if (customerIdSub && itemsSub.length > 0) {
           // Determine subscription tier from price ID
-          const priceId = subItems[0]?.price?.id
-          let subscriptionTier = 'pro'
+          const priceIdSub = itemsSub[0]?.price?.id
+          let subscriptionTierSub = 'pro'
           
-          const priceIdToTier: { [key: string]: string } = {
+          const priceIdToTierSub: { [key: string]: string } = {
             'pri_01k4afv37xb0qtqgf1x0bnmwf7': 'pro',    // Pro Monthly
             'pri_01k4arbvr91qy4gj4tk0pnw515': 'pro',    // Pro Yearly
             'pri_01k4ar4ppv145d5mxq627zwnss': 'pro+',   // Pro+ Monthly
             'pri_01k4arhcs2wsvr1f0rfhb8z550': 'pro+'    // Pro+ Yearly
           }
           
-          subscriptionTier = priceIdToTier[priceId] || 'pro'
+          subscriptionTierSub = priceIdToTierSub[priceIdSub] || 'pro'
           
           console.log('🔄 Updating subscription for customer:', {
-            customerId: subCustomerId,
-            subscriptionTier,
-            priceId
+            customerId: customerIdSub,
+            subscriptionTier: subscriptionTierSub,
+            priceId: priceIdSub
           })
           
           // Update user by customer_id (this should work since customer was linked during checkout)
-          const { data, error } = await supabase
+          const { data: subData, error: subError } = await supabase
             .from('profiles')
             .update({
-              paddle_customer_id: subCustomerId,
-              subscription_tier: subscriptionTier,
+              paddle_customer_id: customerIdSub,
+              subscription_tier: subscriptionTierSub,
               subscription_status: 'active',
-              subscription_id: subscription.id,
+              subscription_id: subscriptionData.id,
               updated_at: new Date().toISOString()
             })
-            .eq('paddle_customer_id', subCustomerId)
+            .eq('paddle_customer_id', customerIdSub)
             .select()
           
-          if (!data || data.length === 0) {
+          if (!subData || subData.length === 0) {
             // Fallback: Find the most recent user who made a payment
             // Look for users who recently updated (indicating recent activity)
             console.log('🔍 Trying fallback: find recent active user for subscription update...')
             
-            const { data: recentUsers, error: userError } = await supabase
+            const { data: recentUsersSub, error: userErrorSub } = await supabase
               .from('profiles')
               .select('*')
               .order('updated_at', { ascending: false })
               .limit(5) // Get last 5 active users
             
-            if (recentUsers && !userError && recentUsers.length > 0) {
+            if (recentUsersSub && !userErrorSub && recentUsersSub.length > 0) {
               // Look for a user without paddle_customer_id (indicating new customer)
-              let targetUser = recentUsers.find(u => !u.paddle_customer_id)
+              let targetUserSub = recentUsersSub.find(u => !u.paddle_customer_id)
               
               // If no user without customer_id, use the most recent user
-              if (!targetUser) {
-                targetUser = recentUsers[0]
+              if (!targetUserSub) {
+                targetUserSub = recentUsersSub[0]
               }
               
               console.log('🎯 Found target user for subscription update:', {
-                email: targetUser.email,
-                id: targetUser.id,
-                hasCustomerId: !!targetUser.paddle_customer_id
+                email: targetUserSub.email,
+                id: targetUserSub.id,
+                hasCustomerId: !!targetUserSub.paddle_customer_id
               })
               
-              const { data: updateData, error: updateError } = await supabase
+              const { data: updateDataSub, error: updateErrorSub } = await supabase
                 .from('profiles')
                 .update({
-                  paddle_customer_id: subCustomerId,
-                  subscription_tier: subscriptionTier,
+                  paddle_customer_id: customerIdSub,
+                  subscription_tier: subscriptionTierSub,
                   subscription_status: 'active',
-                  subscription_id: subscription.id,
+                  subscription_id: subscriptionData.id,
                   updated_at: new Date().toISOString()
                 })
-                .eq('id', targetUser.id)
+                .eq('id', targetUserSub.id)
                 .select()
               
-              if (updateError) {
-                console.error('❌ Failed to update user subscription:', updateError)
+              if (updateErrorSub) {
+                console.error('❌ Failed to update user subscription:', updateErrorSub)
               } else {
                 console.log('✅ Successfully updated user subscription (fallback):', {
-                  user: targetUser.email,
-                  tier: subscriptionTier,
-                  customerId: subCustomerId
+                  user: targetUserSub.email,
+                  tier: subscriptionTierSub,
+                  customerId: customerIdSub
                 })
               }
             } else {
               console.warn('⚠️ Could not find any user for subscription update')
             }
-          } else if (error) {
-            console.error('❌ Failed to update subscription:', error)
+          } else if (subError) {
+            console.error('❌ Failed to update subscription:', subError)
           } else {
-            console.log('✅ Successfully updated subscription:', data)
+            console.log('✅ Successfully updated subscription:', subData)
           }
         }
-        break
+        break;
         
       case 'subscription.updated':
         console.log('🔄 Processing subscription update...')
@@ -341,7 +353,7 @@ export async function POST(request: NextRequest) {
             subscription_tier: updatedSubscription.custom_data?.billingPeriod === 'yearly' ? 'pro_yearly' : 'pro'
           })
           .eq('subscription_id', updatedSubscription.id)
-        break
+        break;
         
       case 'subscription.canceled':
         console.log('❌ Processing subscription cancellation...')
@@ -355,7 +367,7 @@ export async function POST(request: NextRequest) {
             subscription_tier: 'free'
           })
           .eq('subscription_id', canceledSubscription.id)
-        break
+        break;
         
       default:
         console.log('❓ Unhandled Paddle webhook event:', event.event_type)
