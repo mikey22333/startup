@@ -40,6 +40,13 @@ function verifyPaddleSignature(rawBody: string, signature: string): boolean {
   }
 }
 
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'Paddle webhook endpoint is active',
+    timestamp: new Date().toISOString()
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
@@ -48,7 +55,8 @@ export async function POST(request: NextRequest) {
     console.log('🎣 Paddle webhook received:', {
       hasSignature: !!signature,
       bodyLength: body.length,
-      headers: Object.fromEntries(request.headers.entries())
+      timestamp: new Date().toISOString(),
+      url: request.url
     })
     
     if (!signature) {
@@ -68,8 +76,13 @@ export async function POST(request: NextRequest) {
     let event
     try {
       event = JSON.parse(body)
-      console.log('📦 Paddle webhook event:', JSON.stringify(event, null, 2))
+      console.log('📦 Parsed webhook event:', {
+        eventType: event.event_type,
+        eventId: event.event_id,
+        occurred_at: event.occurred_at
+      })
     } catch (parseError) {
+      console.log('📦 Paddle webhook event:', JSON.stringify(event, null, 2))
       console.error('❌ Failed to parse webhook body:', parseError)
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
@@ -77,14 +90,26 @@ export async function POST(request: NextRequest) {
     const supabase = createClient()
     
     // Handle different Paddle webhook events (Paddle v4 format)
+    console.log('🎯 Processing Paddle webhook event:', event.event_type)
+    console.log('🔍 Event data keys:', Object.keys(event.data || {}))
+    
     switch (event.event_type) {
       case 'transaction.completed':
         console.log('💰 Processing completed transaction...')
         const transaction = event.data
+        console.log('📋 Transaction data:', {
+          id: transaction?.id,
+          status: transaction?.status,
+          customer: transaction?.customer,
+          items: transaction?.details?.line_items?.length || 0
+        })
         
         // Get customer email from transaction
         const customerEmail = transaction.customer?.email
         const items = transaction.details?.line_items || []
+        
+        console.log('📧 Customer email:', customerEmail)
+        console.log('📦 Items count:', items.length)
         
         console.log('Transaction details:', {
           transactionId: transaction.id,
@@ -199,4 +224,14 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// GET endpoint to test webhook connectivity
+export async function GET() {
+  console.log('🔍 Webhook GET test called')
+  return NextResponse.json({ 
+    status: 'Webhook endpoint is accessible',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  })
 }
