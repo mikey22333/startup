@@ -19,6 +19,10 @@ dist/
 .env.production.local
 .env*.local
 
+# Environment variable documentation with keys
+RENDER_ENVIRONMENT_VARIABLES*.md
+*ENVIRONMENT_VARIABLES*.md
+
 # Database
 *.db
 *.sqlite

@@ -9,7 +9,12 @@ let paddleInstance: Paddle | null = null
 
 export const getPaddle = async (): Promise<Paddle | null> => {
   if (!paddleClientToken) {
-    console.warn('Paddle client token not found')
+    console.error('❌ CRITICAL: NEXT_PUBLIC_PADDLE_CLIENT_TOKEN environment variable is missing!')
+    console.error('🔧 Add this to your environment variables:', {
+      'NEXT_PUBLIC_PADDLE_CLIENT_TOKEN': 'test_584145076f8bb55f5f12466b1ea',
+      'Environment': paddleEnvironment,
+      'Documentation': 'See RENDER_ENVIRONMENT_VARIABLES_UPDATE.md'
+    })
     return null
   }
 
@@ -76,8 +81,10 @@ export const openPaddleCheckout = async ({
   const paddle = await getPaddle()
   
   if (!paddle) {
-    console.error('❌ Paddle not initialized')
-    throw new Error('Payment system not available')
+    console.error('❌ Paddle not initialized - Missing environment variables!')
+    console.error('🔧 Required: NEXT_PUBLIC_PADDLE_CLIENT_TOKEN')
+    console.error('📖 See: RENDER_ENVIRONMENT_VARIABLES_UPDATE.md')
+    throw new Error('Payment system not available - Environment variables missing')
   }
 
   console.log('✅ Paddle instance obtained:', paddle)
