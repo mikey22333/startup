@@ -20,8 +20,9 @@ export function useSubscription() {
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastRefresh, setLastRefresh] = useState<number>(0)
 
-  const fetchUsageStatus = async () => {
+  const fetchUsageStatus = async (forceRefresh = false) => {
     if (!user || authLoading) return
 
     try {
@@ -29,6 +30,9 @@ export function useSubscription() {
       setError(null)
 
       console.log('🔄 Fetching usage status for user:', user.email)
+      
+      // Add cache busting for force refresh
+      const timestamp = forceRefresh ? Date.now() : Math.floor(Date.now() / 60000) // 1 minute cache
       
       // Get user profile directly from Supabase (client-side with auth session)
       const { data: profile, error: profileError } = await supabase
@@ -155,7 +159,7 @@ export function useSubscription() {
       const data = await response.json()
       
       // Refresh usage status after upgrade
-      await fetchUsageStatus()
+      await fetchUsageStatus(true) // Force refresh after upgrade
       
       return data
     } catch (err) {
@@ -164,6 +168,11 @@ export function useSubscription() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Manual refresh function
+  const refreshUsageStatus = async (forceRefresh = true) => {
+    return await fetchUsageStatus(forceRefresh)
   }
 
   useEffect(() => {
@@ -177,11 +186,22 @@ export function useSubscription() {
     }
   }, [user, authLoading])
 
+  // Set up periodic refresh every 30 seconds to catch webhook updates
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(() => {
+      fetchUsageStatus(true)
+    }, 30000) // Refresh every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [user])
+
   return {
     usageStatus,
     loading,
     error,
-    refreshUsageStatus: fetchUsageStatus,
+    refreshUsageStatus,
     upgradeSubscription
   }
 }

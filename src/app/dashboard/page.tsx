@@ -4,13 +4,23 @@ import { useAuth } from '@/components/AuthProvider'
 import { useSubscription } from '@/hooks/useSubscription'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ArrowLeft, User, CreditCard, BarChart3, Calendar, Crown, CheckCircle2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, User, CreditCard, BarChart3, Calendar, Crown, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react'
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth()
-  const { usageStatus, loading: usageLoading } = useSubscription()
+  const { usageStatus, loading: usageLoading, refreshUsageStatus } = useSubscription()
   const router = useRouter()
   const [recentPlans, setRecentPlans] = useState<any[]>([])
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await refreshUsageStatus(true)
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   useEffect(() => {
     // Redirect to auth if not authenticated
@@ -61,6 +71,14 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+                title="Refresh subscription status"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-medium">
                 {user.user_metadata?.full_name?.charAt(0).toUpperCase() || 'U'}
               </div>
@@ -115,6 +133,12 @@ export default function Dashboard() {
             <p className="text-xs text-white/60">
               {usageStatus?.subscriptionTier === 'free' ? 'Limited features' : 'Premium features'}
             </p>
+            {/* Debug info */}
+            <div className="mt-2 text-xs text-white/40 space-y-1">
+              <div>User ID: {user.id}</div>
+              <div>Email: {user.email}</div>
+              <div>Status: {usageStatus?.subscriptionTier || 'loading...'}</div>
+            </div>
           </div>
 
           {/* Account Status */}

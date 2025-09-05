@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+
+// Create service role client for webhook (needs admin permissions)
+function createServiceClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 // Verify Paddle webhook signature
 function verifyPaddleSignature(rawBody: string, signature: string): boolean {
@@ -82,7 +90,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
     
-    const supabase = createClient()
+    const supabase = createServiceClient()
     
     // Handle different Paddle webhook events (Paddle v4 format)
     console.log('🎯 Processing Paddle webhook event:', event.event_type)
