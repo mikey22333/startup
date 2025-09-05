@@ -12,19 +12,19 @@ function SuccessPageContent() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const sessionId = searchParams.get('session_id')
+    const transactionId = searchParams.get('_ptxn')
     
-    if (!sessionId) {
-      setError('No session ID found')
+    if (!transactionId) {
+      setError('No transaction ID found')
       setLoading(false)
       return
     }
 
-    // Verify the session (optional - you could also just show success immediately)
+    // For Paddle, show success immediately since webhook handles backend processing
     const verifySession = async () => {
       try {
-        // In a real app, you might want to verify this server-side
-        // For now, we'll just show the success message
+        // Paddle webhook handles the backend processing
+        // We can show success immediately
         setLoading(false)
       } catch (err) {
         setError('Failed to verify payment')

@@ -3,37 +3,24 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react'
-import { stripe } from '@/lib/stripe'
 
 export default function SuccessPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [session, setSession] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const sessionId = searchParams.get('session_id')
+    const transactionId = searchParams.get('_ptxn')
     
-    if (!sessionId) {
-      setError('No session ID found')
+    if (!transactionId) {
+      setError('No transaction ID found')
       setLoading(false)
       return
     }
 
-    // Verify the session (optional - you could also just show success immediately)
-    const verifySession = async () => {
-      try {
-        // In a real app, you might want to verify this server-side
-        // For now, we'll just show the success message
-        setLoading(false)
-      } catch (err) {
-        setError('Failed to verify payment')
-        setLoading(false)
-      }
-    }
-
-    verifySession()
+    // For Paddle, show success immediately since webhook handles backend processing
+    setLoading(false)
   }, [searchParams])
 
   const handleContinue = () => {
