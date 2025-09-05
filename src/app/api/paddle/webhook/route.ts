@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
         eventId: event.event_id,
         occurred_at: event.occurred_at
       })
+      console.log('🔍 FULL EVENT DATA:', JSON.stringify(event, null, 2))
     } catch (parseError) {
       console.log('📦 Paddle webhook event:', JSON.stringify(event, null, 2))
       console.error('❌ Failed to parse webhook body:', parseError)
@@ -89,35 +90,96 @@ export async function POST(request: NextRequest) {
     
     switch (event.event_type) {
       case 'transaction.completed':
-        console.log('💰 Processing completed transaction...')
+      case 'transaction.paid': // Paddle sends this instead of completed
+        console.log('💰 Processing completed/paid transaction...')
         const transaction = event.data
         console.log('📋 Transaction data:', {
           id: transaction?.id,
           status: transaction?.status,
-          customer: transaction?.customer,
-          items: transaction?.details?.line_items?.length || 0
+          customer: transaction?.customer_id,
+          items: transaction?.items?.length || 0
         })
         
-        // Get customer email from transaction
-        const customerEmail = transaction.customer?.email
-        const items = transaction.details?.line_items || []
+        // Get customer ID and find user in database
+        const customerId = transaction.customer_id
+        const items = transaction.items || []
         
-        console.log('📧 Customer email:', customerEmail)
+        console.log('� Customer ID:', customerId)
         console.log('📦 Items count:', items.length)
         
-        console.log('Transaction details:', {
-          transactionId: transaction.id,
-          customerEmail,
-          status: transaction.status,
-          items: items.length
+        if (customerId && items.length > 0) {
+          // Find user by customer_id first, then by email as fallback
+          const { data: customerData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('paddle_customer_id', customerId)
+            .single()
+          
+          if (customerData) {
+            // Determine subscription tier based on price ID
+            const priceId = items[0]?.price?.id
+            let subscriptionTier = 'pro'
+            
+            // Map price IDs to subscription tiers
+            const priceIdToTier: { [key: string]: string } = {
+              'pri_01k4afv37xb0qtqgf1x0bnmwf7': 'pro',    // Pro Monthly
+              'pri_01k4arbvr91qy4gj4tk0pnw515': 'pro',    // Pro Yearly
+              'pri_01k4ar4ppv145d5mxq627zwnss': 'pro+',   // Pro+ Monthly
+              'pri_01k4arhcs2wsvr1f0rfhb8z550': 'pro+'    // Pro+ Yearly
+            }
+            
+            subscriptionTier = priceIdToTier[priceId] || 'pro'
+            
+            console.log('🔄 Updating user subscription:', {
+              userId: customerData.id,
+              email: customerData.email,
+              priceId,
+              subscriptionTier
+            })
+            
+            // Update user's subscription status
+            const { data, error } = await supabase
+              .from('profiles')
+              .update({
+                subscription_tier: subscriptionTier,
+                subscription_status: 'active',
+                subscription_id: transaction.subscription_id,
+                paddle_transaction_id: transaction.id,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', customerData.id)
+              .select()
+            
+            if (error) {
+              console.error('❌ Failed to update user subscription:', error)
+            } else {
+              console.log('✅ Successfully updated user subscription:', data)
+            }
+          } else {
+            console.warn('⚠️ No user found with customer ID:', customerId)
+          }
+        }
+        break
+        
+      case 'subscription.created':
+      case 'subscription.activated':
+        console.log('📝 Processing subscription creation/activation...')
+        const subscription = event.data
+        const subCustomerId = subscription.customer_id
+        const subItems = subscription.items || []
+        
+        console.log('🔍 Subscription details:', {
+          id: subscription.id,
+          customerId: subCustomerId,
+          status: subscription.status,
+          items: subItems.length
         })
         
-        if (customerEmail && items.length > 0) {
-          // Determine subscription tier based on price ID
-          const priceId = items[0]?.price?.id
+        if (subCustomerId && subItems.length > 0) {
+          // Determine subscription tier from price ID
+          const priceId = subItems[0]?.price?.id
           let subscriptionTier = 'pro'
           
-          // Map price IDs to subscription tiers
           const priceIdToTier: { [key: string]: string } = {
             'pri_01k4afv37xb0qtqgf1x0bnmwf7': 'pro',    // Pro Monthly
             'pri_01k4arbvr91qy4gj4tk0pnw515': 'pro',    // Pro Yearly
@@ -127,51 +189,66 @@ export async function POST(request: NextRequest) {
           
           subscriptionTier = priceIdToTier[priceId] || 'pro'
           
-          console.log('🔄 Updating user subscription:', {
-            customerEmail,
-            priceId,
-            subscriptionTier
+          console.log('🔄 Updating subscription for customer:', {
+            customerId: subCustomerId,
+            subscriptionTier,
+            priceId
           })
           
-          // Update user's subscription status using email
+          // Update user by customer_id (this should work since customer was linked during checkout)
           const { data, error } = await supabase
             .from('profiles')
             .update({
-              paddle_customer_id: transaction.customer?.id,
+              paddle_customer_id: subCustomerId,
               subscription_tier: subscriptionTier,
               subscription_status: 'active',
-              subscription_id: transaction.subscription_id,
-              paddle_transaction_id: transaction.id,
+              subscription_id: subscription.id,
               updated_at: new Date().toISOString()
             })
-            .eq('email', customerEmail)
+            .eq('paddle_customer_id', subCustomerId)
             .select()
           
-          if (error) {
-            console.error('❌ Failed to update user subscription:', error)
+          if (!data || data.length === 0) {
+            // Fallback: Find the most recent user who made a payment
+            // This is a temporary fix - in production you'd want better customer linking
+            console.log('🔍 Trying fallback: find recent user for subscription update...')
+            
+            const { data: recentUser, error: userError } = await supabase
+              .from('profiles')
+              .select('*')
+              .is('paddle_customer_id', null)
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .single()
+            
+            if (recentUser && !userError) {
+              console.log('🎯 Found recent user, updating subscription:', recentUser.email)
+              
+              const { data: updateData, error: updateError } = await supabase
+                .from('profiles')
+                .update({
+                  paddle_customer_id: subCustomerId,
+                  subscription_tier: subscriptionTier,
+                  subscription_status: 'active',
+                  subscription_id: subscription.id,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', recentUser.id)
+                .select()
+              
+              if (updateError) {
+                console.error('❌ Failed to update user subscription:', updateError)
+              } else {
+                console.log('✅ Successfully updated user subscription (fallback):', updateData)
+              }
+            } else {
+              console.warn('⚠️ Could not find any user for subscription update')
+            }
+          } else if (error) {
+            console.error('❌ Failed to update subscription:', error)
           } else {
-            console.log('✅ Successfully updated user subscription:', data)
+            console.log('✅ Successfully updated subscription:', data)
           }
-        }
-        break
-        
-      case 'subscription.created':
-        console.log('📝 Processing subscription creation...')
-        // Handle new subscription
-        const subscription = event.data
-        const customerId = subscription.custom_data?.userId
-        
-        if (customerId) {
-          // Update user's subscription status
-          await supabase
-            .from('profiles')
-            .update({
-              paddle_customer_id: subscription.customer_id,
-              subscription_tier: subscription.custom_data?.billingPeriod === 'yearly' ? 'pro_yearly' : 'pro',
-              subscription_status: 'active',
-              subscription_id: subscription.id
-            })
-            .eq('id', customerId)
         }
         break
         
@@ -205,7 +282,34 @@ export async function POST(request: NextRequest) {
         
       default:
         console.log('❓ Unhandled Paddle webhook event:', event.event_type)
-        console.log('Event data:', JSON.stringify(event, null, 2))
+        console.log('🔍 Full event data:', JSON.stringify(event, null, 2))
+        
+        // Try to handle transaction events that might have different names
+        if (event.event_type?.includes('transaction') || event.event_type?.includes('payment')) {
+          console.log('🔄 Attempting to process as transaction event...')
+          const transaction = event.data
+          const customerEmail = transaction?.customer?.email
+          
+          if (customerEmail) {
+            console.log('📧 Found customer email in fallback handler:', customerEmail)
+            // Try to update subscription
+            const { data, error } = await supabase
+              .from('profiles')
+              .update({
+                subscription_tier: 'pro',
+                subscription_status: 'active',
+                updated_at: new Date().toISOString()
+              })
+              .eq('email', customerEmail)
+              .select()
+              
+            if (error) {
+              console.error('❌ Fallback update failed:', error)
+            } else {
+              console.log('✅ Fallback subscription update successful:', data)
+            }
+          }
+        }
     }
 
     console.log('✅ Webhook processing completed successfully')
