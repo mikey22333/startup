@@ -1,7 +1,8 @@
 import { initializePaddle, Paddle } from '@paddle/paddle-js'
 
 // Paddle configuration
-const paddleEnvironment = process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
+// Use environment variable to control Paddle mode, default to sandbox for testing
+const paddleEnvironment = process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT || 'sandbox'
 const paddleClientToken = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
 
 // Paddle instance
