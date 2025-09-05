@@ -234,8 +234,9 @@ export async function POST(request: NextRequest) {
             console.warn('⚠️ No user found for customer ID:', customerId)
           }
         }
-        break;
-        
+        } // Close the if (customerId && items.length > 0) block
+        break
+
       case 'subscription.created':
       case 'subscription.activated':
         console.log('📝 Processing subscription creation/activation...')
