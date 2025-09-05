@@ -326,7 +326,7 @@ export default function LandingPage() {
               </div>
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-semibold mb-2">Pro</h3>
-                <div className="text-4xl font-bold mb-2">$19<span className="text-lg font-normal">/month</span></div>
+                <div className="text-4xl font-bold mb-2">$12.99<span className="text-lg font-normal">/month</span></div>
                 <p className="text-gray-600">For entrepreneurs & startups</p>
               </div>
               <ul className="space-y-4 mb-8">
@@ -363,7 +363,7 @@ export default function LandingPage() {
             <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-semibold text-gray-900 mb-2">Pro+</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-2">$39<span className="text-lg font-normal">/month</span></div>
+                <div className="text-4xl font-bold text-gray-900 mb-2">$29.99<span className="text-lg font-normal">/month</span></div>
                 <p className="text-gray-600">For agencies & consultants</p>
               </div>
               <ul className="space-y-4 mb-8">

@@ -46,9 +46,9 @@ NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_51ABC...
 ### 3. Create Products & Prices
 In Stripe Dashboard -> **Products**:
 
-**Pro Monthly** ($19/month)
+**Pro Monthly** ($12.99/month)
 - Create product: "PlanSpark Pro Monthly"
-- Set price: $19.00 USD, recurring monthly
+- Set price: $12.99 USD, recurring monthly
 - Copy the price ID: `price_1ABC...`
 
 **Pro Plus Monthly** ($49/month)
@@ -57,7 +57,7 @@ In Stripe Dashboard -> **Products**:
 - Copy the price ID: `price_1DEF...`
 
 **Yearly Plans** (20% discount)
-- Pro Yearly: $182.40 ($19 × 12 × 0.8)
+- Pro Yearly: $129.90 ($12.99 × 10 months = 2 months free)
 - Pro+ Yearly: $470.40 ($49 × 12 × 0.8)
 
 ### 4. Create Webhook Endpoint

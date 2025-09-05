@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import { useSubscription } from '@/hooks/useSubscription'
+import { openPaddleCheckout, PADDLE_PRICE_IDS } from '@/lib/paddle'
 
 // Lazy load the Beams component for better performance
 const Beams = lazy(() => import("@/components/Beams"))
@@ -34,7 +35,7 @@ const PRICING_PLANS = [
   {
     name: "Pro",
     subtitle: "For entrepreneurs & startups.",
-    price: "$19",
+    price: "$12.99",
     period: "per month",
     features: [
       "Everything in Basic",
@@ -49,7 +50,7 @@ const PRICING_PLANS = [
   {
     name: "Pro+",
     subtitle: "For agencies & consultants.",
-    price: "$39",
+    price: "$29.99",
     period: "per month",
     features: [
       "Unlimited business plans",
@@ -215,16 +216,16 @@ export default function PricingPage() {
 
       // If selecting free plan, handle differently
       if (newTier === 'free') {
-        // Redirect to customer portal for downgrades
-        const response = await fetch('/api/stripe/customer-portal', {
+        // For Paddle, direct customers to support for downgrades
+        const response = await fetch('/api/paddle/customer-portal', {
           method: 'POST',
         })
         
         if (response.ok) {
-          const { url } = await response.json()
-          window.location.href = url
-        } else {
           alert('You are already on the free plan!')
+        } else {
+          const { error, supportEmail } = await response.json()
+          alert(error || 'To cancel your subscription, please contact support.')
         }
         return
       }
@@ -235,14 +236,14 @@ export default function PricingPage() {
         return
       }
 
-      // Map plan names to Stripe price IDs
+      // Map plan names to Paddle price IDs
       const priceMapping: { [key: string]: string } = {
         'Pro': isAnnual 
-          ? process.env.NEXT_PUBLIC_STRIPE_PRO_YEARLY_PRICE_ID || 'price_yearly_pro'
-          : process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID || 'price_1234567890',
+          ? PADDLE_PRICE_IDS.PRO_YEARLY
+          : PADDLE_PRICE_IDS.PRO_MONTHLY,
         'Pro+': isAnnual 
-          ? process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_YEARLY_PRICE_ID || 'price_yearly_pro_plus'
-          : process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_MONTHLY_PRICE_ID || 'price_0987654321'
+          ? PADDLE_PRICE_IDS.PRO_PLUS_YEARLY
+          : PADDLE_PRICE_IDS.PRO_PLUS_MONTHLY
       }
 
       const priceId = priceMapping[planName]
@@ -251,8 +252,8 @@ export default function PricingPage() {
         return
       }
 
-      // Create Stripe checkout session
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      // Get checkout data from our API
+      const response = await fetch('/api/paddle/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -265,13 +266,18 @@ export default function PricingPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to create checkout session')
+        throw new Error(error.error || 'Failed to prepare checkout')
       }
 
-      const { url } = await response.json()
+      const checkoutData = await response.json()
       
-      // Redirect to Stripe Checkout
-      window.location.href = url
+      // Open Paddle checkout
+      await openPaddleCheckout({
+        priceId: checkoutData.priceId,
+        customerId: checkoutData.customerId,
+        billingPeriod: checkoutData.billingPeriod,
+        userEmail: user?.email || null
+      })
       
     } catch (err) {
       console.error('Upgrade failed:', err)
