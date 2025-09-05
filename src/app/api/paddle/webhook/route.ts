@@ -204,7 +204,6 @@ export async function POST(request: NextRequest) {
                 subscription_tier: subscriptionTier,
                 subscription_status: 'active',
                 subscription_id: transaction.subscription_id,
-                paddle_transaction_id: transaction.id,
                 updated_at: new Date().toISOString()
               })
               .eq('id', customerData.id)
