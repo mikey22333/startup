@@ -131,66 +131,21 @@ export async function POST(request: NextRequest) {
           if (!customerData) {
             console.log('🔍 No user found by customer_id, searching for the paying user...')
             
-            // First, specifically look for the user who initiated the payment
-            // This email was used in the checkout process
-            const { data: specificUser } = await supabase
+            // Find the most recent user who doesn't have a paddle_customer_id
+            // This indicates they just made a payment and need to be linked
+            const { data: recentUser } = await supabase
               .from('profiles')
               .select('*')
-              .eq('email', 'riyassajeed233@gmail.com')
+              .is('paddle_customer_id', null)
+              .order('updated_at', { ascending: false })
+              .limit(1)
               .single()
               
-            if (specificUser) {
-              console.log('✅ Found the specific paying user:', specificUser.email)
-              customerData = specificUser
+            if (recentUser) {
+              console.log('✅ Found recent user for payment:', recentUser.email)
+              customerData = recentUser
             } else {
-              console.log('🔍 Specific user not found, looking for recent users...')
-              
-              // Fallback: Find user who recently logged in and doesn't have customer_id
-              // Look for users active in the last 30 minutes (extended payment window)
-              const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
-              
-              const { data: recentUsers } = await supabase
-                .from('profiles')
-                .select('*')
-                .gte('updated_at', thirtyMinutesAgo)  // Recently active (extended window)
-                .order('updated_at', { ascending: false })
-                .limit(5)
-              
-              console.log('🔍 Recent users (last 30 min):', recentUsers?.map(u => ({ 
-                email: u.email, 
-                updated_at: u.updated_at,
-                has_customer_id: u.paddle_customer_id ? true : false
-              })))
-            
-            // Prioritize the current active user (the one making the payment)
-            if (recentUsers && recentUsers.length > 0) {
-              // First check for the known payment user
-              let targetUser = recentUsers.find(u => u.email === 'riyassajeed233@gmail.com')
-              
-              // If not found, get the most recent user
-              if (!targetUser) {
-                targetUser = recentUsers[0]
-              }
-              
-              customerData = targetUser
-              console.log('🎯 Selected user for update:', customerData.email)
-              console.log('🎯 Found recent user who just paid:', customerData.email)
-            } else {
-              console.warn('⚠️ No recent users found, using fallback...')
-              
-              // Last resort: find any user without customer_id
-              const { data: anyUser } = await supabase
-                .from('profiles')
-                .select('*')
-                .is('paddle_customer_id', null)
-                .order('updated_at', { ascending: false })
-                .limit(1)
-                .single()
-              
-              customerData = anyUser
-              if (customerData) {
-                console.log('🔄 Using fallback user:', customerData.email)
-              }
+              console.warn('⚠️ No user without customer_id found')
             }
           }
           
@@ -242,7 +197,6 @@ export async function POST(request: NextRequest) {
             console.warn('⚠️ No user found for customer ID:', customerId)
           }
         }
-        } // Close the if (customerId && items.length > 0) block
         break
 
       case 'subscription.created':
