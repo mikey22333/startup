@@ -1528,38 +1528,39 @@ function calculateRealisticSuccessRate(
   marketData: any = null,
   businessIdea: string = ''
 ): string {
-  let baseRate = 0
-  
-  // Base success rates by platform type (from real industry data)
-  switch (platformType.toLowerCase()) {
-    case 'crowdfunding':
-      baseRate = 0.37 // Average crowdfunding success rate
-      break
-    case 'equity crowdfunding':
-      baseRate = 0.16 // Equity crowdfunding average
-      break
-    case 'angel/vc platform':
-      baseRate = 0.08 // VC funding success rate
-      break
-    case 'accelerator':
-      baseRate = 0.02 // Accelerator acceptance rate
-      break
-    case 'government loans':
-      baseRate = 0.65 // SBA loan approval rate
-      break
-    case 'government/eu funding':
-      baseRate = 0.32 // EU funding approval rate
-      break
-    case 'corporate vc':
-      baseRate = 0.04 // Corporate VC funding rate
-      break
-    default:
-      baseRate = 0.25 // General platform average
-  }
-  
-  // Adjust based on business type (some industries have higher success)
-  const lowerBusinessType = businessType.toLowerCase()
-  const lowerIdea = businessIdea.toLowerCase()
+  try {
+    let baseRate = 0
+    
+    // Base success rates by platform type (from real industry data)
+    switch (platformType.toLowerCase()) {
+      case 'crowdfunding':
+        baseRate = 0.37 // Average crowdfunding success rate
+        break
+      case 'equity crowdfunding':
+        baseRate = 0.16 // Equity crowdfunding average
+        break
+      case 'angel/vc platform':
+        baseRate = 0.08 // VC funding success rate
+        break
+      case 'accelerator':
+        baseRate = 0.02 // Accelerator acceptance rate
+        break
+      case 'government loans':
+        baseRate = 0.65 // SBA loan approval rate
+        break
+      case 'government/eu funding':
+        baseRate = 0.32 // EU funding approval rate
+        break
+      case 'corporate vc':
+        baseRate = 0.04 // Corporate VC funding rate
+        break
+      default:
+        baseRate = 0.25 // General platform average
+    }
+    
+    // Adjust based on business type (some industries have higher success)
+    const lowerBusinessType = (businessType || '').toLowerCase()
+    const lowerIdea = (businessIdea || '').toLowerCase()
   
   if (lowerBusinessType.includes('technology') || lowerBusinessType.includes('software') || lowerIdea.includes('app')) {
     baseRate *= 1.2 // Tech businesses have 20% higher success
@@ -1621,6 +1622,22 @@ function calculateRealisticSuccessRate(
     return `${percentage}% funding rate`
   } else {
     return `${percentage}% success rate`
+  }
+  
+  } catch (error) {
+    console.error('Error calculating success rate:', error)
+    // Return a safe default based on platform type
+    if (platformType.toLowerCase().includes('crowdfunding')) {
+      return '37% success rate'
+    } else if (platformType.toLowerCase().includes('loan')) {
+      return '65% approval rate'
+    } else if (platformType.toLowerCase().includes('accelerator')) {
+      return '2% acceptance rate'
+    } else if (platformType.toLowerCase().includes('vc') || platformType.toLowerCase().includes('angel')) {
+      return '8% funding rate'
+    } else {
+      return '25% success rate'
+    }
   }
 }
 
@@ -1730,31 +1747,36 @@ function calculateRecommendationScore(
 function getFundingPlatforms(businessType: string, location: string, budgetRange: string, businessIdea: string = '', marketData: any = null): any[] {
   // Parse budget string properly handling 'k', 'lakh', 'crore', ranges, etc.
   let budgetNum = 0
-  if (budgetRange) {
-    const budgetLower = budgetRange.toLowerCase()
-    if (budgetLower.includes('k')) {
-      // Handle 'k' suffix - in Indian context, this often means lakhs for business budgets
-      const numStr = budgetLower.replace(/[^0-9.-]/g, '').split('-')[0] // Take first number from range
-      const baseNum = parseFloat(numStr)
-      
-      // For large business budgets in Indian context, interpret 'k' as lakhs if reasonable
-      if (baseNum >= 25 && (location.toLowerCase().includes('india') || location.toLowerCase().includes('delhi'))) {
-        budgetNum = baseNum * 100000 // Treat as lakhs (₹50k = ₹50 lakhs)
+  try {
+    if (budgetRange) {
+      const budgetLower = budgetRange.toLowerCase()
+      if (budgetLower.includes('k')) {
+        // Handle 'k' suffix - in Indian context, this often means lakhs for business budgets
+        const numStr = budgetLower.replace(/[^0-9.-]/g, '').split('-')[0] // Take first number from range
+        const baseNum = parseFloat(numStr)
+        
+        // For large business budgets in Indian context, interpret 'k' as lakhs if reasonable
+        if (baseNum >= 25 && (location.toLowerCase().includes('india') || location.toLowerCase().includes('delhi'))) {
+          budgetNum = baseNum * 100000 // Treat as lakhs (₹50k = ₹50 lakhs)
+        } else {
+          budgetNum = baseNum * 1000 // Treat as thousands
+        }
+      } else if (budgetLower.includes('lakh')) {
+        // Handle 'lakh' suffix
+        const numStr = budgetLower.replace(/[^0-9.-]/g, '').split('-')[0] 
+        budgetNum = parseFloat(numStr) * 100000
+      } else if (budgetLower.includes('crore')) {
+        // Handle 'crore' suffix
+        const numStr = budgetLower.replace(/[^0-9.-]/g, '').split('-')[0]
+        budgetNum = parseFloat(numStr) * 10000000
       } else {
-        budgetNum = baseNum * 1000 // Treat as thousands
+        // Default parsing
+        budgetNum = parseInt(budgetRange.replace(/[^0-9]/g, ''))
       }
-    } else if (budgetLower.includes('lakh')) {
-      // Handle 'lakh' suffix
-      const numStr = budgetLower.replace(/[^0-9.-]/g, '').split('-')[0] 
-      budgetNum = parseFloat(numStr) * 100000
-    } else if (budgetLower.includes('crore')) {
-      // Handle 'crore' suffix
-      const numStr = budgetLower.replace(/[^0-9.-]/g, '').split('-')[0]
-      budgetNum = parseFloat(numStr) * 10000000
-    } else {
-      // Default parsing
-      budgetNum = parseInt(budgetRange.replace(/[^0-9]/g, ''))
     }
+  } catch (error) {
+    console.error('Error parsing budget in getFundingPlatforms:', error)
+    budgetNum = 0
   }
   
   // Use realistic default if parsing failed
@@ -1768,8 +1790,9 @@ function getFundingPlatforms(businessType: string, location: string, budgetRange
   
   console.log('getFundingPlatforms: budget analysis - budgetNum:', budgetNum, 'businessType:', businessType, 'location:', location)
   
-  // Add based on funding amount needed
-  if (budgetNum <= 25000) {
+  // Wrap platform additions in try-catch to prevent failures
+  try {
+    // Always add core crowdfunding platforms (regardless of budget)
     platforms.push({
       name: "Kickstarter",
       type: "Crowdfunding",
@@ -1793,9 +1816,8 @@ function getFundingPlatforms(businessType: string, location: string, budgetRange
       fees: "5% platform fee + 3% payment processing",
       link: "https://www.indiegogo.com"
     })
-  }
-  
-  if (budgetNum >= 10000 && budgetNum <= 250000) {
+
+    // Always add equity crowdfunding platforms
     platforms.push({
       name: "SeedInvest",
       type: "Equity Crowdfunding",
@@ -1819,9 +1841,8 @@ function getFundingPlatforms(businessType: string, location: string, budgetRange
       fees: "6% success fee + 2% payment processing",
       link: "https://republic.co"
     })
-  }
-  
-  if (budgetNum >= 25000) {
+
+    // Always add angel/VC platforms
     platforms.push({
       name: "AngelList",
       type: "Angel/VC Platform",
@@ -1833,7 +1854,47 @@ function getFundingPlatforms(businessType: string, location: string, budgetRange
       fees: "Free to apply, carry agreements vary",
       link: "https://angel.co"
     })
+  } catch (error) {
+    console.error('Error adding core platforms:', error)
   }
+  
+  // SeedInvest and Republic - Always show equity crowdfunding platforms
+  platforms.push({
+    name: "SeedInvest",
+    type: "Equity Crowdfunding",
+    description: "SEC-qualified equity crowdfunding for accredited and non-accredited investors",
+    requirements: "SEC filing, business plan, financial projections",
+    averageAmount: "$10,000 - $5,000,000",
+    timeline: "3-6 months process",
+    successRate: calculateRealisticSuccessRate("Equity Crowdfunding", businessType, budgetNum, marketData, businessIdea),
+    fees: "6-8% success fee + legal costs",
+    link: "https://www.seedinvest.com"
+  })
+  
+  platforms.push({
+    name: "Republic",
+    type: "Equity Crowdfunding",
+    description: "Investment platform for startups accessible to all investor types",
+    requirements: "Pitch deck, financial model, legal documentation",
+    averageAmount: "$50,000 - $5,000,000",
+    timeline: "2-4 months campaign",
+    successRate: calculateRealisticSuccessRate("Equity Crowdfunding", businessType, budgetNum, marketData, businessIdea),
+    fees: "6% success fee + 2% payment processing",
+    link: "https://republic.co"
+  })
+  
+  // AngelList - Always show angel/VC platform
+  platforms.push({
+    name: "AngelList",
+    type: "Angel/VC Platform",
+    description: "Connect with angel investors and venture capital firms",
+    requirements: "Strong team, scalable business model, traction metrics",
+    averageAmount: "$25,000 - $25,000,000",
+    timeline: "3-12 months",
+    successRate: calculateRealisticSuccessRate("Angel/VC Platform", businessType, budgetNum, marketData, businessIdea),
+    fees: "Free to apply, carry agreements vary",
+    link: "https://angel.co"
+  })
   
   // Industry-specific platforms
   if (businessType?.toLowerCase().includes('tech') || businessType?.toLowerCase().includes('software')) {
@@ -1920,6 +1981,63 @@ function getFundingPlatforms(businessType: string, location: string, budgetRange
   })
   
   console.log('getFundingPlatforms: returning', platforms.length, 'platforms for budget', budgetNum)
+  
+  // Fallback: Always ensure at least some default platforms are returned
+  if (platforms.length === 0) {
+    console.warn('No platforms found, adding default fallback platforms')
+    try {
+      platforms.push({
+        name: "Kickstarter",
+        type: "Crowdfunding",
+        description: "Creative projects and innovative products with rewards-based funding",
+        requirements: "Creative project, compelling campaign, prototype or concept",
+        averageAmount: "$1,000 - $100,000",
+        timeline: "30-60 day campaign",
+        successRate: "37%",
+        fees: "5% platform fee + 3-5% payment processing",
+        link: "https://www.kickstarter.com"
+      })
+      
+      platforms.push({
+        name: "AngelList",
+        type: "Angel/VC Platform",
+        description: "Connect with angel investors and venture capital firms",
+        requirements: "Strong team, scalable business model, traction metrics",
+        averageAmount: "$25,000 - $25,000,000",
+        timeline: "3-12 months",
+        successRate: "8%",
+        fees: "Free to apply, carry agreements vary",
+        link: "https://angel.co"
+      })
+      
+      platforms.push({
+        name: "Small Business Administration (SBA)",
+        type: "Government Loans",
+        description: "US government-backed loans for small businesses",
+        requirements: "US business, good credit, business plan, collateral",
+        averageAmount: "$13,000 - $5,000,000",
+        timeline: "30-90 days",
+        successRate: "65%",
+        fees: "2-3.5% guarantee fee + lender fees",
+        link: "https://www.sba.gov"
+      })
+    } catch (error) {
+      console.error('Error adding fallback platforms:', error)
+      // Return minimal platform if all else fails
+      return [{
+        name: "General Funding Platform",
+        type: "Mixed",
+        description: "Various funding options available",
+        requirements: "Business plan and documentation",
+        averageAmount: "$1,000 - $1,000,000",
+        timeline: "1-12 months",
+        successRate: "25%",
+        fees: "Varies by platform",
+        link: "#"
+      }]
+    }
+  }
+  
   return platforms.slice(0, 6) // Return top 6 most relevant platforms
 }
 
