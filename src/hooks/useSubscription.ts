@@ -48,10 +48,11 @@ export function useSubscription() {
 
       let userProfile = profile
 
-      // If no profile exists, create one with proper defaults
+      // If no profile exists, create one with proper defaults (always use current date)
       if (!userProfile) {
-        console.log('📝 Creating new user profile')
+        console.log('📝 Creating new user profile with current date')
         const today = new Date().toISOString().split('T')[0]
+        const now = new Date().toISOString()
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
@@ -61,11 +62,11 @@ export function useSubscription() {
             subscription_tier: 'free',
             subscription_status: 'active',
             daily_plans_used: 0,
-            daily_plans_reset_date: today,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            subscription_started_at: new Date().toISOString(),
-            subscription_tier_changed_at: new Date().toISOString()
+            daily_plans_reset_date: today, // Always use current date, not user creation date
+            created_at: now,
+            updated_at: now,
+            subscription_started_at: now,
+            subscription_tier_changed_at: now
           })
           .select()
           .single()
@@ -76,7 +77,10 @@ export function useSubscription() {
         }
 
         userProfile = newProfile
-        console.log('✅ New profile created with proper defaults:', newProfile)
+        console.log('✅ New profile created with current date:', { 
+          email: newProfile.email, 
+          reset_date: newProfile.daily_plans_reset_date 
+        })
       }
 
       console.log('✅ Profile fetched:', userProfile)

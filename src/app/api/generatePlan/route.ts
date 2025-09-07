@@ -7522,9 +7522,10 @@ export async function POST(request: NextRequest) {
           
           console.log(`User ${user.email} (${userProfile.subscription_tier}) usage: ${userProfile.daily_plans_used}/${dailyLimit === Number.MAX_SAFE_INTEGER ? '∞' : dailyLimit}`)
         } else {
-          // User exists but no profile - create a default free profile
-          console.log('User found but no profile, creating default profile...')
+          // User exists but no profile - create a default free profile with current date
+          console.log('User found but no profile, creating default profile with current date...')
           const today = new Date().toISOString().split('T')[0]
+          const now = new Date().toISOString()
           
           const { data: newProfile, error: createError } = await authenticatedClient
             .from('profiles')
@@ -7534,11 +7535,11 @@ export async function POST(request: NextRequest) {
               subscription_tier: 'free',
               subscription_status: 'active',
               daily_plans_used: 0,
-              daily_plans_reset_date: today,
-              subscription_started_at: new Date().toISOString(),
-              subscription_tier_changed_at: new Date().toISOString(),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              daily_plans_reset_date: today, // Always use current date for new profiles
+              subscription_started_at: now,
+              subscription_tier_changed_at: now,
+              created_at: now,
+              updated_at: now
             })
             .select()
             .single()
