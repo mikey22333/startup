@@ -9,34 +9,8 @@ import PageTransition from '@/components/PageTransition'
 const Beams = lazy(() => import("@/components/Beams"))
 
 export default memo(function ContactPage() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [subject, setSubject] = useState('')
-  const [message, setMessage] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouter()
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    
-    // Simulate form submission (no actual backend implementation)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    setIsSubmitted(true)
-    setIsSubmitting(false)
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false)
-      setName('')
-      setEmail('')
-      setSubject('')
-      setMessage('')
-    }, 3000)
-  }
 
   // Memoized beams props
   const beamsProps = {
@@ -161,100 +135,34 @@ export default memo(function ContactPage() {
           </p>
         </div>
 
-        {/* Contact Form */}
-        <div className="bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 p-8 shadow-2xl">
-          {isSubmitted ? (
-            <div className="text-center py-8">
-              <div className="mb-4">
-                <svg className="w-16 h-16 text-green-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-semibold text-white mb-2">Message Sent!</h3>
-              <p className="text-white/70">Thank you for reaching out. We'll get back to you soon.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all backdrop-blur-sm"
-                  placeholder="Your name"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all backdrop-blur-sm"
-                  placeholder="your.email@example.com"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-white mb-2">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  required
-                  rows={6}
-                  className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all backdrop-blur-sm resize-none"
-                  placeholder="Tell us about your question or feedback..."
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting || !name.trim() || !email.trim() || !message.trim()}
-                className="w-full bg-white/20 backdrop-blur-sm hover:bg-white/30 disabled:bg-white/10 text-white font-medium py-4 px-8 rounded-xl text-lg transition-all border border-white/30 shadow-lg disabled:cursor-not-allowed"
+        {/* Contact Information */}
+        <div className="bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 p-12 shadow-2xl text-center">
+          <div className="mb-8">
+            <svg className="w-20 h-20 text-white/80 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <h3 className="text-3xl font-bold text-white mb-4">Contact Us</h3>
+            <p className="text-white/70 text-lg mb-8">
+              Have questions or feedback? We'd love to hear from you.
+            </p>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <h4 className="text-white font-semibold text-lg mb-3">Email Us</h4>
+              <a 
+                href="mailto:info@planspark.app"
+                className="text-2xl font-mono text-white hover:text-white/80 transition-colors duration-300 underline decoration-white/50 hover:decoration-white/80"
               >
-                {isSubmitting ? (
-                  <div className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Sending...
-                  </div>
-                ) : (
-                  'Send Message'
-                )}
-              </button>
-            </form>
-          )}
-        </div>
-
-        {/* Alternative Contact Info */}
-        <div className="text-center mt-12">
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-white/70">
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <span className="text-sm">info@planspark.app</span>
+                info@planspark.app
+              </a>
             </div>
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm">Response within 24 hours</span>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <h4 className="text-white font-semibold text-lg mb-3">Response Time</h4>
+              <p className="text-white/80 text-lg">
+                We typically respond within 24 hours
+              </p>
             </div>
           </div>
         </div>
