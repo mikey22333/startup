@@ -7444,9 +7444,9 @@ export async function POST(request: NextRequest) {
         if (profile && !profileError) {
           userProfile = profile
           
-          // Check if daily usage needs reset (daily reset)
+          // Check if daily usage needs reset (daily reset) - handle null/undefined dates
           const today = new Date().toISOString().split('T')[0]
-          let shouldResetUsage = profile.daily_plans_reset_date !== today
+          let shouldResetUsage = !profile.daily_plans_reset_date || profile.daily_plans_reset_date !== today
           let resetReason = shouldResetUsage ? 'daily reset' : null
           
           // Check for tier changes using the new subscription_tier_changed_at field (if available)
@@ -7480,19 +7480,23 @@ export async function POST(request: NextRequest) {
           }
           
           if (shouldResetUsage) {
-            // Reset daily usage
+            // Reset daily usage with better error handling
             const { error: resetError } = await authenticatedClient
               .from('profiles')
               .update({
                 daily_plans_used: 0,
-                daily_plans_reset_date: today
+                daily_plans_reset_date: today,
+                updated_at: new Date().toISOString()
               })
               .eq('id', user.id)
             
             if (!resetError) {
               userProfile.daily_plans_used = 0
               userProfile.daily_plans_reset_date = today
-              console.log(`Reset usage for user ${user.email} (tier: ${profile.subscription_tier}, reason: ${resetReason})`)
+              console.log(`✅ Reset usage for user ${user.email} (tier: ${profile.subscription_tier}, reason: ${resetReason})`)
+            } else {
+              console.error('❌ Failed to reset daily usage:', resetError)
+              // Continue execution but log the error
             }
           }
           
@@ -7532,7 +7536,9 @@ export async function POST(request: NextRequest) {
               daily_plans_used: 0,
               daily_plans_reset_date: today,
               subscription_started_at: new Date().toISOString(),
-              subscription_tier_changed_at: new Date().toISOString()
+              subscription_tier_changed_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             })
             .select()
             .single()

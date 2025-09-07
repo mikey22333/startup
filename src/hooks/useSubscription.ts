@@ -48,9 +48,10 @@ export function useSubscription() {
 
       let userProfile = profile
 
-      // If no profile exists, create one
+      // If no profile exists, create one with proper defaults
       if (!userProfile) {
         console.log('📝 Creating new user profile')
+        const today = new Date().toISOString().split('T')[0]
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
@@ -60,7 +61,11 @@ export function useSubscription() {
             subscription_tier: 'free',
             subscription_status: 'active',
             daily_plans_used: 0,
-            daily_plans_reset_date: new Date().toISOString().split('T')[0]
+            daily_plans_reset_date: today,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            subscription_started_at: new Date().toISOString(),
+            subscription_tier_changed_at: new Date().toISOString()
           })
           .select()
           .single()
@@ -71,28 +76,60 @@ export function useSubscription() {
         }
 
         userProfile = newProfile
-        console.log('✅ New profile created:', newProfile)
+        console.log('✅ New profile created with proper defaults:', newProfile)
       }
 
       console.log('✅ Profile fetched:', userProfile)
 
-      // Check if daily usage needs reset
+      // Check if daily usage needs reset (consistent with server-side logic)
       const today = new Date().toISOString().split('T')[0]
       let currentUsage = userProfile.daily_plans_used || 0
+      let shouldResetUsage = false
+      let resetReason = null
       
-      if (userProfile.daily_plans_reset_date !== today) {
-        // Reset daily usage
+      // Primary reset condition: different date
+      if (!userProfile.daily_plans_reset_date || userProfile.daily_plans_reset_date !== today) {
+        shouldResetUsage = true
+        resetReason = 'daily reset'
+      }
+      
+      // Additional reset conditions for tier changes (consistent with API)
+      if (!shouldResetUsage && userProfile.subscription_tier_changed_at) {
+        const tierChangeDate = new Date(userProfile.subscription_tier_changed_at).toISOString().split('T')[0]
+        if (tierChangeDate === today && userProfile.daily_plans_reset_date !== today) {
+          shouldResetUsage = true
+          resetReason = 'tier changed today'
+        }
+      }
+      
+      // Detect tier downgrades (consistent with API)
+      if (!shouldResetUsage && userProfile.daily_plans_reset_date === today) {
+        const tier = userProfile.subscription_tier || 'free'
+        if (tier === 'free' && currentUsage > 1) {
+          shouldResetUsage = true
+          resetReason = 'downgrade to free tier detected'
+        } else if (tier === 'pro' && currentUsage > 5) {
+          shouldResetUsage = true
+          resetReason = 'downgrade to pro tier detected'
+        }
+      }
+      
+      if (shouldResetUsage) {
+        console.log(`🔄 Resetting daily usage: ${resetReason}`)
         const { error: resetError } = await supabase
           .from('profiles')
           .update({
             daily_plans_used: 0,
-            daily_plans_reset_date: today
+            daily_plans_reset_date: today,
+            updated_at: new Date().toISOString()
           })
           .eq('id', user.id)
         
         if (!resetError) {
           currentUsage = 0
-          console.log('✅ Daily usage reset for new day')
+          console.log('✅ Daily usage reset:', resetReason)
+        } else {
+          console.error('❌ Failed to reset daily usage:', resetError)
         }
       }
 
