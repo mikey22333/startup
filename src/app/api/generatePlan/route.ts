@@ -7598,6 +7598,9 @@ export async function POST(request: NextRequest) {
           }
           
           if (shouldResetUsage) {
+            console.log(`🔄 About to reset daily usage for user ${user.email}: ${resetReason}`)
+            console.log(`📊 Before reset - Usage: ${profile.daily_plans_used}, Reset Date: ${profile.daily_plans_reset_date}, Today: ${today}`)
+            
             // Reset daily usage with better error handling
             const { error: resetError } = await authenticatedClient
               .from('profiles')
@@ -7612,10 +7615,13 @@ export async function POST(request: NextRequest) {
               userProfile.daily_plans_used = 0
               userProfile.daily_plans_reset_date = today
               console.log(`✅ Reset usage for user ${user.email} (tier: ${profile.subscription_tier}, reason: ${resetReason})`)
+              console.log(`📊 After reset - Usage: 0, Reset Date: ${today}`)
             } else {
               console.error('❌ Failed to reset daily usage:', resetError)
               // Continue execution but log the error
             }
+          } else {
+            console.log(`ℹ️ No reset needed for user ${user.email} - Usage: ${profile.daily_plans_used}, Reset Date: ${profile.daily_plans_reset_date}, Today: ${today}`)
           }
           
           // Check usage limits based on subscription tier
@@ -8233,17 +8239,31 @@ Currency: ${currency || 'USD'}`
     const finalUser = user; // The user from request headers
     if (finalUser && userProfile && authenticatedClient) {
       try {
+        // Get the current usage from database to ensure we have the latest value after any resets
+        const { data: currentProfile, error: fetchError } = await authenticatedClient
+          .from('profiles')
+          .select('daily_plans_used')
+          .eq('id', user.id)
+          .single()
+        
+        if (fetchError) {
+          console.error('Failed to fetch current usage for increment:', fetchError)
+          return
+        }
+        
+        const currentUsage = currentProfile?.daily_plans_used || 0
+        
         const { error: updateError } = await authenticatedClient
           .from('profiles')
           .update({
-            daily_plans_used: userProfile.daily_plans_used + 1
+            daily_plans_used: currentUsage + 1
           })
           .eq('id', user.id)
         
         if (updateError) {
           console.error('Failed to update usage counter:', updateError)
         } else {
-          console.log(`Updated usage counter for user ${finalUser.id}: ${userProfile.daily_plans_used + 1}`)
+          console.log(`Updated usage counter for user ${finalUser.id}: ${currentUsage} -> ${currentUsage + 1}`)
         }
       } catch (updateError) {
         console.error('Error updating usage counter:', updateError)
