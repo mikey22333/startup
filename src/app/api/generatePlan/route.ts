@@ -7563,9 +7563,19 @@ export async function POST(request: NextRequest) {
           userProfile = profile
           
           // Check if daily usage needs reset (daily reset) - handle null/undefined dates
-          const today = new Date().toISOString().split('T')[0]
+          // Use consistent timezone handling to avoid date mismatches
+          const now = new Date()
+          const today = now.toISOString().split('T')[0] // UTC date
+          
+          // Debug timezone issues
+          console.log(`🕐 Timezone debug - UTC date: ${today}, Local date: ${now.toLocaleDateString('en-CA')}`)
+          
           let shouldResetUsage = !profile.daily_plans_reset_date || profile.daily_plans_reset_date !== today
           let resetReason = shouldResetUsage ? 'daily reset' : null
+          
+          if (shouldResetUsage) {
+            console.log(`🔍 Reset check - Profile date: ${profile.daily_plans_reset_date}, Today: ${today}, UTC: ${new Date().toUTCString()}`)
+          }
           
           // Check for tier changes using the new subscription_tier_changed_at field (if available)
           if (!shouldResetUsage && profile.subscription_tier_changed_at) {
@@ -7616,6 +7626,20 @@ export async function POST(request: NextRequest) {
               userProfile.daily_plans_reset_date = today
               console.log(`✅ Reset usage for user ${user.email} (tier: ${profile.subscription_tier}, reason: ${resetReason})`)
               console.log(`📊 After reset - Usage: 0, Reset Date: ${today}`)
+              
+              // Verify the database update worked
+              const { data: verifyProfile } = await authenticatedClient
+                .from('profiles')
+                .select('daily_plans_used, daily_plans_reset_date')
+                .eq('id', user.id)
+                .single()
+              
+              if (verifyProfile) {
+                console.log(`🔍 DB Verification - Usage: ${verifyProfile.daily_plans_used}, Reset Date: ${verifyProfile.daily_plans_reset_date}`)
+                if (verifyProfile.daily_plans_reset_date !== today) {
+                  console.error(`❌ TIMEZONE BUG: Expected ${today}, got ${verifyProfile.daily_plans_reset_date}`)
+                }
+              }
             } else {
               console.error('❌ Failed to reset daily usage:', resetError)
               // Continue execution but log the error
