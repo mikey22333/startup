@@ -32,6 +32,9 @@ export default function RootLayout({
       <head>
         {/* Direct meta tag (explicit) - safe to keep alongside metadata.verification */}
         <meta name="google-site-verification" content="Fr9_HEnZtTppqv_yTBpPnT_F7Ph1wLmbQ_jVs_WNLTo" />
+        {/* Favicon: use the logo from the public folder */}
+        <link rel="icon" href="/Gemini_Generated_Image_q3lht8q3lht8q3lh.png" />
+        <link rel="apple-touch-icon" href="/Gemini_Generated_Image_q3lht8q3lht8q3lh.png" />
       </head>
       <body className="bg-black">
         <PostHogProvider>
