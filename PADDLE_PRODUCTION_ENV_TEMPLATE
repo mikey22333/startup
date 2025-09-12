@@ -1,0 +1,65 @@
+# Paddle Production Environment Variables Template
+# Copy these values to your .env.local and Render environment variables
+
+# =======================
+# PADDLE PRODUCTION SETUP
+# =======================
+
+# Environment: Set to 'production' for live payments
+NEXT_PUBLIC_PADDLE_ENVIRONMENT=production
+
+# Client Token: Get from Paddle Dashboard > Developer Tools > Authentication
+# Format: live_xxxxxxxxxxxx (for production)
+NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=live_your_client_token_here
+
+# =======================
+# PRODUCTION PRICE IDS
+# =======================
+# Get these from your live Paddle Dashboard > Catalog > Products
+
+# Pro Plan Pricing
+NEXT_PUBLIC_PADDLE_PRO_MONTHLY_PRICE_ID=pri_live_pro_monthly_id
+NEXT_PUBLIC_PADDLE_PRO_YEARLY_PRICE_ID=pri_live_pro_yearly_id
+
+# Pro+ Plan Pricing  
+NEXT_PUBLIC_PADDLE_PRO_PLUS_MONTHLY_PRICE_ID=pri_live_pro_plus_monthly_id
+NEXT_PUBLIC_PADDLE_PRO_PLUS_YEARLY_PRICE_ID=pri_live_pro_plus_yearly_id
+
+# =======================
+# WEBHOOK CONFIGURATION
+# =======================
+
+# Webhook Secret: Get from Paddle Dashboard > Developer Tools > Notifications
+PADDLE_WEBHOOK_SECRET=your_live_webhook_secret
+
+# =======================
+# INSTRUCTIONS
+# =======================
+
+# 1. Create products in your live Paddle dashboard:
+#    - Pro Monthly ($12.99/month)
+#    - Pro Yearly ($99/year) 
+#    - Pro+ Monthly ($29.99/month)
+#    - Pro+ Yearly ($299/year)
+
+# 2. Generate live client-side token in Paddle dashboard
+
+# 3. Create webhook destination pointing to:
+#    https://your-domain.com/api/paddle/webhook
+
+# 4. Subscribe to these events:
+#    - subscription.created
+#    - subscription.updated  
+#    - subscription.cancelled
+#    - transaction.completed
+#    - transaction.updated
+
+# 5. Update these environment variables in Render dashboard
+
+# =======================
+# TESTING
+# =======================
+
+# Test with real payment methods in production
+# Monitor webhook delivery in Paddle dashboard
+# Verify subscription lifecycle works correctly

@@ -180,9 +180,7 @@ const PricingCard = memo(({
     >
       {isCurrentPlan 
         ? 'Current Plan' 
-        : plan.name === 'Basic' 
-          ? plan.buttonText
-          : 'Coming Soon'
+        : plan.buttonText
       }
     </button>
 
@@ -250,12 +248,7 @@ export default function PricingPage() {
       return
     }
 
-    // Temporary message while Paddle account is under review
-    alert('🚀 Payment upgrades are coming soon! Our payment processor is currently under review. Please check back in a few days for full upgrade functionality.')
-    return
-
-    // TODO: Re-enable when Paddle account is approved
-    /*
+    // Production Paddle checkout enabled
     try {
       let tierMap: { [key: string]: 'free' | 'pro' | 'pro+' } = {
         'Basic': 'free',
@@ -335,7 +328,6 @@ export default function PricingPage() {
       console.error('Upgrade failed:', err)
       alert(err instanceof Error ? err.message : 'Upgrade failed')
     }
-    */
   }, [user, router, usageStatus, isAnnual])
 
   // Memoized Beams props
@@ -387,23 +379,6 @@ export default function PricingPage() {
           
           {/* Header */}
           <div className="text-center mb-16">
-            {/* Temporary Notice Banner */}
-            <div className="mb-8 p-4 bg-yellow-500/20 backdrop-blur-sm border border-yellow-500/30 rounded-2xl max-w-4xl mx-auto">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                <span className="text-yellow-300 text-sm font-medium tracking-wider uppercase">
-                  Coming Soon
-                </span>
-                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-              </div>
-              <p className="text-yellow-100 text-lg font-medium mb-1">
-                🚀 Payment Upgrades Are Almost Ready!
-              </p>
-              <p className="text-yellow-200/80 text-sm">
-                Our payment system is currently under review for security approval. 
-                Upgrade functionality will be available soon. Thanks for your patience!
-              </p>
-            </div>
 
             <div className="inline-flex items-center space-x-3 mb-6 md:mb-8">
               <div className="w-2 h-2 bg-white/80 rounded-full shadow-lg" />

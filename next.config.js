@@ -51,12 +51,12 @@ const nextConfig = {
           {
             key: 'Content-Security-Policy',
             value: [
-              "default-src 'self' https://*.paddle.com https://sandbox-buy.paddle.com https://sandbox-cdn.paddle.com https://us.i.posthog.com https://app.posthog.com https://us-assets.i.posthog.com https://*.supabase.co",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.paddle.com https://sandbox-cdn.paddle.com https://cdn.paddle.com https://us.i.posthog.com https://us-assets.i.posthog.com",
-              "style-src 'self' 'unsafe-inline' https://*.paddle.com https://sandbox-cdn.paddle.com",
-              "style-src-elem 'self' 'unsafe-inline' https://*.paddle.com https://sandbox-cdn.paddle.com",
-              "connect-src 'self' https://*.paddle.com https://sandbox-checkout-service.paddle.com https://us.i.posthog.com https://app.posthog.com https://us-assets.i.posthog.com https://*.supabase.co",
-              "frame-src 'self' https://sandbox-buy.paddle.com https://buy.paddle.com https://*.paddle.com",
+              "default-src 'self' https://*.paddle.com https://buy.paddle.com https://cdn.paddle.com https://sandbox-buy.paddle.com https://sandbox-cdn.paddle.com https://us.i.posthog.com https://app.posthog.com https://us-assets.i.posthog.com https://*.supabase.co",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.paddle.com https://cdn.paddle.com https://sandbox-cdn.paddle.com https://us.i.posthog.com https://us-assets.i.posthog.com",
+              "style-src 'self' 'unsafe-inline' https://*.paddle.com https://cdn.paddle.com https://sandbox-cdn.paddle.com",
+              "style-src-elem 'self' 'unsafe-inline' https://*.paddle.com https://cdn.paddle.com https://sandbox-cdn.paddle.com",
+              "connect-src 'self' https://*.paddle.com https://checkout-service.paddle.com https://sandbox-checkout-service.paddle.com https://us.i.posthog.com https://app.posthog.com https://us-assets.i.posthog.com https://*.supabase.co",
+              "frame-src 'self' https://buy.paddle.com https://sandbox-buy.paddle.com https://*.paddle.com",
               "frame-ancestors 'self' http://localhost:* https://*.paddle.com",
               "img-src 'self' data: https://*.paddle.com"
             ].join('; ')

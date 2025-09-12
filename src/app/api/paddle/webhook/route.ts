@@ -154,18 +154,22 @@ export async function POST(request: NextRequest) {
             const priceId = items[0]?.price?.id
             let subscriptionTier = 'pro'
             
-            // Map price IDs to subscription tiers
+            // Map price IDs to subscription tiers using environment variables
             const priceIdToTier: { [key: string]: string } = {
-              'pri_01k4afv37xb0qtqgf1x0bnmwf7': 'pro',    // Pro Monthly
-              'pri_01k4arbvr91qy4gj4tk0pnw515': 'pro',    // Pro Yearly
-              'pri_01k4ar4ppv145d5mxq627zwnss': 'pro+',   // Pro+ Monthly
-              'pri_01k4arhcs2wsvr1f0rfhb8z550': 'pro+'    // Pro+ Yearly
+              [process.env.NEXT_PUBLIC_PADDLE_PRO_MONTHLY_PRICE_ID || '']: 'pro',
+              [process.env.NEXT_PUBLIC_PADDLE_PRO_YEARLY_PRICE_ID || '']: 'pro',
+              [process.env.NEXT_PUBLIC_PADDLE_PRO_PLUS_MONTHLY_PRICE_ID || '']: 'pro+',
+              [process.env.NEXT_PUBLIC_PADDLE_PRO_PLUS_YEARLY_PRICE_ID || '']: 'pro+'
             }
             
             subscriptionTier = priceIdToTier[priceId] || 'pro'
             
             // Calculate subscription expiration date based on billing period
-            const isYearly = priceId === 'pri_01k4arbvr91qy4gj4tk0pnw515' || priceId === 'pri_01k4arhcs2wsvr1f0rfhb8z550'
+            const yearlyPriceIds = [
+              process.env.NEXT_PUBLIC_PADDLE_PRO_YEARLY_PRICE_ID,
+              process.env.NEXT_PUBLIC_PADDLE_PRO_PLUS_YEARLY_PRICE_ID
+            ]
+            const isYearly = yearlyPriceIds.includes(priceId)
             const expirationDate = new Date()
             if (isYearly) {
               expirationDate.setFullYear(expirationDate.getFullYear() + 1)
@@ -232,16 +236,20 @@ export async function POST(request: NextRequest) {
           let subscriptionTierSub = 'pro'
           
           const priceIdToTierSub: { [key: string]: string } = {
-            'pri_01k4afv37xb0qtqgf1x0bnmwf7': 'pro',    // Pro Monthly
-            'pri_01k4arbvr91qy4gj4tk0pnw515': 'pro',    // Pro Yearly
-            'pri_01k4ar4ppv145d5mxq627zwnss': 'pro+',   // Pro+ Monthly
-            'pri_01k4arhcs2wsvr1f0rfhb8z550': 'pro+'    // Pro+ Yearly
+            [process.env.NEXT_PUBLIC_PADDLE_PRO_MONTHLY_PRICE_ID || '']: 'pro',
+            [process.env.NEXT_PUBLIC_PADDLE_PRO_YEARLY_PRICE_ID || '']: 'pro',
+            [process.env.NEXT_PUBLIC_PADDLE_PRO_PLUS_MONTHLY_PRICE_ID || '']: 'pro+',
+            [process.env.NEXT_PUBLIC_PADDLE_PRO_PLUS_YEARLY_PRICE_ID || '']: 'pro+'
           }
           
           subscriptionTierSub = priceIdToTierSub[priceIdSub] || 'pro'
           
           // Calculate subscription expiration date based on billing period
-          const isYearlySub = priceIdSub === 'pri_01k4arbvr91qy4gj4tk0pnw515' || priceIdSub === 'pri_01k4arhcs2wsvr1f0rfhb8z550'
+          const yearlyPriceIdsSub = [
+            process.env.NEXT_PUBLIC_PADDLE_PRO_YEARLY_PRICE_ID,
+            process.env.NEXT_PUBLIC_PADDLE_PRO_PLUS_YEARLY_PRICE_ID
+          ]
+          const isYearlySub = yearlyPriceIdsSub.includes(priceIdSub)
           const expirationDateSub = new Date()
           if (isYearlySub) {
             expirationDateSub.setFullYear(expirationDateSub.getFullYear() + 1)
