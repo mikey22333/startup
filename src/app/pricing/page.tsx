@@ -167,15 +167,13 @@ const PricingCard = memo(({
     {/* CTA Button */}
     <button
       onClick={onButtonClick}
-      disabled={isCurrentPlan || (plan.name !== 'Basic')} // Disable paid plans temporarily
+      disabled={isCurrentPlan} // Only disable current plan
       className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-300 mb-8 ${
         isCurrentPlan
           ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
-          : plan.name === 'Basic'
-          ? plan.isPopular
-            ? 'bg-white text-black hover:bg-white/90 shadow-lg'
-            : 'bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/20'
-          : 'bg-gray-600 text-gray-300 cursor-not-allowed' // Disabled state for paid plans
+          : plan.isPopular
+          ? 'bg-white text-black hover:bg-white/90 shadow-lg'
+          : 'bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/20'
       }`}
     >
       {isCurrentPlan 
