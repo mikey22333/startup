@@ -10,7 +10,7 @@ async function retryGeminiAPI(
   url: string,
   options: RequestInit,
   maxRetries: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 2000
 ): Promise<Response> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -8385,22 +8385,43 @@ async function callGroqAPI(systemPrompt: string, userPrompt: string): Promise<st
     try {
       console.log(`Calling Groq API as fallback... (attempt ${attempt}/${maxRetries})`)
       
+      const requestBody = {
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 8000, // Groq supports larger tokens
+        stream: false
+      }
+      
+      // Log request details for debugging 400 errors
+      console.log('Groq request - Model:', GROQ_MODEL)
+      console.log('Groq request - System prompt length:', systemPrompt?.length || 0)
+      console.log('Groq request - User prompt length:', userPrompt?.length || 0)
+      
+      // Check for potential issues that cause 400 errors
+      if (!systemPrompt || !userPrompt) {
+        console.error('❌ Groq request missing prompts - system:', !!systemPrompt, 'user:', !!userPrompt)
+        recordGroqFailure()
+        return null
+      }
+      
+      // Groq has token limits - check if prompts are too long
+      const totalPromptLength = systemPrompt.length + userPrompt.length
+      if (totalPromptLength > 32000) { // Conservative limit
+        console.error('❌ Groq request too long:', totalPromptLength, 'characters - truncating user prompt')
+        userPrompt = userPrompt.substring(0, 16000) + '...'
+      }
+      
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 8000, // Groq supports larger tokens
-          stream: false
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (response.ok) {
@@ -8434,7 +8455,25 @@ async function callGroqAPI(systemPrompt: string, userPrompt: string): Promise<st
         }
       }
 
+      // Get response body for better error debugging
+      let errorDetails = 'No error details available'
+      try {
+        const errorResponse = await response.text()
+        errorDetails = errorResponse
+      } catch (e) {
+        console.log('Could not read error response body')
+      }
+      
       console.error('Groq API failed:', response.status, response.statusText)
+      console.error('Groq error details:', errorDetails)
+      
+      // Check if it's a 400 error (bad request) - don't retry these
+      if (response.status === 400) {
+        console.error('❌ Groq 400 Bad Request - not retrying')
+        recordGroqFailure()
+        return null
+      }
+      
       recordGroqFailure() // Only record failure after all retries exhausted
       return null
       
