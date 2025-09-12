@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
       // Funding Sources
       if (planData.fundingSources && planData.fundingSources.length > 0) {
-        const fundingOptions = planData.fundingSources.map(f => f.name).join(', ')
+        const fundingOptions = planData.fundingSources.map((f: any) => f.name).join(', ')
         businessContext.push(`Potential Funding Sources: ${fundingOptions}`)
       }
 
