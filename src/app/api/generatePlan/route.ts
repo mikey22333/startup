@@ -216,7 +216,8 @@ function resetGroqFailures(): void {
 
 // Groq API configuration
 const GROQ_API_KEY = process.env.GROQ_API_KEY
-const GROQ_MODEL = 'llama-3.1-70b-versatile'
+// Updated to current supported Groq model (previous llama-3.1-70b-versatile was decommissioned)
+const GROQ_MODEL = 'meta-llama/llama-prompt-guard-2-86m'
 
 interface GoogleSearchResult {
   title: string
