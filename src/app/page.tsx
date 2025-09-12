@@ -4,22 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Menu, X, ArrowRight, Check, Brain, BarChart3, FileText, Users, ChevronRight } from 'lucide-react'
 import { trackEvent } from '@/components/PostHogProvider'
+import { motion } from 'framer-motion'
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
-
   const handleCTAClick = (location: string) => {
     trackEvent('cta_clicked', {
       location,
-      page: 'landing',
-      timestamp: new Date().toISOString(),
-    })
-  }
-
-  const handleWatchDemo = () => {
-    setIsVideoModalOpen(true)
-    trackEvent('watch_demo_clicked', {
       page: 'landing',
       timestamp: new Date().toISOString(),
     })
@@ -51,7 +42,12 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Navigation */}
-      <nav className="border-b border-gray-100 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
+      <motion.nav 
+        className="border-b border-gray-100 bg-white/95 backdrop-blur-sm sticky top-0 z-50"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -120,31 +116,51 @@ export default function LandingPage() {
             </div>
           </div>
         )}
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
       <section className="relative pt-20 pb-8 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Small tag */}
-          <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 border border-orange-200/50 mb-8">
+          <motion.div 
+            className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 border border-orange-200/50 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
             <span className="mr-2">✨</span>
             AI-POWERED BUSINESS PLANNING
-          </div>
+          </motion.div>
           
           {/* Main heading - Premium styling */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 leading-[0.9] mb-8 tracking-tight">
+          <motion.h1 
+            className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 leading-[0.9] mb-8 tracking-tight"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
             Turn your <span className="font-semibold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">idea</span> into
             <br />
             a <span className="font-semibold italic">business plan</span>
-          </h1>
+          </motion.h1>
           
           {/* Description */}
-          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed font-light">
+          <motion.p 
+            className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed font-light"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
             Generate comprehensive, investor-ready business plans in minutes using AI and real market data.
-          </p>
+          </motion.p>
           
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+          {/* CTA Button */}
+          <motion.div 
+            className="flex justify-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
             <a
               href="/generate"
               onClick={() => handleCTAClick('hero_primary')}
@@ -152,36 +168,42 @@ export default function LandingPage() {
             >
               Create your plan
             </a>
-            <button 
-              onClick={handleWatchDemo}
-              className="flex items-center text-gray-700 hover:text-gray-900 transition-colors font-medium text-lg"
-            >
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-              </svg>
-              Watch demo
-            </button>
-          </div>
+          </motion.div>
         </div>
         
         {/* Dashboard Preview */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div 
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
+        >
           <div className="relative">
-            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+            <motion.div 
+              className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+              whileHover={{ y: -8 }}
+              transition={{ duration: 0.3 }}
+            >
               <img 
                 src="/Screenshot 2025-09-01 202851.png" 
                 alt="PlanSpark Dashboard interface"
                 className="w-full h-auto rounded-2xl"
               />
-            </div>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Features Section */}
       <section id="features" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+          >
             <h2 className="text-3xl lg:text-5xl font-light text-gray-900 mb-6">
               Everything you need to
               <span className="block font-normal">launch your business</span>
@@ -189,17 +211,29 @@ export default function LandingPage() {
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               From idea validation to execution roadmap, powered by AI and real market data.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
-                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-6">
+              <motion.div 
+                key={index} 
+                className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={{ y: -8, transition: { duration: 0.2 } }}
+              >
+                <motion.div 
+                  className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-6"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ duration: 0.2 }}
+                >
                   <feature.icon className="w-6 h-6 text-gray-700" />
-                </div>
+                </motion.div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -210,43 +244,64 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
-            <div className="space-y-8">
-              <h2 className="text-4xl lg:text-5xl font-light text-gray-900 leading-tight">
+            <motion.div 
+              className="space-y-8"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+            >
+              <motion.h2 
+                className="text-4xl lg:text-5xl font-light text-gray-900 leading-tight"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
                 Build with confidence
-              </h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
+              </motion.h2>
+              <motion.p 
+                className="text-lg text-gray-600 leading-relaxed"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              >
                 From automated business plan generation to comprehensive market analysis and financial projections - all powered by AI to help you build your next successful venture.
-              </p>
+              </motion.p>
               
               {/* Feature List */}
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
-                  <span className="text-gray-900 font-medium">Market Research</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
-                  <span className="text-gray-900 font-medium">Financial Projections</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
-                  <span className="text-gray-900 font-medium">Business Strategy</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
-                  <span className="text-gray-900 font-medium">Competitive Analysis</span>
-                </div>
-              </div>
+              <motion.div 
+                className="space-y-4"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                {['Market Research', 'Financial Projections', 'Business Strategy', 'Competitive Analysis'].map((item, index) => (
+                  <motion.div 
+                    key={index}
+                    className="flex items-center space-x-3"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
+                  >
+                    <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span className="text-gray-900 font-medium">{item}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
 
-              <div className="pt-4">
+              <motion.div 
+                className="pt-4"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.9 }}
+              >
                 <a 
                   href="#"
                   className="inline-flex items-center text-gray-900 font-medium hover:text-gray-700 transition-colors"
@@ -254,19 +309,188 @@ export default function LandingPage() {
                   Get on top of your business planning
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </a>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
             {/* Right Content - Visual */}
-            <div className="relative">
-              <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
+            <motion.div 
+              className="relative"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <motion.div 
+                className="bg-gray-50 rounded-2xl p-8 border border-gray-200"
+                whileHover={{ y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
                 <img 
                   src="/Screenshot 2025-09-01 202824.png" 
                   alt="PlanSpark Business Planning Dashboard"
                   className="w-full h-auto rounded-lg shadow-lg"
                 />
-              </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Competitive Comparison Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+          >
+            <h2 className="text-3xl lg:text-5xl font-light text-gray-900 mb-6">
+              Comprehensive
+              <span className="block font-normal">competitive analysis</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Our AI automatically identifies and analyzes your competitors, providing detailed insights into their strengths, weaknesses, and market positioning.
+            </p>
+          </motion.div>
+
+          {/* Example Competitive Analysis Table */}
+          <motion.div 
+            className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Example: Skill-Sharing Platform Competitive Analysis</h3>
+              <p className="text-sm text-gray-600 mt-1">AI-generated competitive analysis for your business plan</p>
             </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left py-4 px-6 font-semibold text-gray-900">Company</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-900">Pricing</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-900">Key Strength</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-900">Main Weakness</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-900">Market Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <motion.tr 
+                    className="border-b border-gray-100 bg-orange-50"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                  >
+                    <td className="py-4 px-6 font-semibold text-orange-700">Your Business</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Flexible pay-per-use model vs subscription lock-in</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">First-to-market AI integration & automation</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Two-sided market development & network effects</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">0% (launching)</td>
+                  </motion.tr>
+                  <motion.tr 
+                    className="border-b border-gray-100"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                  >
+                    <td className="py-4 px-6 font-medium text-gray-900">Skillshare</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Subscription SaaS - $14/month or $99/year</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Large library of courses</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Limited focus on direct skill swapping</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Estimated 1-3% of the online learning market, with over 30,000 courses.</td>
+                  </motion.tr>
+                  <motion.tr 
+                    className="border-b border-gray-100"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                  >
+                    <td className="py-4 px-6 font-medium text-gray-900">Udemy</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Individual course purchases, subscription options - Courses range from free to $199+, subscription options available</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Large course selection</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Course quality varies significantly</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Estimated 2-4% of the online learning market, with over 200,000 courses.</td>
+                  </motion.tr>
+                  <motion.tr 
+                    className="border-b border-gray-100"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
+                  >
+                    <td className="py-4 px-6 font-medium text-gray-900">Fiverr</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Commission-based, transaction fees - Freelancers set their own prices; Fiverr takes a commission (typically 20%)</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Large marketplace of freelancers</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Focus on paid services, not skill swapping</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Estimated 1-2% of the global freelance market.</td>
+                  </motion.tr>
+                  <motion.tr 
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.7 }}
+                  >
+                    <td className="py-4 px-6 font-medium text-gray-900">Meetup</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Subscription for organizers - $16.99/month or $14.99/month (billed annually)</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Facilitates in-person networking and skill sharing</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Less focus on online skill exchange</td>
+                    <td className="py-4 px-6 text-sm text-gray-700">Difficult to quantify market share; significant presence in local communities.</td>
+                  </motion.tr>
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+
+          {/* Analysis Features */}
+          <div className="grid md:grid-cols-2 gap-12 mt-16">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <Check className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Competitive Advantages</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Our AI automatically identifies your competitive advantages by analyzing your business model against 
+                    market leaders. Discover unique positioning opportunities and understand exactly where your business 
+                    can outperform existing solutions.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              <div className="flex items-start space-x-4">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Market Opportunities</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Identify untapped market segments and gaps in competitor offerings. Our analysis reveals opportunities 
+                    where competitors show weaknesses, helping you position your business for maximum market impact 
+                    and sustainable growth.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -274,35 +498,84 @@ export default function LandingPage() {
       {/* How It Works */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+          >
             <h2 className="text-3xl lg:text-5xl font-light text-gray-900 mb-6">
               From idea to plan
               <span className="block font-normal">in three simple steps</span>
             </h2>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6">
-                1
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Describe Your Idea</h3>
-              <p className="text-gray-600">Tell us about your business idea, target market, and goals. Our AI will understand your vision.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6">
-                2
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">AI Generates Plan</h3>
-              <p className="text-gray-600">Our AI analyzes market data, competitors, and industry trends to create a comprehensive business plan.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6">
-                3
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Export & Execute</h3>
-              <p className="text-gray-600">Download your professional business plan as a PDF and start executing your vision with confidence.</p>
-            </div>
+            {[
+              { 
+                step: 1, 
+                title: "Describe Your Idea", 
+                description: "Tell us about your business idea, target market, and goals. Our AI will understand your vision." 
+              },
+              { 
+                step: 2, 
+                title: "AI Generates Plan", 
+                description: "Our AI analyzes market data, competitors, and industry trends to create a comprehensive business plan." 
+              },
+              { 
+                step: 3, 
+                title: "Export & Execute", 
+                description: "Download your professional business plan as a PDF and start executing your vision with confidence." 
+              }
+            ].map((item, index) => (
+              <motion.div 
+                key={index}
+                className="text-center"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+              >
+                <motion.div 
+                  className="w-16 h-16 bg-gray-900 text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-6"
+                  whileHover={{ 
+                    scale: 1.1, 
+                    rotate: [0, -10, 10, -10, 0],
+                    transition: { duration: 0.5 }
+                  }}
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 260, 
+                    damping: 20, 
+                    delay: index * 0.2 + 0.3 
+                  }}
+                >
+                  {item.step}
+                </motion.div>
+                <motion.h3 
+                  className="text-xl font-semibold text-gray-900 mb-4"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.2 + 0.5 }}
+                >
+                  {item.title}
+                </motion.h3>
+                <motion.p 
+                  className="text-gray-600"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.2 + 0.6 }}
+                >
+                  {item.description}
+                </motion.p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -310,17 +583,30 @@ export default function LandingPage() {
       {/* Pricing Section */}
       <section id="pricing" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+          >
             <h2 className="text-3xl lg:text-5xl font-light text-gray-900 mb-6">
               Simple, transparent
               <span className="block font-normal">pricing</span>
             </h2>
             <p className="text-xl text-gray-600">Choose the plan that fits your needs</p>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Basic Plan */}
-            <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+            <motion.div 
+              className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            >
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-semibold text-gray-900 mb-2">Basic</h3>
                 <div className="text-4xl font-bold text-gray-900 mb-2">Free</div>
@@ -350,13 +636,26 @@ export default function LandingPage() {
               >
                 Get Started
               </a>
-            </div>
+            </motion.div>
 
             {/* Pro Plan */}
-            <div className="bg-white text-black p-8 rounded-2xl relative border-2 border-gray-900 shadow-lg">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+            <motion.div 
+              className="bg-white text-black p-8 rounded-2xl relative border-2 border-gray-900 shadow-lg"
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              whileHover={{ y: -12, scale: 1.02, transition: { duration: 0.2 } }}
+            >
+              <motion.div 
+                className="absolute -top-4 left-1/2 transform -translate-x-1/2"
+                initial={{ opacity: 0, y: -10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
                 <span className="bg-gray-900 text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
-              </div>
+              </motion.div>
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-semibold mb-2">Pro</h3>
                 <div className="text-4xl font-bold mb-2">$12.99<span className="text-lg font-normal">/month</span></div>
@@ -390,10 +689,17 @@ export default function LandingPage() {
               >
                 Get Started
               </a>
-            </div>
+            </motion.div>
 
             {/* Pro+ Plan */}
-            <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm">
+            <motion.div 
+              className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            >
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-semibold text-gray-900 mb-2">Pro+</h3>
                 <div className="text-4xl font-bold text-gray-900 mb-2">$29.99<span className="text-lg font-normal">/month</span></div>
@@ -423,7 +729,7 @@ export default function LandingPage() {
               >
                 Get Started
               </a>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -431,25 +737,50 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-20 bg-white text-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl lg:text-5xl font-light mb-6">
+          <motion.h2 
+            className="text-3xl lg:text-5xl font-light mb-6"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+          >
             Ready to turn your idea
             <span className="block font-normal">into a business?</span>
-          </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          </motion.h2>
+          <motion.p 
+            className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             Join thousands of entrepreneurs who've launched successful businesses with PlanSpark.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="border border-gray-300 text-gray-900 px-8 py-4 rounded-lg hover:bg-gray-50 transition-colors font-medium">
-              View examples
-            </button>
-            <a
+          </motion.p>
+          <motion.div 
+            className="flex justify-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <motion.a
               href="/generate"
               className="bg-gray-900 text-white px-8 py-4 rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center space-x-2 text-lg font-medium"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
               <span>Start planning now</span>
-            </a>
-          </div>
-          <p className="text-gray-500 text-sm mt-4">No credit card required</p>
+            </motion.a>
+          </motion.div>
+          <motion.p 
+            className="text-gray-500 text-sm mt-4"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            No credit card required
+          </motion.p>
         </div>
       </section>
 
@@ -492,31 +823,6 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* Video Modal */}
-      {isVideoModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="relative bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
-            {/* Close button */}
-            <button
-              onClick={() => setIsVideoModalOpen(false)}
-              className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-opacity-75 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            
-            {/* Video */}
-            <video
-              controls
-              autoPlay
-              className="w-full h-auto"
-              poster="/Screenshot 2025-09-01 202851.png"
-            >
-              <source src="/planspark.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
