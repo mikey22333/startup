@@ -51,6 +51,7 @@ export default function RootLayout({
             __html: `
               if (typeof window !== 'undefined') {
                 try {
+                  // Apply permissions policy meta tags
                   if (!document.querySelector('meta[http-equiv="Permissions-Policy"]')) {
                     const meta = document.createElement('meta');
                     meta.httpEquiv = 'Permissions-Policy';
@@ -63,7 +64,19 @@ export default function RootLayout({
                     featureMeta.content = 'payment *; publickey-credentials-get *; web-share *; clipboard-write *; clipboard-read *';
                     document.head.appendChild(featureMeta);
                   }
-                  console.log('✅ Runtime permissions policy applied');
+                  
+                  // Enhanced iframe permissions for Paddle checkout
+                  const originalCreateElement = document.createElement;
+                  document.createElement = function(tagName) {
+                    const element = originalCreateElement.call(this, tagName);
+                    if (tagName.toLowerCase() === 'iframe') {
+                      element.setAttribute('allow', 'payment *; publickey-credentials-get *; web-share *; clipboard-write *; clipboard-read *');
+                      element.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+                    }
+                    return element;
+                  };
+                  
+                  console.log('✅ Runtime permissions policy and iframe fix applied');
                 } catch (e) { console.warn('Permissions fix failed:', e); }
               }
             `
