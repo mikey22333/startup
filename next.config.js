@@ -71,11 +71,11 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'payment=(self "https://*.paddle.com" "https://*.m2pfintech.com"), publickey-credentials-get=(self "https://*.paddle.com" "https://*.m2pfintech.com"), web-share=*'
+            value: 'payment=*, publickey-credentials-get=*, web-share=*, clipboard-write=*, clipboard-read=*'
           },
           {
             key: 'Feature-Policy',
-            value: 'payment *; publickey-credentials-get *'
+            value: 'payment *; publickey-credentials-get *; web-share *'
           }
         ]
       }

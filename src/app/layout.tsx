@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { AuthProvider } from '@/components/AuthProvider'
 import { PostHogProvider } from '@/components/PostHogProvider'
+import Script from 'next/script'
 
 // Force dynamic rendering for all pages to prevent useSearchParams errors
 export const dynamic = 'force-dynamic'
@@ -33,12 +34,34 @@ export default function RootLayout({
         {/* Direct meta tag (explicit) - safe to keep alongside metadata.verification */}
         <meta name="google-site-verification" content="Fr9_HEnZtTppqv_yTBpPnT_F7Ph1wLmbQ_jVs_WNLTo" />
         {/* Permissions Policy for Payment API - Allows payment processing */}
-        <meta httpEquiv="Permissions-Policy" content="payment=*, publickey-credentials-get=*, web-share=*" />
+        <meta httpEquiv="Permissions-Policy" content="payment=*, publickey-credentials-get=*, web-share=*, clipboard-write=*, clipboard-read=*" />
+        {/* Feature Policy for older browsers */}
+        <meta httpEquiv="Feature-Policy" content="payment *; publickey-credentials-get *; web-share *" />
         {/* Favicon: use the logo from the public folder */}
         <link rel="icon" href="/Gemini_Generated_Image_q3lht8q3lht8q3lh.png" />
         <link rel="apple-touch-icon" href="/Gemini_Generated_Image_q3lht8q3lht8q3lh.png" />
       </head>
       <body className="bg-black">
+        {/* Runtime permissions policy fix */}
+        <Script
+          id="permissions-fix"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined') {
+                try {
+                  if (!document.querySelector('meta[http-equiv="Permissions-Policy"]')) {
+                    const meta = document.createElement('meta');
+                    meta.httpEquiv = 'Permissions-Policy';
+                    meta.content = 'payment=*, publickey-credentials-get=*, web-share=*, clipboard-write=*, clipboard-read=*';
+                    document.head.appendChild(meta);
+                  }
+                  console.log('✅ Runtime permissions policy applied');
+                } catch (e) { console.warn('Permissions fix failed:', e); }
+              }
+            `
+          }}
+        />
         <PostHogProvider>
           <AuthProvider>
             <div className="min-h-screen">
