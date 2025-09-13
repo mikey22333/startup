@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+
+// Comprehensive permissions policy values for live deployment
+const PERMISSIONS_POLICY = 'payment=(*), publickey-credentials-get=(*), web-share=(*), clipboard-write=(*), clipboard-read=(*), camera=(), microphone=(), geolocation=()';
+const FEATURE_POLICY = 'payment *; publickey-credentials-get *; web-share *; clipboard-write *; clipboard-read *';
+
 const nextConfig = {
   // Optimize for Render deployment
   output: 'standalone',
@@ -71,11 +76,11 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'payment=*, publickey-credentials-get=*, web-share=*, clipboard-write=*, clipboard-read=*'
+            value: PERMISSIONS_POLICY
           },
           {
             key: 'Feature-Policy',
-            value: 'payment *; publickey-credentials-get *; web-share *'
+            value: FEATURE_POLICY
           }
         ]
       }
