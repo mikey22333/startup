@@ -41,6 +41,8 @@ export default function RootLayout({
         {/* Favicon: use the logo from the public folder */}
         <link rel="icon" href="/Gemini_Generated_Image_q3lht8q3lht8q3lh.png" />
         <link rel="apple-touch-icon" href="/Gemini_Generated_Image_q3lht8q3lht8q3lh.png" />
+        {/* Ahrefs Web Analytics */}
+        <script src="https://analytics.ahrefs.com/analytics.js" data-key="8fKpsbt/9Pkf4pDF1W5Txg" async></script>
       </head>
       <body className="bg-black">
         {/* Runtime permissions policy fix */}
