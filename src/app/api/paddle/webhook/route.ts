@@ -72,8 +72,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No signature provided' }, { status: 400 })
     }
 
-    // DISABLED: Skip signature verification for testing - webhooks are working
-    console.log('✅ Signature verification disabled for testing - processing webhook')
+    // Verify webhook signature for security
+    const isValid = verifyPaddleSignature(body, signature)
+    if (!isValid) {
+      console.error('❌ Invalid Paddle webhook signature')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+    console.log('✅ Paddle webhook signature verified')
     
     let event
     try {

@@ -1,8 +1,6 @@
 import { initializePaddle, Paddle } from '@paddle/paddle-js'
 
-// Paddle configuration
-// Use environment variable to control Paddle mode, default to production for live environment
-const paddleEnvironment = process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT || 'production'
+// Paddle configuration - PRODUCTION ONLY
 const paddleClientToken = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
 
 // Paddle instance
@@ -13,40 +11,19 @@ export const getPaddle = async (): Promise<Paddle | null> => {
     console.error('❌ CRITICAL: NEXT_PUBLIC_PADDLE_CLIENT_TOKEN environment variable is missing!')
     console.error('🔧 Add this to your environment variables:', {
       'NEXT_PUBLIC_PADDLE_CLIENT_TOKEN': 'live_xxxxx (production token)',
-      'Environment': paddleEnvironment,
-      'Documentation': 'See RENDER_ENVIRONMENT_VARIABLES_UPDATE.md'
     })
     return null
   }
 
   if (!paddleInstance) {
     try {
-      // Set environment based on configuration - sandbox only for testing
-      if (paddleEnvironment === 'sandbox') {
-        console.log('🏖️ Setting Paddle environment to sandbox (testing mode)')
-        // @ts-ignore - Paddle.Environment exists on window.Paddle
-        if (typeof window !== 'undefined' && (window as any).Paddle) {
-          (window as any).Paddle.Environment.set('sandbox')
-        }
-      } else {
-        console.log('🚀 Using Paddle production environment')
-      }
-
-      console.log('🔧 Initializing Paddle with:', { environment: paddleEnvironment, token: paddleClientToken.substring(0, 10) + '...' })
+      console.log('🚀 Initializing Paddle in PRODUCTION mode')
+      console.log('🔧 Token:', paddleClientToken.substring(0, 10) + '...')
       
       const result = await initializePaddle({
-        environment: paddleEnvironment as 'production' | 'sandbox',
+        environment: 'production',
         token: paddleClientToken,
       })
-      
-      // Set environment again after initialization to be sure (only for sandbox)
-      if (paddleEnvironment === 'sandbox' && result) {
-        console.log('🏖️ Confirming sandbox environment after init')
-        // @ts-ignore
-        if ((window as any).Paddle?.Environment) {
-          (window as any).Paddle.Environment.set('sandbox')
-        }
-      }
       
       paddleInstance = result || null
       console.log('✅ Paddle initialized successfully:', !!paddleInstance)
